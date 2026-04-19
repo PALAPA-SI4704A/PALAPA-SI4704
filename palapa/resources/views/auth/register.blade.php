@@ -97,7 +97,7 @@
 
             <div class="pt-4 text-center">
                 <p class="text-sm text-gray-500 mb-8">
-                    Sudah memiliki akun? <a href="#" class="text-blue-600 font-bold underline hover:text-blue-800 transition">Masuk Sekarang.</a>
+                    Sudah memiliki akun? <a href="{{ route('login') }}" class="text-blue-600 font-bold underline hover:text-blue-800 transition">Masuk Sekarang.</a>
                 </p>
                 <button type="submit" class="w-full bg-gray-800 hover:bg-black text-white font-bold py-4 rounded-full shadow-xl transform transition active:scale-[0.98] tracking-widest">
                     DAFTAR
