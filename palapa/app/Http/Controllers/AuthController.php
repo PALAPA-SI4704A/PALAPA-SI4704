@@ -38,4 +38,39 @@ class AuthController extends Controller
         // 4. Arahkan ke halaman utama/dashboard
         return redirect('/')->with('success', 'Registrasi berhasil!');
     }
+
+    // Menampilkan halaman form login
+    public function showLoginForm()
+    {
+        return view('auth.login');
+    }
+
+    // Memproses data login
+    public function login(Request $request)
+    {
+        $credentials = $request->validate([
+            'email' => 'required|string|email',
+            'password' => 'required|string',
+        ]);
+
+        if (Auth::attempt($credentials, $request->boolean('remember'))) {
+            $request->session()->regenerate();
+            return redirect()->intended('/')->with('success', 'Login berhasil!');
+        }
+
+        return back()->withErrors([
+            'email' => 'Email atau password yang dimasukkan salah.',
+        ])->onlyInput('email');
+    }
+
+    // Memproses logout
+    public function logout(Request $request)
+    {
+        Auth::logout();
+        
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        
+        return redirect('/login')->with('success', 'Anda telah berhasil logout!');
+    }
 }
