@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
@@ -19,24 +20,32 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         // 1. Validasi inputan form
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
+            'phone' => 'required|string|max:20',
             'password' => 'required|string|min:8|confirmed',
         ]);
 
         // 2. Simpan user baru ke database
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
+        $user = new User();
+        $user->users_name = $validated['name'];
+        $user->email = $validated['email'];
+        $user->phone = $validated['phone'];
+        $user->role = 'masyarakat';
+        $user->password = Hash::make($validated['password']);
+
+        if (! $user->save()) {
+            throw ValidationException::withMessages([
+                'email' => 'Registrasi gagal disimpan. Silakan coba lagi.',
+            ]);
+        }
 
         // 3. Otomatis login setelah berhasil daftar
         Auth::login($user);
 
-        // 4. Arahkan ke halaman utama/dashboard
-        return redirect('/')->with('success', 'Registrasi berhasil!');
+        // 4. Arahkan ke halaman login agar alur tidak kembali ke form register
+        return redirect()->route('login')->with('success', 'Registrasi berhasil! Silakan masuk.');
     }
 
     // Menampilkan halaman form login
@@ -55,7 +64,7 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
-            return redirect()->intended('/')->with('success', 'Login berhasil!');
+            return redirect()->intended('/beranda')->with('success', 'Login berhasil!');
         }
 
         return back()->withErrors([
