@@ -21,7 +21,7 @@ class AuthController extends Controller
     {
         // 1. Validasi inputan form
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'users_name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'phone' => 'required|string|max:20',
             'password' => 'required|string|min:8|confirmed',
@@ -29,7 +29,7 @@ class AuthController extends Controller
 
         // 2. Simpan user baru ke database
         $user = new User();
-        $user->users_name = $validated['name'];
+        $user->users_name = $validated['users_name'];
         $user->email = $validated['email'];
         $user->phone = $validated['phone'];
         $user->role = 'masyarakat';
@@ -44,8 +44,8 @@ class AuthController extends Controller
         // 3. Otomatis login setelah berhasil daftar
         Auth::login($user);
 
-        // 4. Arahkan ke halaman login agar alur tidak kembali ke form register
-        return redirect()->route('login')->with('success', 'Registrasi berhasil! Silakan masuk.');
+        // 4. Arahkan ke halaman beranda
+        return redirect()->route('beranda')->with('success', 'Registrasi berhasil! Selamat datang.');
     }
 
     // Menampilkan halaman form login
