@@ -7,6 +7,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Phosphor Icons & AlpineJS -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
     <style>
         :root {
             --bg: #f3f5f8;
@@ -40,150 +45,11 @@
             min-height: 100vh;
         }
 
-        .sidebar {
-            width: 256px;
-            background: var(--surface);
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow);
-            padding: 20px 16px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 20px;
-            padding: 0 6px;
-        }
-
-        .brand img {
-            width: 96px;
-            height: auto;
-        }
-
-        .collapse {
-            font-size: 18px;
-            color: #a5adba;
-        }
-
-        .profile {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 10px;
-            border-radius: 14px;
-            background: #f8fafc;
-            margin-bottom: 20px;
-        }
-
-        .avatar {
-            width: 42px;
-            height: 42px;
-            border-radius: 999px;
-            object-fit: cover;
-        }
-
-        .name {
-            margin: 0;
-            font-size: 13px;
-            font-weight: 700;
-            line-height: 1.3;
-        }
-
-        .email {
-            margin: 0;
-            font-size: 11px;
-            color: var(--muted);
-            line-height: 1.3;
-        }
-
-        .menu {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .icon {
-            width: 16px;
-            text-align: center;
-        }
-
-        .menu a {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            text-decoration: none;
-            color: #687385;
-            font-size: 13px;
-            font-weight: 500;
-            padding: 10px 12px;
-            border-radius: 10px;
-            transition: all 0.2s ease;
-        }
-
-        .menu a:hover {
-            background: #edf4ff;
-            color: var(--primary-dark);
-        }
-
-        .menu a.active {
-            background: #e8f2ff;
-            color: var(--primary-dark);
-            font-weight: 600;
-        }
-
-        .sidebar-footer a {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            text-decoration: none;
-            color: #687385;
-            font-size: 13px;
-            font-weight: 500;
-            padding: 10px 12px;
-            border-radius: 10px;
-            transition: all 0.2s ease;
-        }
-
-        .sidebar-footer a:hover {
-            background: #edf4ff;
-            color: var(--primary-dark);
-        }
-
-        .sidebar-footer {
-            margin-top: auto;
-            padding-top: 16px;
-            border-top: 1px solid var(--line);
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .logout-button {
-            text-align: left;
-            border: 0;
-            background: transparent;
-            color: #687385;
-            font-size: 13px;
-            font-weight: 500;
-            padding: 10px 12px;
-            border-radius: 10px;
-            font-family: inherit;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .logout-button:hover {
-            background: #fff1f1;
-            color: #d04a4a;
-        }
-
         .content {
             flex: 1;
             padding: 8px 0;
             overflow: hidden;
+            transition: all 0.3s ease;
         }
 
         .content-head {
@@ -356,34 +222,8 @@
     </style>
 </head>
 <body>
-<div class="shell">
-    <aside class="sidebar">
-        <div class="brand">
-            <img src="{{ asset('images/logo-palapa.png') }}" alt="Logo Palapa">
-            <span class="collapse">&#8249;</span>
-        </div>
-
-        <div class="profile">
-            <img class="avatar" src="https://i.pravatar.cc/96?img=12" alt="Foto Pengguna">
-            <div>
-                <p class="name">{{ auth()->check() ? auth()->user()->users_name : 'John Smith' }}</p>
-                <p class="email">{{ auth()->check() ? auth()->user()->email : 'account@gmail.com' }}</p>
-            </div>
-        </div>
-
-        <nav class="menu">
-            <a class="active" href="{{ route('beranda') }}"><span class="icon">◌</span>Beranda</a>
-            <a href="{{ route('reports.create') }}"><span class="icon">◌</span>Buat Laporan</a>
-        </nav>
-
-        <div class="sidebar-footer">
-            <a href="#"><span class="icon">◌</span>FAQ</a>
-            <form action="{{ route('logout') }}" method="POST">
-                @csrf
-                <button class="logout-button" type="submit">◌ Keluar</button>
-            </form>
-        </div>
-    </aside>
+<div class="shell" x-data="{ sidebarOpen: true }">
+    @include('components.sidebar')
 
     <main class="content">
         <div class="content-head">
