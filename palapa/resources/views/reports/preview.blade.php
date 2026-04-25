@@ -7,6 +7,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Phosphor Icons & AlpineJS -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
     <style>
         body {
             margin: 0;
@@ -18,10 +23,17 @@
 
         * { box-sizing: border-box; }
 
-        .wrap {
-            max-width: 1060px;
-            margin: 0 auto;
+        .shell {
+            display: flex;
+            gap: 24px;
             padding: 16px;
+            min-height: 100vh;
+        }
+        
+        .content {
+            flex: 1;
+            max-width: calc(100vw - 306px);
+            transition: max-width 0.3s ease;
         }
 
         .panel {
@@ -148,12 +160,21 @@
             }
             .actions form { width: 100%; }
             .btn { width: 100%; }
+            .shell { flex-direction: column; }
+            .content { max-width: none !important; }
+        }
+                flex-direction: column;
+            }
+            .actions form { width: 100%; }
+            .btn { width: 100%; }
         }
     </style>
 </head>
 <body>
-<div class="wrap">
-    <main class="panel">
+<div class="shell" x-data="{ sidebarOpen: true }">
+    @include('components.sidebar')
+
+    <main class="panel content" :style="sidebarOpen ? 'max-width: calc(100vw - 306px);' : 'max-width: calc(100vw - 138px);'">
         <h1>Preview Laporan</h1>
         <p class="subtitle">Periksa data sebelum disimpan ke sistem.</p>
 

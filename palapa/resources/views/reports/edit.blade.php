@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Buat Laporan - Palapa</title>
+    <title>Edit Laporan - Palapa</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -227,10 +227,9 @@
                 flex-direction: column;
             }
 
-            .sidebar,
             .content {
                 width: 100%;
-                max-width: none;
+                max-width: none !important;
             }
 
             .coord-row {
@@ -255,8 +254,8 @@
     <main class="content" :style="sidebarOpen ? 'max-width: calc(100vw - 306px);' : 'max-width: calc(100vw - 138px);'">
         <div class="panel">
             <div class="title-wrap">
-                <a class="back" href="{{ route('beranda') }}">&larr;</a>
-                <h1>Buat Laporan</h1>
+                <a class="back" href="{{ route('profile') }}">&larr;</a>
+                <h1>Edit Laporan</h1>
             </div>
 
             @if ($errors->any())
@@ -269,14 +268,14 @@
                 </div>
             @endif
 
-            <form action="{{ route('reports.preview') }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ route('reports.update', $report) }}" method="POST" enctype="multipart/form-data">
                 @csrf
-                <input type="hidden" name="photo_temp" value="{{ old('photo_temp', $prefill['photo_temp'] ?? '') }}">
+                @method('PUT')
 
                 <div class="field">
                     <label for="title">Judul <span class="req">*</span></label>
                     <input id="title" name="title" type="text" required
-                        value="{{ old('title', $prefill['title'] ?? '') }}"
+                        value="{{ old('title', $report->title) }}"
                         placeholder="Contoh: Asap tebal di area hutan dekat jalan utama">
                 </div>
 
@@ -284,25 +283,25 @@
                     <label>Lokasi <span class="req">*</span></label>
                     <div class="coord-row">
                         <input id="latitude" name="latitude" type="text" required
-                            value="{{ old('latitude', $prefill['latitude'] ?? '') }}"
+                            value="{{ old('latitude', $report->latitude) }}"
                             placeholder="Latitude, contoh -6.200000">
                         <input id="longitude" name="longitude" type="text" required
-                            value="{{ old('longitude', $prefill['longitude'] ?? '') }}"
+                            value="{{ old('longitude', $report->longitude) }}"
                             placeholder="Longitude, contoh 106.816666">
                         <button id="use-location" class="geo-btn" type="button" title="Gunakan lokasi saat ini">GPS</button>
                     </div>
                 </div>
 
                 <div class="field">
-                    <label for="photo">Upload Foto Kejadian</label>
+                    <label for="photo">Upload Foto Kejadian Baru (Opsional)</label>
                     <label class="upload-box">
                         <input id="photo" name="photo" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png">
                         <div>
                             <div class="upload-icon">UP</div>
                             <p class="upload-text">Seret foto atau <strong>Pilih foto</strong><br>Format JPEG/PNG, maksimal 5 MB.</p>
                             <p class="preview-name" id="preview-name"></p>
-                            @if(old('photo_temp', $prefill['photo_temp'] ?? ''))
-                                <p class="preview-note">Foto sebelumnya masih tersimpan untuk preview.</p>
+                            @if($report->photo)
+                                <p class="preview-note">Laporan ini sudah memiliki foto. Upload foto baru untuk menggantinya.</p>
                             @endif
                         </div>
                     </label>
@@ -311,10 +310,10 @@
                 <div class="field">
                     <label for="description">Deskripsi Kejadian <span class="req">*</span></label>
                     <textarea id="description" name="description" required
-                        placeholder="Jelaskan kondisi kebakaran yang terlihat (misalnya luas area, asap, atau kondisi sekitar)">{{ old('description', $prefill['description'] ?? '') }}</textarea>
+                        placeholder="Jelaskan kondisi kebakaran yang terlihat">{{ old('description', $report->description) }}</textarea>
                 </div>
 
-                <button class="submit" type="submit">Lanjutkan Preview</button>
+                <button class="submit" type="submit">Simpan Perubahan</button>
             </form>
         </div>
     </main>
