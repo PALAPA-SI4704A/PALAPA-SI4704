@@ -24,6 +24,15 @@ class ReportController extends Controller
         return view('reports.index', compact('reports'));
     }
 
+    public function profile()
+    {
+        $reports = Report::where('user_id', Auth::id())
+            ->latest('report_id')
+            ->get();
+
+        return view('profile', compact('reports'));
+    }
+
     /**
      * Show the form for creating a new resource.
      */
@@ -94,7 +103,7 @@ class ReportController extends Controller
             'status' => 'pending',
         ]);
 
-        return redirect()->route('reports.index')->with('success', 'Laporan berhasil dikirim');
+        return redirect()->route('profile')->with('success', 'Laporan berhasil dikirim');
     }
 
     /**
@@ -131,15 +140,44 @@ class ReportController extends Controller
      */
     public function edit(Report $report)
     {
-        //
+        if ($report->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        return view('reports.edit', compact('report'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Report $report)
+    public function update(StoreReportRequest $request, Report $report)
     {
-        //
+        if ($report->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $validated = $request->validated();
+
+        $photoPath = $report->photo;
+        if ($request->hasFile('photo')) {
+            if ($photoPath && Storage::disk('public')->exists($photoPath)) {
+                Storage::disk('public')->delete($photoPath);
+            }
+            
+            $extension = $request->file('photo')->getClientOriginalExtension();
+            $finalName = (string) Str::uuid() . ($extension ? '.' . $extension : '');
+            $photoPath = $request->file('photo')->storeAs('photos', $finalName, 'public');
+        }
+
+        $report->update([
+            'title' => $validated['title'],
+            'description' => $validated['description'],
+            'photo' => $photoPath,
+            'latitude' => $validated['latitude'],
+            'longitude' => $validated['longitude'],
+        ]);
+
+        return redirect()->route('profile')->with('success', 'Laporan berhasil diperbarui');
     }
 
     /**
