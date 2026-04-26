@@ -25,6 +25,22 @@
                  style="max-width: 200px;">
         </div>
 
+        @if (session('success'))
+            <div class="mb-6 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+                {{ session('success') }}
+            </div>
+        @endif
+
+        @if ($errors->any())
+            <div class="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                <ul class="list-disc pl-5">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         <form action="{{ route('login') }}" method="POST" class="space-y-6">
             @csrf
 
@@ -36,7 +52,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                         </svg>
                     </span>
-                    <input type="email" name="email" placeholder="namakamu@mail.com" required
+                    <input type="email" name="email" value="{{ old('email') }}" placeholder="namakamu@mail.com" required
                         class="w-full pl-12 pr-4 input-h-50 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-50/50 outline-none transition text-gray-700 placeholder-gray-300">
                 </div>
             </div>
