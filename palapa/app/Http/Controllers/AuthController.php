@@ -64,6 +64,11 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
+            
+            if (Auth::user()->role === 'petugas') {
+                return redirect()->intended('/petugas/dashboard')->with('success', 'Login berhasil sebagai petugas!');
+            }
+
             return redirect()->intended('/beranda')->with('success', 'Login berhasil!');
         }
 

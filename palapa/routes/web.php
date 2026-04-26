@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\PetugasController;
 
 Route::redirect('/', '/beranda');
 
@@ -20,6 +21,11 @@ Route::middleware('auth')->group(function () {
 	Route::post('/reports/store', [ReportController::class, 'store'])->name('reports.store');
 	Route::get('/reports/{report}/edit', [ReportController::class, 'edit'])->name('reports.edit');
 	Route::put('/reports/{report}', [ReportController::class, 'update'])->name('reports.update');
+
+    // Petugas Routes
+    Route::get('/petugas/dashboard', [PetugasController::class, 'index'])->name('petugas.dashboard');
+    Route::get('/petugas/reports/{report}', [PetugasController::class, 'show'])->name('petugas.reports.show');
+    Route::post('/petugas/reports/{report}/assign/{petugas}', [PetugasController::class, 'assign'])->name('petugas.reports.assign');
 });
 
 Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');
