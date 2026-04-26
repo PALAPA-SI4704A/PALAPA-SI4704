@@ -145,7 +145,7 @@ class ReportController extends Controller
      */
     public function history(Report $report)
     {
-        // DATA DUMMY RIWAYAT STATUS
+        // DATA DUMMY STATUS
         $statusHistories = [
             [
                 'id' => 1,
