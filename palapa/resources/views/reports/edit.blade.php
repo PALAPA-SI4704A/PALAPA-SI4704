@@ -11,6 +11,10 @@
     <!-- Phosphor Icons & AlpineJS -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <!-- LeafletJS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
     <style>
         :root {
@@ -281,6 +285,7 @@
 
                 <div class="field">
                     <label>Lokasi <span class="req">*</span></label>
+                    <div id="map" style="height: 300px; border-radius: 8px; margin-bottom: 10px; z-index: 1; border: 1px solid #dfe6ef;"></div>
                     <div class="coord-row">
                         <input id="latitude" name="latitude" type="text" required
                             value="{{ old('latitude', $report->latitude) }}"
@@ -326,6 +331,54 @@
     const longitudeInput = document.getElementById('longitude');
     const useLocationButton = document.getElementById('use-location');
 
+    // Map Initialization
+    let initialLat = latitudeInput.value ? parseFloat(latitudeInput.value) : -2.5489; // Default Indonesia
+    let initialLng = longitudeInput.value ? parseFloat(longitudeInput.value) : 118.0149;
+    let initialZoom = latitudeInput.value ? 13 : 5;
+
+    const map = L.map('map').setView([initialLat, initialLng], initialZoom);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors',
+        maxZoom: 19
+    }).addTo(map);
+
+    let marker;
+    if (latitudeInput.value && longitudeInput.value) {
+        marker = L.marker([initialLat, initialLng], { draggable: true }).addTo(map);
+    } else {
+        marker = L.marker([initialLat, initialLng], { draggable: true });
+    }
+
+    function updateMarker(lat, lng) {
+        if (!map.hasLayer(marker)) {
+            marker.addTo(map);
+        }
+        marker.setLatLng([lat, lng]);
+        latitudeInput.value = lat.toFixed(6);
+        longitudeInput.value = lng.toFixed(6);
+    }
+
+    map.on('click', function(e) {
+        updateMarker(e.latlng.lat, e.latlng.lng);
+    });
+
+    marker.on('dragend', function(e) {
+        let position = marker.getLatLng();
+        updateMarker(position.lat, position.lng);
+    });
+
+    latitudeInput.addEventListener('change', function() {
+        let lt = parseFloat(this.value);
+        let lg = parseFloat(longitudeInput.value);
+        if (!isNaN(lt) && !isNaN(lg)) { updateMarker(lt, lg); map.setView([lt, lg], 13); }
+    });
+
+    longitudeInput.addEventListener('change', function() {
+        let lt = parseFloat(latitudeInput.value);
+        let lg = parseFloat(this.value);
+        if (!isNaN(lt) && !isNaN(lg)) { updateMarker(lt, lg); map.setView([lt, lg], 13); }
+    });
+
     if (photoInput) {
         photoInput.addEventListener('change', function (event) {
             const file = event.target.files && event.target.files[0];
@@ -341,8 +394,10 @@
             }
 
             navigator.geolocation.getCurrentPosition(function (position) {
-                latitudeInput.value = position.coords.latitude.toFixed(6);
-                longitudeInput.value = position.coords.longitude.toFixed(6);
+                let lt = position.coords.latitude;
+                let lg = position.coords.longitude;
+                updateMarker(lt, lg);
+                map.setView([lt, lg], 13);
             }, function () {
                 alert('Lokasi tidak bisa diambil. Pastikan izin lokasi diaktifkan.');
             });
