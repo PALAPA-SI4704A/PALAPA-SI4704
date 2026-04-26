@@ -20,6 +20,7 @@ Route::middleware('auth')->group(function () {
 	Route::post('/reports/store', [ReportController::class, 'store'])->name('reports.store');
 	Route::get('/reports/{report}/edit', [ReportController::class, 'edit'])->name('reports.edit');
 	Route::put('/reports/{report}', [ReportController::class, 'update'])->name('reports.update');
+	Route::get('/reports/{report}/history', [ReportController::class, 'history'])->name('reports.history');
 });
 
 Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');
