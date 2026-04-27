@@ -131,6 +131,36 @@
             color: #8090a7;
             padding: 30px 10px;
         }
+
+        .filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+
+        .filter-btn {
+            text-decoration: none;
+            display: inline-block;
+            background: #f1f4f8;
+            color: #607089;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover {
+            background: #e2e8f0;
+        }
+
+        .filter-btn.active {
+            background: #1f76c2;
+            color: #fff;
+        }
     </style>
 </head>
 <body>
@@ -148,6 +178,13 @@
             <div class="success">{{ session('success') }}</div>
         @endif
 
+        <div class="filters">
+            <a href="{{ route('reports.index', ['status' => 'semua']) }}" class="filter-btn {{ $currentStatus === 'semua' ? 'active' : '' }}">Semua</a>
+            <a href="{{ route('reports.index', ['status' => 'pending']) }}" class="filter-btn {{ $currentStatus === 'pending' ? 'active' : '' }}">Pending</a>
+            <a href="{{ route('reports.index', ['status' => 'diproses']) }}" class="filter-btn {{ $currentStatus === 'diproses' ? 'active' : '' }}">Diproses</a>
+            <a href="{{ route('reports.index', ['status' => 'selesai']) }}" class="filter-btn {{ $currentStatus === 'selesai' ? 'active' : '' }}">Selesai</a>
+        </div>
+
         <div class="table-wrap">
             <table>
                 <thead>
@@ -157,6 +194,7 @@
                     <th>Status</th>
                     <th>Foto</th>
                     <th>Dikirim</th>
+                    <th>Aksi</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -173,10 +211,13 @@
                             @endif
                         </td>
                         <td>{{ $report->created_at?->format('d M Y H:i') }}</td>
+                        <td>
+                            <a class="photo-link" href="{{ route('reports.history', $report->report_id) }}">Riwayat</a>
+                        </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="5" class="empty">Belum ada laporan.</td>
+                        <td colspan="6" class="empty">Belum ada laporan.</td>
                     </tr>
                 @endforelse
                 </tbody>
