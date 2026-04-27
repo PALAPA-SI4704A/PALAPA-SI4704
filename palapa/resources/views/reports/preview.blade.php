@@ -12,6 +12,10 @@
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
+    <!-- LeafletJS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <style>
         body {
             margin: 0;
@@ -197,6 +201,10 @@
                     <strong>Longitude</strong>
                     <p>{{ $data['longitude'] }}</p>
                 </div>
+                <div class="item" style="grid-column: 1 / -1;">
+                    <strong>Peta Lokasi</strong>
+                    <div id="map-preview" style="height: 200px; border-radius: 8px; border: 1px solid #dfe6ef; margin-top: 8px; z-index: 1;"></div>
+                </div>
                 <div class="item">
                     <strong>Status Awal</strong>
                     <span class="badge">pending</span>
@@ -235,5 +243,26 @@
         </div>
     </main>
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        let lat = {{ $data['latitude'] }};
+        let lng = {{ $data['longitude'] }};
+        
+        const map = L.map('map-preview', {
+            zoomControl: false,
+            dragging: false,
+            scrollWheelZoom: false,
+            doubleClickZoom: false,
+        }).setView([lat, lng], 14);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors',
+            maxZoom: 19
+        }).addTo(map);
+
+        L.marker([lat, lng]).addTo(map);
+    });
+</script>
 </body>
 </html>

@@ -21,5 +21,7 @@ class DatabaseSeeder extends Seeder
             'users_name' => 'Test User',
             'email' => 'test@example.com', 
         ]);
+
+        $this->call(PetugasSeeder::class);
     }
 }
