@@ -240,7 +240,7 @@
 
             <article class="card">
                 <div class="emoji">🧑‍🚒</div>
-                <div class="value">568 Kasus</div>
+                <div class="value">565 Kasus</div>
                 <p class="caption">Penanganan<br>Kebakaran 2026</p>
             </article>
 
