@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Report;
 use App\Models\User;
-use App\Models\Penugasan;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -12,37 +12,51 @@ class PetugasController extends Controller
 {
     public function index()
     {
-        $laporanHariIni = Report::whereDate('created_at', today())->count();
-        $diproses = Report::where('status', 'diproses')->count();
-        $selesai = Report::where('status', 'selesai')->count();
-        $total = Report::count();
-
-        $laporanMasuk = Report::orderBy('created_at', 'desc')->get();
-        $petugasTersedia = User::where('role', 'petugas')->get();
-
-        return view('petugas.dashboard', compact('laporanHariIni', 'diproses', 'selesai', 'total', 'laporanMasuk', 'petugasTersedia'));
-    }
-
-    public function show(Report $report)
-    {
-        $petugasTersedia = User::where('role', 'petugas')->get();
-        return view('petugas.reports.show', compact('report', 'petugasTersedia'));
-    }
-
-    public function assign(Request $request, Report $report, User $petugas)
-    {
-        if ($petugas->role !== 'petugas') {
-            abort(403);
+        // 1. Pengecekan Akses (Hanya Petugas)
+        if (Auth::user()->role !== 'petugas') {
+            abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
 
-        Penugasan::create([
-            'report_id' => $report->report_id,
-            'petugas_id' => $petugas->users_id,
-            'assigned_at' => now(),
-        ]);
+        // 2. Mengambil SEMUA Laporan Masuk Langsung dari Tabel Reports
+        // Diurutkan dari yang paling baru dibuat oleh warga
+        $laporanMasuk = Report::with('pelapor')
+                        ->orderBy('created_at', 'desc')
+                        ->get();
 
-        $report->update(['status' => 'diproses']);
+        // 3. Menghitung Data Statistik berdasarkan seluruh laporan masuk
+        $today = Carbon::today();
+        
+        $laporanHariIni = $laporanMasuk->filter(function ($report) use ($today) {
+            return Carbon::parse($report->created_at)->isSameDay($today);
+        })->count();
 
-        return redirect()->back()->with('success', 'Petugas berhasil ditugaskan.');
+        // Asumsi status default saat warga buat laporan adalah 'menunggu' atau 'baru'
+        // Sesuaikan nama status dengan yang ada di database Anda jika berbeda
+        $diproses = $laporanMasuk->where('status', 'diproses')->count();
+        $selesai = $laporanMasuk->where('status', 'selesai')->count();
+        $total = $laporanMasuk->count();
+
+        // 4. Mengambil Daftar Petugas Tersedia
+        $petugasTersedia = User::where('role', 'petugas')->get();
+
+        // 5. Mengirimkan seluruh data ke View
+        return view('petugas.dashboard', compact(
+            'laporanMasuk', 
+            'petugasTersedia', 
+            'laporanHariIni', 
+            'diproses', 
+            'selesai', 
+            'total'
+        ));
+    }
+
+    public function show($report)
+    {
+        // ... Logika untuk melihat detail laporan
+    }
+
+    public function assign($report, $petugas)
+    {
+        // ... Logika untuk menugaskan
     }
 }

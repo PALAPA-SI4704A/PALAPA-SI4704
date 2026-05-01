@@ -32,7 +32,7 @@ class AuthController extends Controller
         $user->users_name = $validated['users_name'];
         $user->email = $validated['email'];
         $user->phone = $validated['phone'];
-        $user->role = 'masyarakat';
+        $user->role = 'masyarakat'; // Secara default yang register mandiri adalah masyarakat
         $user->password = Hash::make($validated['password']);
 
         if (! $user->save()) {
@@ -44,7 +44,7 @@ class AuthController extends Controller
         // 3. Otomatis login setelah berhasil daftar
         Auth::login($user);
 
-        // 4. Arahkan ke halaman beranda
+        // 4. Arahkan ke halaman beranda warga
         return redirect()->route('beranda')->with('success', 'Registrasi berhasil! Selamat datang.');
     }
 
@@ -65,11 +65,18 @@ class AuthController extends Controller
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
             
-            if (Auth::user()->role === 'petugas') {
-                return redirect()->intended('/petugas/dashboard')->with('success', 'Login berhasil sebagai petugas!');
+            // Pengecekan role pengguna untuk menentukan halaman tujuan
+            $role = Auth::user()->role;
+
+            if ($role === 'petugas') {
+                return redirect()->route('petugas.dashboard')->with('success', 'Login berhasil sebagai petugas!');
+            } elseif ($role === 'admin') {
+                // Persiapan jika route admin sudah dibuat nanti
+                // return redirect()->route('admin.dashboard')->with('success', 'Login berhasil sebagai admin!');
             }
 
-            return redirect()->intended('/beranda')->with('success', 'Login berhasil!');
+            // Default redirect untuk Warga (Masyarakat)
+            return redirect()->route('beranda')->with('success', 'Login berhasil!');
         }
 
         return back()->withErrors([

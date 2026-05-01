@@ -115,6 +115,14 @@
         background: none;
         border: none;
         cursor: pointer;
+        text-decoration: none; /* Tambahan agar tidak ada garis bawah jika jadi link */
+        display: flex; /* Memastikan ikon di tengah */
+        align-items: center;
+        justify-content: center;
+    }
+
+    .profile-bell:hover {
+        color: var(--primary-dark, #1267ad);
     }
 
     .sidebar.collapsed .profile-bell {
@@ -281,9 +289,11 @@
             <p class="name">{{ auth()->check() ? auth()->user()->users_name : 'John Smith' }}</p>
             <p class="email">{{ auth()->check() ? auth()->user()->email : 'johnsm1th@gmail.com' }}</p>
         </div>
-        <button class="profile-bell">
+        
+        <!-- Diubah menjadi tag <a> yang mengarah ke route notifikasi -->
+        <a href="{{ route('notifikasi.index') }}" class="profile-bell" title="Notifikasi">
             <i class="ph ph-bell"></i>
-        </button>
+        </a>
     </div>
 
     <div class="divider"></div>
