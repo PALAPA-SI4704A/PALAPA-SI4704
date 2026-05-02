@@ -182,6 +182,7 @@
             <div class="filters" style="margin-bottom: 0;">
                 <a href="{{ route('reports.index', ['status' => 'semua', 'search' => $currentSearch]) }}" class="filter-btn {{ $currentStatus === 'semua' ? 'active' : '' }}">Semua</a>
                 <a href="{{ route('reports.index', ['status' => 'pending', 'search' => $currentSearch]) }}" class="filter-btn {{ $currentStatus === 'pending' ? 'active' : '' }}">Pending</a>
+                <a href="{{ route('reports.index', ['status' => 'valid', 'search' => $currentSearch]) }}" class="filter-btn {{ $currentStatus === 'valid' ? 'active' : '' }}">Valid</a>
                 <a href="{{ route('reports.index', ['status' => 'diproses', 'search' => $currentSearch]) }}" class="filter-btn {{ $currentStatus === 'diproses' ? 'active' : '' }}">Diproses</a>
                 <a href="{{ route('reports.index', ['status' => 'selesai', 'search' => $currentSearch]) }}" class="filter-btn {{ $currentStatus === 'selesai' ? 'active' : '' }}">Selesai</a>
             </div>
