@@ -229,7 +229,7 @@
         
         <div class="stats-grid">
             <div class="stat-card">
-                <h3>Laporan Masuk Hari Ini</h3>
+                <h3>Laporan Masuk Hari Ini.</h3>
                 <p class="value">{{ $laporanHariIni }}</p>
             </div>
             <div class="stat-card">
@@ -344,14 +344,6 @@
                         </tr>
                         @endforelse
                     </tbody>
-                </table>
-            </div>
-        </div>
-
-    </main>
-</div>
-</body>
-</html>         </tbody>
                 </table>
             </div>
         </div>
