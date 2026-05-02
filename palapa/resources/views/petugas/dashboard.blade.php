@@ -224,7 +224,7 @@
 </head>
 <body>
 <div class="layout" x-data="{ sidebarOpen: true }">
-    @include('components.sidebar-petugas')
+    @include('components.sidebar')
 
     <main class="content" :style="sidebarOpen ? 'max-width: calc(100vw - 306px);' : 'max-width: calc(100vw - 138px);'">
         
