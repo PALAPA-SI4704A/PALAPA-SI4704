@@ -299,24 +299,42 @@
     <div class="divider"></div>
 
     <nav class="menu">
-        <a class="{{ request()->routeIs('beranda') ? 'active' : '' }}" href="{{ route('beranda') }}">
-            <i class="ph ph-squares-four icon"></i> <span class="menu-text">Beranda</span>
-        </a>
-        <a class="{{ request()->routeIs('reports.create') ? 'active' : '' }}" href="{{ route('reports.create') }}">
-            <i class="ph ph-file-plus icon"></i> <span class="menu-text">Buat Laporan</span>
-        </a>
-        <a class="{{ request()->routeIs('profile') ? 'active' : '' }}" href="{{ route('profile') }}">
-            <i class="ph ph-user icon"></i> <span class="menu-text">Profil Saya</span>
-        </a>
-        
-        <div class="divider"></div>
-        
-        <a class="{{ request()->routeIs('reports.index') ? 'active' : '' }}" href="{{ route('reports.index') }}">
-            <i class="ph ph-folder-open icon"></i> <span class="menu-text">Laporan Masuk</span>
-        </a>
-        <a href="#">
-            <i class="ph ph-database icon"></i> <span class="menu-text">Manajemen Data</span>
-        </a>
+        @if(auth()->check() && auth()->user()->role === 'petugas')
+            <a class="{{ request()->routeIs('petugas.dashboard') ? 'active' : '' }}" href="{{ route('petugas.dashboard') }}">
+                <i class="ph ph-squares-four icon"></i> <span class="menu-text">Beranda</span>
+            </a>
+            <a href="#">
+                <i class="ph ph-user icon"></i> <span class="menu-text">Profil Saya</span>
+            </a>
+            
+            <div class="divider"></div>
+            
+            <a href="#">
+                <i class="ph ph-folder-open icon"></i> <span class="menu-text">Laporan Masuk</span>
+            </a>
+            <a href="#">
+                <i class="ph ph-database icon"></i> <span class="menu-text">Manajemen Data</span>
+            </a>
+        @else
+            <a class="{{ request()->routeIs('beranda') ? 'active' : '' }}" href="{{ route('beranda') }}">
+                <i class="ph ph-squares-four icon"></i> <span class="menu-text">Beranda</span>
+            </a>
+            <a class="{{ request()->routeIs('reports.create') ? 'active' : '' }}" href="{{ route('reports.create') }}">
+                <i class="ph ph-file-plus icon"></i> <span class="menu-text">Buat Laporan</span>
+            </a>
+            <a class="{{ request()->routeIs('profile') ? 'active' : '' }}" href="{{ route('profile') }}">
+                <i class="ph ph-user icon"></i> <span class="menu-text">Profil Saya</span>
+            </a>
+            
+            <div class="divider"></div>
+            
+            <a class="{{ request()->routeIs('reports.index') ? 'active' : '' }}" href="{{ route('reports.index') }}">
+                <i class="ph ph-folder-open icon"></i> <span class="menu-text">Laporan Masuk</span>
+            </a>
+            <a href="#">
+                <i class="ph ph-database icon"></i> <span class="menu-text">Manajemen Data</span>
+            </a>
+        @endif
     </nav>
 
     <div class="sidebar-footer">

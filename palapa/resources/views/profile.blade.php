@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="{{ asset('images/favicon.png') }}">
     <title>Profil Saya - Palapa</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -400,29 +401,6 @@
                             @endforelse
                         </tbody>
                     </table>
-                </div>
-            </div>
-
-            <div class="updates-panel">
-                <div class="updates-header">
-                    <h3 class="section-title" style="margin: 0;">Pembaharuan</h3>
-                    <i class="ph ph-bell" style="color: #1f76c2; font-size: 20px;"></i>
-                </div>
-                
-                <div class="update-item">
-                    <p class="update-content">Hai, {{ auth()->check() ? explode(' ', auth()->user()->users_name)[0] : 'John' }}! Laporan kamu sedang ditangani oleh petugas pemadam. Yuk pantau!</p>
-                    <div class="update-meta">
-                        <span>Laporan #32</span>
-                        <span style="color: #1f76c2; font-weight: 600;">Baru</span>
-                    </div>
-                </div>
-                
-                <div class="update-item">
-                    <p class="update-content">Hai, {{ auth()->check() ? explode(' ', auth()->user()->users_name)[0] : 'John' }}! Terima kasih. Laporan kamu sudah diverifikasi dan akan segera ditangani.</p>
-                    <div class="update-meta">
-                        <span>Laporan #45</span>
-                        <span>12:42</span>
-                    </div>
                 </div>
             </div>
         </div>
