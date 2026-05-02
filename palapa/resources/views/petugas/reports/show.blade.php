@@ -124,6 +124,7 @@
         .badge-diproses { background: #fefcbf; color: #b7791f; }
         .badge-baru { background: #e6f0fd; color: #3182ce; }
         .badge-selesai { background: #c6f6d5; color: #2f855a; }
+        .badge-ditolak { background: #fed7d7; color: #c53030; }
 
         .section-title {
             color: #0f66aa;
@@ -220,6 +221,8 @@
                         $statusClass = 'badge-baru';
                         if($report->status == 'diproses') $statusClass = 'badge-diproses';
                         if($report->status == 'selesai') $statusClass = 'badge-selesai';
+                        if($report->status == 'valid') $statusClass = 'badge-selesai';
+                        if($report->status == 'palsu') $statusClass = 'badge-ditolak';
                     @endphp
                     <span class="badge {{ $statusClass }}">
                         @if($report->status == 'diproses') 🕒 @endif
@@ -261,6 +264,30 @@
             </div>
         </div>
 
+        @if($report->status === 'pending')
+        <div class="main-panel" style="margin-bottom: 24px;">
+            <h2 class="section-title">Verifikasi Laporan</h2>
+            <p style="margin-bottom: 16px; color: #718096; font-size: 14px;">Pastikan laporan ini valid sebelum menugaskan petugas lapangan.</p>
+            <div style="display: flex; gap: 12px;">
+                <form action="{{ route('petugas.reports.verify', $report) }}" method="POST">
+                    @csrf
+                    <input type="hidden" name="status" value="valid">
+                    <button type="submit" style="background: #2f855a; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                        <i class="ph ph-check-circle" style="font-size: 18px;"></i> Laporan Valid
+                    </button>
+                </form>
+                <form action="{{ route('petugas.reports.verify', $report) }}" method="POST">
+                    @csrf
+                    <input type="hidden" name="status" value="palsu">
+                    <button type="submit" style="background: #e53e3e; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                        <i class="ph ph-x-circle" style="font-size: 18px;"></i> Laporan Palsu
+                    </button>
+                </form>
+            </div>
+        </div>
+        @endif
+
+        @if(in_array($report->status, ['valid', 'diproses', 'selesai']))
         <div>
             <h2 class="section-title">Petugas Tersedia</h2>
             
@@ -318,6 +345,7 @@
                 </table>
             </div>
         </div>
+        @endif
 
     </main>
 </div>
