@@ -68,23 +68,55 @@ class PetugasController extends Controller
         ));
     }
 
-    public function show($report)
+    public function show(Report $report)
     {
-        // ... Logika untuk melihat detail laporan
+        if (Auth::user()->role !== 'petugas') {
+            abort(403, 'Anda tidak memiliki akses ke halaman ini.');
+        }
+
+        $report->load('pelapor');
+        $petugasTersedia = User::where('role', 'petugas')->get();
+
+        return view('petugas.reports.show', compact('report', 'petugasTersedia'));
     }
 
-    public function assign($report, $petugas)
+    public function assign(Report $report, User $petugas)
     {
-        // ... Logika untuk menugaskan
+        if (Auth::user()->role !== 'petugas') {
+            abort(403, 'Anda tidak memiliki akses ke halaman ini.');
+        }
+
+        $report->penugasans()->create([
+            'petugas_id' => $petugas->users_id,
+            'assigned_at' => now()
+        ]);
+
+        $report->update(['status' => 'diproses']);
+
+        return redirect()->back()->with('success', 'Petugas ' . $petugas->users_name . ' berhasil ditugaskan.');
     }
 
     public function verify(Request $request, Report $report)
     {
+        if (Auth::user()->role !== 'petugas') {
+            abort(403, 'Anda tidak memiliki akses ke halaman ini.');
+        }
+
+        \Log::info('Verifying report', ['report_id' => $report->report_id, 'status' => $request->status, 'reason' => $request->rejection_reason]);
+
         $request->validate([
-            'status' => 'required|in:valid,palsu'
+            'status' => 'required|in:valid,ditolak',
+            'rejection_reason' => 'required_if:status,ditolak|string|max:500'
         ]);
 
-        $report->update(['status' => $request->status]);
+        $data = ['status' => $request->status];
+        if ($request->status === 'ditolak') {
+            $data['rejection_reason'] = $request->rejection_reason;
+        }
+
+        $report->update($data);
+        
+        \Log::info('Report verified successfully', ['new_status' => $report->status]);
 
         return redirect()->back()->with('success', 'Laporan berhasil diverifikasi menjadi: ' . ucfirst($request->status));
     }

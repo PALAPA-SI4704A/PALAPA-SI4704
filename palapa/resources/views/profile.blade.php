@@ -372,6 +372,11 @@
                                     <td>
                                         @if(strtolower($report->status) == 'selesai')
                                             <span class="badge selesai"><i class="ph ph-check-circle"></i> Selesai</span>
+                                        @elseif(strtolower($report->status) == 'ditolak')
+                                            <span class="badge" style="background: #fed7d7; color: #c53030;"><i class="ph ph-x-circle"></i> Ditolak</span>
+                                            @if($report->rejection_reason)
+                                                <div style="font-size: 11px; color: #c53030; margin-top: 4px; max-width: 150px; line-height: 1.3;">{{ $report->rejection_reason }}</div>
+                                            @endif
                                         @else
                                             <span class="badge proses"><i class="ph ph-clock"></i> Diproses</span>
                                         @endif

@@ -202,7 +202,12 @@
                     <tr>
                         <td>{{ $report->title }}</td>
                         <td>{{ $report->latitude }}, {{ $report->longitude }}</td>
-                        <td><span class="badge">{{ $report->status }}</span></td>
+                        <td>
+                            <span class="badge" style="{{ $report->status === 'ditolak' ? 'background: #fed7d7; color: #c53030;' : '' }}">{{ ucfirst($report->status) }}</span>
+                            @if($report->status === 'ditolak' && $report->rejection_reason)
+                                <div style="font-size: 12px; color: #c53030; margin-top: 4px; max-width: 200px;">{{ $report->rejection_reason }}</div>
+                            @endif
+                        </td>
                         <td>
                             @if ($report->photo)
                                 <a class="photo-link" href="{{ route('reports.photo', ['path' => $report->photo]) }}" target="_blank">Lihat foto</a>
