@@ -179,11 +179,21 @@
             <div class="success">{{ session('success') }}</div>
         @endif
 
-        <div class="filters">
-            <a href="{{ route('reports.index', ['status' => 'semua']) }}" class="filter-btn {{ $currentStatus === 'semua' ? 'active' : '' }}">Semua</a>
-            <a href="{{ route('reports.index', ['status' => 'pending']) }}" class="filter-btn {{ $currentStatus === 'pending' ? 'active' : '' }}">Pending</a>
-            <a href="{{ route('reports.index', ['status' => 'diproses']) }}" class="filter-btn {{ $currentStatus === 'diproses' ? 'active' : '' }}">Diproses</a>
-            <a href="{{ route('reports.index', ['status' => 'selesai']) }}" class="filter-btn {{ $currentStatus === 'selesai' ? 'active' : '' }}">Selesai</a>
+        <div class="filters-container" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+            <div class="filters" style="margin-bottom: 0;">
+                <a href="{{ route('reports.index', ['status' => 'semua', 'search' => $currentSearch]) }}" class="filter-btn {{ $currentStatus === 'semua' ? 'active' : '' }}">Semua</a>
+                <a href="{{ route('reports.index', ['status' => 'pending', 'search' => $currentSearch]) }}" class="filter-btn {{ $currentStatus === 'pending' ? 'active' : '' }}">Pending</a>
+                <a href="{{ route('reports.index', ['status' => 'diproses', 'search' => $currentSearch]) }}" class="filter-btn {{ $currentStatus === 'diproses' ? 'active' : '' }}">Diproses</a>
+                <a href="{{ route('reports.index', ['status' => 'selesai', 'search' => $currentSearch]) }}" class="filter-btn {{ $currentStatus === 'selesai' ? 'active' : '' }}">Selesai</a>
+            </div>
+
+            <form class="search-form" method="GET" action="{{ route('reports.index') }}" style="display: flex; gap: 8px;">
+                @if($currentStatus !== 'semua')
+                    <input type="hidden" name="status" value="{{ $currentStatus }}">
+                @endif
+                <input type="text" name="search" value="{{ $currentSearch }}" placeholder="Cari judul, tempat, atau tanggal..." style="padding: 8px 12px; border: 1px solid #dfe6ef; border-radius: 10px; font-size: 13px; font-family: inherit; outline: none; width: 250px;">
+                <button type="submit" style="background: #1f76c2; color: white; border: none; border-radius: 10px; padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer;">Cari</button>
+            </form>
         </div>
 
         <div class="table-wrap">
@@ -191,7 +201,7 @@
                 <thead>
                 <tr>
                     <th>Judul</th>
-                    <th>Koordinat</th>
+                    <th>Lokasi</th>
                     <th>Status</th>
                     <th>Foto</th>
                     <th>Dikirim</th>
@@ -202,7 +212,13 @@
                 @forelse ($reports as $report)
                     <tr>
                         <td>{{ $report->title }}</td>
-                        <td>{{ $report->latitude }}, {{ $report->longitude }}</td>
+                        <td>
+                            @if($report->address)
+                                {{ \Illuminate\Support\Str::limit($report->address, 60) }}
+                            @else
+                                {{ $report->latitude }}, {{ $report->longitude }}
+                            @endif
+                        </td>
                         <td>
                             <span class="badge" style="{{ $report->status === 'ditolak' ? 'background: #fed7d7; color: #c53030;' : '' }}">{{ ucfirst($report->status) }}</span>
                             @if($report->status === 'ditolak' && $report->rejection_reason)
