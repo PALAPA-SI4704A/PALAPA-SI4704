@@ -237,7 +237,7 @@
                 <p class="value">{{ $diproses }}</p>
             </div>
             <div class="stat-card">
-                <h3>Selesai Di tangani</h3>
+                <h3>Selesai Di tangani..</h3>
                 <p class="value">{{ $selesai }}</p>
             </div>
             <div class="stat-card">
@@ -344,14 +344,6 @@
                         </tr>
                         @endforelse
                     </tbody>
-                </table>
-            </div>
-        </div>
-
-    </main>
-</div>
-</body>
-</html>         </tbody>
                 </table>
             </div>
         </div>
