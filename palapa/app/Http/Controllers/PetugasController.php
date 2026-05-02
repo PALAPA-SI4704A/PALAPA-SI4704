@@ -19,9 +19,27 @@ class PetugasController extends Controller
 
         // 2. Mengambil SEMUA Laporan Masuk Langsung dari Tabel Reports
         // Diurutkan dari yang paling baru dibuat oleh warga
-        $laporanMasuk = Report::with('pelapor')
-                        ->orderBy('created_at', 'desc')
-                        ->get();
+        $query = Report::with('pelapor')->orderBy('created_at', 'desc');
+
+        if (request()->filled('date')) {
+            $query->whereDate('created_at', request('date'));
+        }
+
+        if (request()->filled('status')) {
+            $query->where('status', request('status'));
+        }
+
+        if (request()->filled('location')) {
+            $location = request('location');
+            $query->where(function($q) use ($location) {
+                $q->where('latitude', 'like', "%{$location}%")
+                  ->orWhere('longitude', 'like', "%{$location}%")
+                  ->orWhere('title', 'like', "%{$location}%")
+                  ->orWhere('description', 'like', "%{$location}%");
+            });
+        }
+
+        $laporanMasuk = $query->get();
 
         // 3. Menghitung Data Statistik berdasarkan seluruh laporan masuk
         $today = Carbon::today();

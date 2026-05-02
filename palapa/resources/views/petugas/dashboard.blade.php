@@ -248,15 +248,19 @@
 
         <div class="section">
             <h2 class="section-title">Laporan Masuk</h2>
-            <div class="filters">
-                <select class="filter-select">
-                    <option>Date range</option>
+            <form class="filters" method="GET" action="{{ route('petugas.dashboard') }}">
+                <input type="date" name="date" class="filter-select" value="{{ request('date') }}" onchange="this.form.submit()">
+                <select name="status" class="filter-select" onchange="this.form.submit()">
+                    <option value="">Semua Status</option>
+                    <option value="valid" {{ request('status') == 'valid' ? 'selected' : '' }}>Valid</option>
+                    <option value="palsu" {{ request('status') == 'palsu' ? 'selected' : '' }}>Palsu</option>
+                    <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                    <option value="diproses" {{ request('status') == 'diproses' ? 'selected' : '' }}>Diproses</option>
+                    <option value="ditolak" {{ request('status') == 'ditolak' ? 'selected' : '' }}>Ditolak</option>
+                    <option value="selesai" {{ request('status') == 'selesai' ? 'selected' : '' }}>Selesai</option>
                 </select>
-                <select class="filter-select">
-                    <option>Status</option>
-                </select>
-                <input type="text" class="filter-input" placeholder="Cari Lokasi">
-            </div>
+                <input type="text" name="location" class="filter-input" placeholder="Cari Lokasi (Tekan Enter)" value="{{ request('location') }}">
+            </form>
 
             <div class="table-responsive">
                 <table>
