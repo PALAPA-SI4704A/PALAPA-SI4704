@@ -138,13 +138,53 @@ class ReportController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Report $report)
+    public function edit(Request $request, Report $report)
     {
         if ($report->user_id !== Auth::id()) {
             abort(403);
         }
 
-        return view('reports.edit', compact('report'));
+        return view('reports.edit', [
+            'report' => $report,
+            'prefill' => [
+                'title' => $request->query('title') ?? $report->title,
+                'description' => $request->query('description') ?? $report->description,
+                'latitude' => $request->query('latitude') ?? $report->latitude,
+                'longitude' => $request->query('longitude') ?? $report->longitude,
+                'photo_temp' => $request->query('photo_temp') ?? '',
+            ]
+        ]);
+    }
+
+    public function previewEdit(StoreReportRequest $request, Report $report)
+    {
+        if ($report->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $validated = $request->validated();
+
+        $photoTempPath = $validated['photo_temp'] ?? null;
+        if ($request->hasFile('photo')) {
+            if ($photoTempPath && Storage::disk('public')->exists($photoTempPath)) {
+                Storage::disk('public')->delete($photoTempPath);
+            }
+            $photoTempPath = $request->file('photo')->store('photos/tmp', 'public');
+        }
+
+        // If no photo_temp is provided and no new file, we can fall back to the existing report photo
+        // in the view.
+
+        return view('reports.preview', [
+            'report' => $report,
+            'data' => [
+                'title' => $validated['title'],
+                'description' => $validated['description'],
+                'latitude' => $validated['latitude'],
+                'longitude' => $validated['longitude'],
+                'photo_temp' => $photoTempPath,
+            ],
+        ]);
     }
 
     /**
@@ -159,14 +199,18 @@ class ReportController extends Controller
         $validated = $request->validated();
 
         $photoPath = $report->photo;
-        if ($request->hasFile('photo')) {
+        if (!empty($validated['photo_temp']) && Storage::disk('public')->exists($validated['photo_temp'])) {
+            $extension = pathinfo($validated['photo_temp'], PATHINFO_EXTENSION);
+            $finalName = (string) Str::uuid() . ($extension ? '.' . $extension : '');
+            $finalPath = 'photos/' . $finalName;
+
+            Storage::disk('public')->move($validated['photo_temp'], $finalPath);
+            
             if ($photoPath && Storage::disk('public')->exists($photoPath)) {
                 Storage::disk('public')->delete($photoPath);
             }
             
-            $extension = $request->file('photo')->getClientOriginalExtension();
-            $finalName = (string) Str::uuid() . ($extension ? '.' . $extension : '');
-            $photoPath = $request->file('photo')->storeAs('photos', $finalName, 'public');
+            $photoPath = $finalPath;
         }
 
         $report->update([

@@ -207,6 +207,9 @@
                 <h2>Foto Kejadian</h2>
                 @if (!empty($data['photo_temp']))
                     <img src="{{ route('reports.photo', ['path' => $data['photo_temp']]) }}" alt="Preview foto laporan" class="photo">
+                @elseif (isset($report) && $report->photo)
+                    <img src="{{ route('reports.photo', ['path' => $report->photo]) }}" alt="Preview foto laporan" class="photo">
+                    <p style="font-size: 12px; color: #1f8b54; margin-top: 8px; text-align: center; font-weight: 600;">Mempertahankan foto sebelumnya.</p>
                 @else
                     <div class="photo-empty">Tidak ada foto diunggah</div>
                 @endif
@@ -214,24 +217,46 @@
         </div>
 
         <div class="actions">
-            <form action="{{ route('reports.create') }}" method="GET">
-                <input type="hidden" name="title" value="{{ $data['title'] }}">
-                <input type="hidden" name="description" value="{{ $data['description'] }}">
-                <input type="hidden" name="latitude" value="{{ $data['latitude'] }}">
-                <input type="hidden" name="longitude" value="{{ $data['longitude'] }}">
-                <input type="hidden" name="photo_temp" value="{{ $data['photo_temp'] ?? '' }}">
-                <button type="submit" class="btn btn-outline">Edit</button>
-            </form>
+            @if(isset($report))
+                <form action="{{ route('reports.edit', $report) }}" method="GET">
+                    <input type="hidden" name="title" value="{{ $data['title'] }}">
+                    <input type="hidden" name="description" value="{{ $data['description'] }}">
+                    <input type="hidden" name="latitude" value="{{ $data['latitude'] }}">
+                    <input type="hidden" name="longitude" value="{{ $data['longitude'] }}">
+                    <input type="hidden" name="photo_temp" value="{{ $data['photo_temp'] ?? '' }}">
+                    <button type="submit" class="btn btn-outline">Edit Kembali</button>
+                </form>
 
-            <form action="{{ route('reports.store') }}" method="POST">
-                @csrf
-                <input type="hidden" name="title" value="{{ $data['title'] }}">
-                <input type="hidden" name="description" value="{{ $data['description'] }}">
-                <input type="hidden" name="latitude" value="{{ $data['latitude'] }}">
-                <input type="hidden" name="longitude" value="{{ $data['longitude'] }}">
-                <input type="hidden" name="photo_temp" value="{{ $data['photo_temp'] ?? '' }}">
-                <button type="submit" class="btn btn-primary">Confirm dan Simpan</button>
-            </form>
+                <form action="{{ route('reports.update', $report) }}" method="POST">
+                    @csrf
+                    @method('PUT')
+                    <input type="hidden" name="title" value="{{ $data['title'] }}">
+                    <input type="hidden" name="description" value="{{ $data['description'] }}">
+                    <input type="hidden" name="latitude" value="{{ $data['latitude'] }}">
+                    <input type="hidden" name="longitude" value="{{ $data['longitude'] }}">
+                    <input type="hidden" name="photo_temp" value="{{ $data['photo_temp'] ?? '' }}">
+                    <button type="submit" class="btn btn-primary">Confirm dan Simpan Perubahan</button>
+                </form>
+            @else
+                <form action="{{ route('reports.create') }}" method="GET">
+                    <input type="hidden" name="title" value="{{ $data['title'] }}">
+                    <input type="hidden" name="description" value="{{ $data['description'] }}">
+                    <input type="hidden" name="latitude" value="{{ $data['latitude'] }}">
+                    <input type="hidden" name="longitude" value="{{ $data['longitude'] }}">
+                    <input type="hidden" name="photo_temp" value="{{ $data['photo_temp'] ?? '' }}">
+                    <button type="submit" class="btn btn-outline">Edit Kembali</button>
+                </form>
+
+                <form action="{{ route('reports.store') }}" method="POST">
+                    @csrf
+                    <input type="hidden" name="title" value="{{ $data['title'] }}">
+                    <input type="hidden" name="description" value="{{ $data['description'] }}">
+                    <input type="hidden" name="latitude" value="{{ $data['latitude'] }}">
+                    <input type="hidden" name="longitude" value="{{ $data['longitude'] }}">
+                    <input type="hidden" name="photo_temp" value="{{ $data['photo_temp'] ?? '' }}">
+                    <button type="submit" class="btn btn-primary">Confirm dan Simpan</button>
+                </form>
+            @endif
         </div>
     </main>
 </div>

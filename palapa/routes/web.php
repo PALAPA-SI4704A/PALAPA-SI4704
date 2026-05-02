@@ -19,6 +19,7 @@ Route::middleware('auth')->group(function () {
 	Route::post('/reports/preview', [ReportController::class, 'preview'])->name('reports.preview');
 	Route::post('/reports/store', [ReportController::class, 'store'])->name('reports.store');
 	Route::get('/reports/{report}/edit', [ReportController::class, 'edit'])->name('reports.edit');
+	Route::post('/reports/{report}/preview', [ReportController::class, 'previewEdit'])->name('reports.previewEdit');
 	Route::put('/reports/{report}', [ReportController::class, 'update'])->name('reports.update');
 });
 
