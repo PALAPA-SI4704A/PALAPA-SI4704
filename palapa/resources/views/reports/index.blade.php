@@ -178,7 +178,6 @@
             <div class="success">{{ session('success') }}</div>
         @endif
         
-
         <div class="filters-container" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
             <div class="filters" style="margin-bottom: 0;">
                 <a href="{{ route('reports.index', ['status' => 'semua', 'search' => $currentSearch]) }}" class="filter-btn {{ $currentStatus === 'semua' ? 'active' : '' }}">Semua</a>
