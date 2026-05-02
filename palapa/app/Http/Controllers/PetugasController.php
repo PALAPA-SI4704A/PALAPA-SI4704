@@ -45,4 +45,15 @@ class PetugasController extends Controller
 
         return redirect()->back()->with('success', 'Petugas berhasil ditugaskan.');
     }
+
+    public function verify(Request $request, Report $report)
+    {
+        $request->validate([
+            'status' => 'required|in:valid,palsu'
+        ]);
+
+        $report->update(['status' => $request->status]);
+
+        return redirect()->back()->with('success', 'Laporan berhasil diverifikasi menjadi: ' . ucfirst($request->status));
+    }
 }

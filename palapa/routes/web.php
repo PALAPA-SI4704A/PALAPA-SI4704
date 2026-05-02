@@ -27,6 +27,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/petugas/dashboard', [PetugasController::class, 'index'])->name('petugas.dashboard');
     Route::get('/petugas/reports/{report}', [PetugasController::class, 'show'])->name('petugas.reports.show');
     Route::post('/petugas/reports/{report}/assign/{petugas}', [PetugasController::class, 'assign'])->name('petugas.reports.assign');
+    Route::post('/petugas/reports/{report}/verify', [PetugasController::class, 'verify'])->name('petugas.reports.verify');
 });
 
 Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');

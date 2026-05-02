@@ -166,6 +166,7 @@
         .badge-baru { background: #e6f0fd; color: #3182ce; }
         .badge-diproses { background: #fefcbf; color: #b7791f; }
         .badge-selesai { background: #c6f6d5; color: #2f855a; }
+        .badge-ditolak { background: #fed7d7; color: #c53030; }
         .badge-onduty { background: #fefcbf; color: #b7791f; }
         .badge-available { background: #c6f6d5; color: #2f855a; }
 
@@ -286,6 +287,8 @@
                                     $statusClass = 'badge-baru';
                                     if($report->status == 'diproses') $statusClass = 'badge-diproses';
                                     if($report->status == 'selesai') $statusClass = 'badge-selesai';
+                                    if($report->status == 'valid') $statusClass = 'badge-selesai';
+                                    if($report->status == 'palsu') $statusClass = 'badge-ditolak';
                                 @endphp
                                 <span class="badge {{ $statusClass }}">{{ ucfirst($report->status) }}</span>
                             </td>
