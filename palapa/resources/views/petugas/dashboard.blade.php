@@ -248,7 +248,7 @@
         </div>
 
         <div class="section">
-            <h2 class="section-title">Laporan Masukkk</h2>
+            <h2 class="section-title">Laporan Masuk</h2>
             <form class="filters" method="GET" action="{{ route('petugas.dashboard') }}">
                 <input type="date" name="date" class="filter-select" value="{{ request('date') }}" onchange="this.form.submit()">
                 <select name="status" class="filter-select" onchange="this.form.submit()">
