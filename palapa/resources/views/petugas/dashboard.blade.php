@@ -253,7 +253,6 @@
                 <select name="status" class="filter-select" onchange="this.form.submit()">
                     <option value="">Semua Status</option>
                     <option value="valid" {{ request('status') == 'valid' ? 'selected' : '' }}>Valid</option>
-                    <option value="palsu" {{ request('status') == 'palsu' ? 'selected' : '' }}>Palsu</option>
                     <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
                     <option value="diproses" {{ request('status') == 'diproses' ? 'selected' : '' }}>Diproses</option>
                     <option value="ditolak" {{ request('status') == 'ditolak' ? 'selected' : '' }}>Ditolak</option>
@@ -292,7 +291,7 @@
                                     if($report->status == 'diproses') $statusClass = 'badge-diproses';
                                     if($report->status == 'selesai') $statusClass = 'badge-selesai';
                                     if($report->status == 'valid') $statusClass = 'badge-selesai';
-                                    if($report->status == 'palsu') $statusClass = 'badge-ditolak';
+                                    if($report->status == 'ditolak') $statusClass = 'badge-ditolak';
                                 @endphp
                                 <span class="badge {{ $statusClass }}">{{ ucfirst($report->status) }}</span>
                             </td>
@@ -345,6 +344,14 @@
                         </tr>
                         @endforelse
                     </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+</div>
+</body>
+</html>         </tbody>
                 </table>
             </div>
         </div>

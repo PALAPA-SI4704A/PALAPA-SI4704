@@ -209,6 +209,20 @@
     <main class="content" :style="sidebarOpen ? 'max-width: calc(100vw - 306px);' : 'max-width: calc(100vw - 138px);'">
         
         <div class="main-panel">
+            @if(session('success'))
+                <div style="background: #c6f6d5; color: #2f855a; padding: 12px; border-radius: 8px; margin-bottom: 24px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                    <i class="ph ph-check-circle" style="font-size: 20px;"></i>
+                    {{ session('success') }}
+                </div>
+            @endif
+
+            @if($errors->any())
+                <div style="background: #fed7d7; color: #c53030; padding: 12px; border-radius: 8px; margin-bottom: 24px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                    <i class="ph ph-warning-circle" style="font-size: 20px;"></i>
+                    Terjadi kesalahan: {{ $errors->first() }}
+                </div>
+            @endif
+
             <div class="report-header">
                 <h1 class="report-title">{{ $report->title ?? 'Laporan Titik Api' }}</h1>
                 <p class="report-subtitle">#{{ $report->report_id }} Detail Laporan</p>
@@ -222,7 +236,7 @@
                         if($report->status == 'diproses') $statusClass = 'badge-diproses';
                         if($report->status == 'selesai') $statusClass = 'badge-selesai';
                         if($report->status == 'valid') $statusClass = 'badge-selesai';
-                        if($report->status == 'palsu') $statusClass = 'badge-ditolak';
+                        if($report->status == 'ditolak') $statusClass = 'badge-ditolak';
                     @endphp
                     <span class="badge {{ $statusClass }}">
                         @if($report->status == 'diproses') 🕒 @endif
@@ -261,27 +275,50 @@
                     <img src="{{ route('reports.photo', ['path' => $report->photo]) }}" alt="Foto Kejadian" style="max-width: 100%; max-height: 300px; border-radius: 8px;">
                 </div>
                 @endif
+
+                @if($report->status === 'ditolak' && $report->rejection_reason)
+                <div class="detail-box full-width" style="background: #fff5f5; border: 1px solid #fed7d7;">
+                    <span class="detail-label" style="color: #c53030;">ALASAN PENOLAKAN</span>
+                    <span class="detail-value" style="color: #c53030;">{{ $report->rejection_reason }}</span>
+                </div>
+                @endif
             </div>
         </div>
 
         @if($report->status === 'pending')
-        <div class="main-panel" style="margin-bottom: 24px;">
+        <div class="main-panel" style="margin-bottom: 24px;" x-data="{ showRejectForm: false }">
             <h2 class="section-title">Verifikasi Laporan</h2>
             <p style="margin-bottom: 16px; color: #718096; font-size: 14px;">Pastikan laporan ini valid sebelum menugaskan petugas lapangan.</p>
-            <div style="display: flex; gap: 12px;">
-                <form action="{{ route('petugas.reports.verify', $report) }}" method="POST">
+            
+            <div style="display: flex; gap: 12px;" x-show="!showRejectForm">
+                <form action="{{ route('petugas.reports.verify', $report->report_id) }}" method="POST">
                     @csrf
                     <input type="hidden" name="status" value="valid">
                     <button type="submit" style="background: #2f855a; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 6px;">
                         <i class="ph ph-check-circle" style="font-size: 18px;"></i> Laporan Valid
                     </button>
                 </form>
-                <form action="{{ route('petugas.reports.verify', $report) }}" method="POST">
+                <button type="button" @click="showRejectForm = true" style="background: #e53e3e; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                    <i class="ph ph-x-circle" style="font-size: 18px;"></i> Tolak Laporan
+                </button>
+            </div>
+
+            <div x-show="showRejectForm" style="display: none; background: #fff5f5; padding: 16px; border-radius: 8px; border: 1px solid #fed7d7; margin-top: 12px;">
+                <form action="{{ route('petugas.reports.verify', $report->report_id) }}" method="POST">
                     @csrf
-                    <input type="hidden" name="status" value="palsu">
-                    <button type="submit" style="background: #e53e3e; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 6px;">
-                        <i class="ph ph-x-circle" style="font-size: 18px;"></i> Laporan Palsu
-                    </button>
+                    <input type="hidden" name="status" value="ditolak">
+                    <div style="margin-bottom: 12px;">
+                        <label style="display: block; font-size: 14px; font-weight: 600; color: #c53030; margin-bottom: 8px;">Alasan Penolakan</label>
+                        <textarea name="rejection_reason" required rows="3" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0; font-family: inherit; font-size: 14px;" placeholder="Masukkan alasan mengapa laporan ini ditolak..."></textarea>
+                    </div>
+                    <div style="display: flex; gap: 12px;">
+                        <button type="submit" style="background: #e53e3e; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                            Konfirmasi Tolak
+                        </button>
+                        <button type="button" @click="showRejectForm = false" style="background: #cbd5e0; color: #4a5568; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                            Batal
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>
@@ -290,12 +327,6 @@
         @if(in_array($report->status, ['valid', 'diproses', 'selesai']))
         <div>
             <h2 class="section-title">Petugas Tersedia</h2>
-            
-            @if(session('success'))
-                <div style="background: #c6f6d5; color: #2f855a; padding: 12px; border-radius: 8px; margin-bottom: 16px;">
-                    {{ session('success') }}
-                </div>
-            @endif
 
             <div style="overflow-x: auto;">
                 <table>
@@ -368,4 +399,5 @@
     });
 </script>
 </body>
+</html>y>
 </html>
