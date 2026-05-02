@@ -352,12 +352,4 @@
     </main>
 </div>
 </body>
-</html>         </tbody>
-                </table>
-            </div>
-        </div>
-
-    </main>
-</div>
-</body>
 </html>
