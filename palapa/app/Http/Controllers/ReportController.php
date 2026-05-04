@@ -82,7 +82,7 @@ class ReportController extends Controller
 
     public function profile()
     {
-        $reports = Report::where('user_id', Auth::id())
+        $reports = Report::where('user_id', Auth::user()->users_id)
             ->latest('report_id')
             ->get();
 
