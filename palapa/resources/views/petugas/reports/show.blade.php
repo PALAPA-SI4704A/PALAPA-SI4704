@@ -257,7 +257,7 @@
 
                 <div class="detail-box">
                     <span class="detail-label">PELAPOR</span>
-                    <span class="detail-value">{{ $report->pelapor->users_name ?? 'Anonim' }}</span>
+                    <span class="detail-value">{{ $report->pelapor?->users_name ?? 'Anonim' }}</span>
                 </div>
 
                 <div class="detail-box full-width">
