@@ -251,8 +251,24 @@
                 </div>
                 
                 <div class="detail-box">
-                    <span class="detail-label">LOKASI (KOORDINAT)</span>
-                    <span class="detail-value">{{ $report->latitude }}, {{ $report->longitude }}</span>
+                    <span class="detail-label">LOKASI</span>
+                    <span class="detail-value" style="display: flex; flex-direction: column; gap: 8px;">
+                        <span>{{ $report->latitude }}, {{ $report->longitude }}</span>
+                        @if($report->address)
+                            <span style="font-size: 13px; color: #4a5568; display: flex; align-items: flex-start; gap: 4px;">
+                                <i class="ph ph-map-pin" style="margin-top: 2px;"></i> 
+                                {{ $report->address }}
+                            </span>
+                        @else
+                            <span style="font-size: 13px; color: #a0aec0; font-style: italic; display: flex; align-items: flex-start; gap: 4px;">
+                                <i class="ph ph-map-pin" style="margin-top: 2px;"></i> 
+                                Area tidak diketahui
+                            </span>
+                        @endif
+                        <a href="https://www.google.com/maps/search/?api=1&query={{ $report->latitude }},{{ $report->longitude }}" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; background: #e6f0fd; color: #3182ce; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 600; width: fit-content; margin-top: 4px; transition: background 0.2s;">
+                            <i class="ph ph-arrow-square-out"></i> Buka di Google Maps
+                        </a>
+                    </span>
                 </div>
 
                 <div class="detail-box">
@@ -291,15 +307,15 @@
             <h2 class="section-title">Verifikasi Laporan</h2>
             <p style="margin-bottom: 16px; color: #718096; font-size: 14px;">Pastikan laporan ini valid sebelum menugaskan petugas lapangan.</p>
             
-            <div style="display: flex; gap: 12px;" x-show="!showRejectForm">
-                <form action="{{ route('petugas.reports.verify', $report->report_id) }}" method="POST">
+            <div style="display: flex; align-items: center; gap: 16px; margin-top: 16px;" x-show="!showRejectForm">
+                <form action="{{ route('petugas.reports.verify', $report->report_id) }}" method="POST" style="margin: 0;">
                     @csrf
                     <input type="hidden" name="status" value="valid">
-                    <button type="submit" style="background: #2f855a; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                    <button type="submit" style="background: #2f855a; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(47, 133, 90, 0.2); transition: background 0.2s;" onmouseover="this.style.background='#276749'" onmouseout="this.style.background='#2f855a'">
                         <i class="ph ph-check-circle" style="font-size: 18px;"></i> Laporan Valid
                     </button>
                 </form>
-                <button type="button" @click="showRejectForm = true" style="background: #e53e3e; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                <button type="button" @click="showRejectForm = true" style="background: white; color: #e53e3e; border: 1px solid #e53e3e; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; margin: 0;" onmouseover="this.style.background='#fff5f5'" onmouseout="this.style.background='white'">
                     <i class="ph ph-x-circle" style="font-size: 18px;"></i> Tolak Laporan
                 </button>
             </div>
@@ -312,7 +328,7 @@
                         <label style="display: block; font-size: 14px; font-weight: 600; color: #c53030; margin-bottom: 8px;">Alasan Penolakan</label>
                         <textarea name="rejection_reason" required rows="3" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0; font-family: inherit; font-size: 14px;" placeholder="Masukkan alasan mengapa laporan ini ditolak..."></textarea>
                     </div>
-                    <div style="display: flex; gap: 12px;">
+                    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
                         <button type="submit" style="background: #e53e3e; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600;">
                             Konfirmasi Tolak
                         </button>
