@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="{{ asset('images/favicon.png') }}">
+    <title>Detail Laporan Admin - Palapa</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Phosphor Icons & AlpineJS -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <!-- LeafletJS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+        :root {
+            --bg: #f3f5f8;
+            --surface: #ffffff;
+            --text: #2a2e38;
+            --muted: #8a94a5;
+            --primary: #1f76c2;
+            --primary-dark: #165f9e;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            background: radial-gradient(circle at 15% 10%, #f8fbff 0%, #f1f4f8 40%, #edf1f6 100%);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .layout {
+            display: flex;
+            gap: 24px;
+            padding: 16px;
+            min-height: 100vh;
+        }
+
+        .content {
+            flex: 1;
+            max-width: calc(100vw - 306px);
+            transition: max-width 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .main-panel {
+            background: var(--surface);
+            border-radius: 20px;
+            padding: 32px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            border: 1px solid #e2e8f0;
+        }
+
+        .report-header {
+            margin-bottom: 24px;
+        }
+
+        .report-title {
+            color: #0f66aa;
+            font-size: 28px;
+            font-weight: 700;
+            margin: 0 0 4px 0;
+        }
+
+        .report-subtitle {
+            color: #718096;
+            font-size: 14px;
+            margin: 0;
+        }
+
+        .report-details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .detail-box {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 16px;
+            min-height: 80px;
+        }
+        
+        .detail-box.full-width {
+            grid-column: 1 / -1;
+            min-height: 120px;
+        }
+
+        .detail-label {
+            font-size: 12px;
+            color: #718096;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .detail-value {
+            font-size: 14px;
+            color: #2d3748;
+            font-weight: 500;
+        }
+
+        .badge {
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .badge-pending { background: #e6f0fd; color: #3182ce; }
+        .badge-diproses { background: #fefcbf; color: #b7791f; }
+        .badge-selesai { background: #c6f6d5; color: #2f855a; }
+        .badge-valid { background: #e2fbf0; color: #2b6cb0; }
+        .badge-ditolak { background: #fed7d7; color: #c53030; }
+
+        .section-title {
+            color: #0f66aa;
+            font-size: 24px;
+            font-weight: 800;
+            margin: 0 0 16px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            text-align: left;
+            background: var(--surface);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        th {
+            padding: 12px 16px;
+            color: #718096;
+            font-weight: 700;
+            border-bottom: 1px solid #edf2f7;
+            background: #f8fafc;
+        }
+
+        td {
+            padding: 16px;
+            border-bottom: 1px solid #edf2f7;
+            color: #2d3748;
+            vertical-align: middle;
+        }
+
+        .btn-action {
+            background: none;
+            border: none;
+            color: #3182ce;
+            font-weight: 600;
+            font-size: 12px;
+            cursor: pointer;
+            padding: 0;
+            font-family: inherit;
+            transition: color 0.2s;
+        }
+        
+        .btn-action:hover {
+            color: var(--primary-dark);
+            text-decoration: underline;
+        }
+
+        .petugas-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 600;
+        }
+
+        .petugas-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .badge-available { background: #c6f6d5; color: #2f855a; }
+        .badge-onduty { background: #fefcbf; color: #b7791f; }
+
+        @media (max-width: 980px) {
+            .layout { flex-direction: column; }
+            .content { max-width: none !important; }
+            .report-details-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="layout" x-data="{ sidebarOpen: true }">
+    @include('components.sidebar')
+
+    <main class="content" :style="sidebarOpen ? 'max-width: calc(100vw - 306px);' : 'max-width: calc(100vw - 138px);'">
+        
+        <div class="main-panel">
+            <!-- Flash Message -->
+            @if(session('success'))
+                <div style="background: #c6f6d5; color: #2f855a; padding: 12px; border-radius: 8px; margin-bottom: 24px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                    <i class="ph ph-check-circle" style="font-size: 20px;"></i>
+                    {{ session('success') }}
+                </div>
+            @endif
+
+            @if($errors->any())
+                <div style="background: #fed7d7; color: #c53030; padding: 12px; border-radius: 8px; margin-bottom: 24px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                    <i class="ph ph-warning-circle" style="font-size: 20px;"></i>
+                    Terjadi kesalahan: {{ $errors->first() }}
+                </div>
+            @endif
+
+            <div class="report-header">
+                <h1 class="report-title">{{ $report->title ?? 'Laporan Titik Api' }}</h1>
+                <p class="report-subtitle">#{{ $report->report_id }} Detail Laporan</p>
+            </div>
+
+            <div class="report-details-grid">
+                <div class="detail-box">
+                    <span class="detail-label">STATUS</span>
+                    @php
+                        $statusClass = 'badge-pending';
+                        if($report->status == 'diproses') $statusClass = 'badge-diproses';
+                        if($report->status == 'selesai') $statusClass = 'badge-selesai';
+                        if($report->status == 'valid') $statusClass = 'badge-valid';
+                        if($report->status == 'ditolak') $statusClass = 'badge-ditolak';
+                    @endphp
+                    <span class="badge {{ $statusClass }}">
+                        @if($report->status == 'pending')
+                            🕒 Menunggu Verifikasi
+                        @else
+                            {{ ucfirst($report->status) }}
+                        @endif
+                    </span>
+                </div>
+                
+                <div class="detail-box">
+                    <span class="detail-label">TANGGAL PELAPORAN</span>
+                    <span class="detail-value">{{ $report->created_at->format('d F Y, H:i') }}</span>
+                </div>
+                
+                <div class="detail-box">
+                    <span class="detail-label">LOKASI</span>
+                    <span class="detail-value" style="display: flex; flex-direction: column; gap: 8px;">
+                        <span>{{ $report->latitude }}, {{ $report->longitude }}</span>
+                        @if($report->address)
+                            <span style="font-size: 13px; color: #4a5568; display: flex; align-items: flex-start; gap: 4px;">
+                                <i class="ph ph-map-pin" style="margin-top: 2px;"></i> 
+                                {{ $report->address }}
+                            </span>
+                        @else
+                            <span style="font-size: 13px; color: #a0aec0; font-style: italic; display: flex; align-items: flex-start; gap: 4px;">
+                                <i class="ph ph-map-pin" style="margin-top: 2px;"></i> 
+                                Area tidak diketahui
+                            </span>
+                        @endif
+                        <a href="https://www.google.com/maps/search/?api=1&query={{ $report->latitude }},{{ $report->longitude }}" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; background: #e6f0fd; color: #3182ce; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 600; width: fit-content; margin-top: 4px; transition: background 0.2s;">
+                            <i class="ph ph-arrow-square-out"></i> Buka di Google Maps
+                        </a>
+                    </span>
+                </div>
+
+                <div class="detail-box">
+                    <span class="detail-label">PELAPOR</span>
+                    <span class="detail-value">{{ $report->pelapor?->users_name ?? 'Anonim' }}</span>
+                </div>
+
+                <div class="detail-box full-width">
+                    <span class="detail-label">PETA LOKASI</span>
+                    <div id="map-preview" style="height: 300px; border-radius: 8px; border: 1px solid #e2e8f0; z-index: 1;"></div>
+                </div>
+
+                <div class="detail-box full-width">
+                    <span class="detail-label">DESKRIPSI KEJADIAN</span>
+                    <span class="detail-value">{{ $report->description }}</span>
+                </div>
+
+                @if($report->photo)
+                <div class="detail-box full-width">
+                    <span class="detail-label">FOTO KEJADIAN</span>
+                    <img src="{{ route('reports.photo', ['path' => $report->photo]) }}" alt="Foto Kejadian" style="max-width: 100%; max-height: 300px; border-radius: 8px;">
+                </div>
+                @endif
+
+                @if($report->status === 'ditolak' && $report->rejection_reason)
+                <div class="detail-box full-width" style="background: #fff5f5; border: 1px solid #fed7d7;">
+                    <span class="detail-label" style="color: #c53030;">ALASAN PENOLAKAN</span>
+                    <span class="detail-value" style="color: #c53030;">{{ $report->rejection_reason }}</span>
+                </div>
+                @endif
+            </div>
+        </div>
+
+        <!-- Form Verifikasi (Hanya Tampil Jika Status 'pending') -->
+        @if($report->status === 'pending')
+        <div class="main-panel" style="margin-bottom: 24px;" x-data="{ showRejectForm: false }">
+            <h2 class="section-title">Verifikasi Laporan</h2>
+            <p style="margin-bottom: 16px; color: #718096; font-size: 14px;">Tentukan validitas laporan masuk ini sebelum ditugaskan kepada petugas di lapangan.</p>
+            
+            <div style="display: flex; align-items: center; gap: 16px; margin-top: 16px;" x-show="!showRejectForm">
+                <form action="{{ route('admin.reports.verify', $report->report_id) }}" method="POST" style="margin: 0;">
+                    @csrf
+                    <input type="hidden" name="status" value="valid">
+                    <button type="submit" style="background: #2f855a; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(47, 133, 90, 0.2); transition: background 0.2s;" onmouseover="this.style.background='#276749'" onmouseout="this.style.background='#2f855a'">
+                        <i class="ph ph-check-circle" style="font-size: 18px;"></i> Laporan Valid
+                    </button>
+                </form>
+                <button type="button" @click="showRejectForm = true" style="background: white; color: #e53e3e; border: 1px solid #e53e3e; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; margin: 0;" onmouseover="this.style.background='#fff5f5'" onmouseout="this.style.background='white'">
+                    <i class="ph ph-x-circle" style="font-size: 18px;"></i> Tolak Laporan
+                </button>
+            </div>
+
+            <div x-show="showRejectForm" style="display: none; background: #fff5f5; padding: 16px; border-radius: 8px; border: 1px solid #fed7d7; margin-top: 12px;">
+                <form action="{{ route('admin.reports.verify', $report->report_id) }}" method="POST">
+                    @csrf
+                    <input type="hidden" name="status" value="ditolak">
+                    <div style="margin-bottom: 12px;">
+                        <label style="display: block; font-size: 14px; font-weight: 600; color: #c53030; margin-bottom: 8px;">Alasan Penolakan</label>
+                        <textarea name="rejection_reason" required rows="3" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0; font-family: inherit; font-size: 14px;" placeholder="Masukkan alasan mengapa laporan ini ditolak..."></textarea>
+                    </div>
+                    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                        <button type="submit" style="background: #e53e3e; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                            Konfirmasi Tolak
+                        </button>
+                        <button type="button" @click="showRejectForm = false" style="background: #cbd5e0; color: #4a5568; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                            Batal
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        @endif
+
+        <!-- Penugasan Petugas (Tampil Jika Status 'valid', 'diproses', atau 'selesai') -->
+        @if(in_array($report->status, ['valid', 'diproses', 'selesai']))
+        <div class="main-panel">
+            <h2 class="section-title">Petugas Tersedia</h2>
+            <p style="margin-bottom: 16px; color: #718096; font-size: 14px;">Tugaskan petugas lapangan untuk menindaklanjuti laporan kebakaran ini.</p>
+
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nama</th>
+                            <th>Status</th>
+                            <th>Jarak</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($petugasTersedia as $petugas)
+                        <tr>
+                            <td>
+                                <div class="petugas-info">
+                                    <div class="petugas-avatar">👩‍🚒</div>
+                                    {{ $petugas->users_name }}
+                                </div>
+                            </td>
+                            <td>
+                                @php
+                                    $isAssigned = \App\Models\Penugasan::where('petugas_id', $petugas->users_id)
+                                                    ->whereNull('completed_at')
+                                                    ->exists();
+                                @endphp
+                                @if($isAssigned)
+                                    <span class="badge badge-onduty">On Duty</span>
+                                @else
+                                    <span class="badge badge-available">Available</span>
+                                @endif
+                            </td>
+                            <td>~ km</td>
+                            <td>
+                                @if($report->status === 'valid')
+                                    <form action="{{ route('admin.reports.assign', ['report' => $report->report_id, 'petugas' => $petugas->users_id]) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="btn-action">[Tugaskan Petugas]</button>
+                                    </form>
+                                @elseif($report->status === 'diproses')
+                                    @php
+                                        $currentlyAssigned = \App\Models\Penugasan::where('report_id', $report->report_id)
+                                                                ->where('petugas_id', $petugas->users_id)
+                                                                ->whereNull('completed_at')
+                                                                ->exists();
+                                    @endphp
+                                    @if($currentlyAssigned)
+                                        <span style="font-weight:600; color:#b7791f; font-size:12px;">Sedang Bertugas</span>
+                                    @else
+                                        <form action="{{ route('admin.reports.assign', ['report' => $report->report_id, 'petugas' => $petugas->users_id]) }}" method="POST">
+                                            @csrf
+                                            <button type="submit" class="btn-action">[Tugaskan Tambahan]</button>
+                                        </form>
+                                    @endif
+                                @else
+                                    <span style="color:#a0aec0; font-size:12px;">Laporan Selesai</span>
+                                @endif
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="4" style="text-align: center; color: #a0aec0;">Tidak ada petugas lapangan yang terdaftar.</td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @endif
+
+    </main>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        let lat = {{ $report->latitude }};
+        let lng = {{ $report->longitude }};
+        
+        const map = L.map('map-preview').setView([lat, lng], 14);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors',
+            maxZoom: 19
+        }).addTo(map);
+
+        L.marker([lat, lng]).addTo(map)
+            .bindPopup("<b>Lokasi Kejadian</b><br>{{ $report->latitude }}, {{ $report->longitude }}")
+            .openPopup();
+    });
+</script>
+</body>
+</html>

@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\PetugasController;
 use App\Http\Controllers\NotifikasiController; // Import controller notifikasi
+use App\Http\Controllers\AdminController;
 
 Route::redirect('/', '/beranda');
 
@@ -42,6 +43,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/petugas/reports/{report}', [PetugasController::class, 'show'])->name('petugas.reports.show');
     Route::post('/petugas/reports/{report}/assign/{petugas}', [PetugasController::class, 'assign'])->name('petugas.reports.assign');
     Route::post('/petugas/reports/{report}/verify', [PetugasController::class, 'verify'])->name('petugas.reports.verify');
+
+    // Admin Routes
+    Route::get('/admin/dashboard', [AdminController::class, 'index'])->name('admin.dashboard');
+    Route::get('/admin/reports/{report}', [AdminController::class, 'show'])->name('admin.reports.show');
+    Route::post('/admin/reports/{report}/verify', [AdminController::class, 'verify'])->name('admin.reports.verify');
+    Route::post('/admin/reports/{report}/assign/{petugas}', [AdminController::class, 'assign'])->name('admin.reports.assign');
+    Route::get('/admin/users', [AdminController::class, 'usersIndex'])->name('admin.users.index');
+    Route::get('/admin/users/{user}/edit', [AdminController::class, 'usersEdit'])->name('admin.users.edit');
+    Route::put('/admin/users/{user}', [AdminController::class, 'usersUpdate'])->name('admin.users.update');
 });
 
 Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');

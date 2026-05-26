@@ -22,6 +22,16 @@ class DatabaseSeeder extends Seeder
             'email' => 'test@example.com', 
         ]);
 
+        User::updateOrCreate(
+            ['email' => 'admin@example.com'],
+            [
+                'users_name' => 'Admin Utama',
+                'password' => \Illuminate\Support\Facades\Hash::make('password'),
+                'role' => 'admin',
+                'phone' => '081234567891',
+            ]
+        );
+
         $this->call(PetugasSeeder::class);
     }
 }
