@@ -71,8 +71,7 @@ class AuthController extends Controller
             if ($role === 'petugas') {
                 return redirect()->route('petugas.dashboard')->with('success', 'Login berhasil sebagai petugas!');
             } elseif ($role === 'admin') {
-                // Persiapan jika route admin sudah dibuat nanti
-                // return redirect()->route('admin.dashboard')->with('success', 'Login berhasil sebagai admin!');
+                return redirect()->route('admin.dashboard')->with('success', 'Login berhasil sebagai admin!');
             }
 
             // Default redirect untuk Warga (Masyarakat)

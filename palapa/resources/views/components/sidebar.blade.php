@@ -299,11 +299,27 @@
     <div class="divider"></div>
 
     <nav class="menu">
-        @if(auth()->check() && auth()->user()->role === 'petugas')
+        @if(auth()->check() && auth()->user()->role === 'admin')
+            <a class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}" href="{{ route('admin.dashboard') }}">
+                <i class="ph ph-squares-four icon"></i> <span class="menu-text">Beranda</span>
+            </a>
+            <a href="{{ route('profile') }}">
+                <i class="ph ph-user icon"></i> <span class="menu-text">Profil Saya</span>
+            </a>
+            
+            <div class="divider"></div>
+            
+            <a class="{{ request()->routeIs('admin.dashboard') && !request()->filled('status') ? 'active' : '' }}" href="{{ route('admin.dashboard') }}">
+                <i class="ph ph-folder-open icon"></i> <span class="menu-text">Laporan Masuk</span>
+            </a>
+            <a class="{{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}">
+                <i class="ph ph-database icon"></i> <span class="menu-text">Manajemen Data</span>
+            </a>
+        @elseif(auth()->check() && auth()->user()->role === 'petugas')
             <a class="{{ request()->routeIs('petugas.dashboard') ? 'active' : '' }}" href="{{ route('petugas.dashboard') }}">
                 <i class="ph ph-squares-four icon"></i> <span class="menu-text">Beranda</span>
             </a>
-            <a href="#">
+            <a href="{{ route('profile') }}">
                 <i class="ph ph-user icon"></i> <span class="menu-text">Profil Saya</span>
             </a>
             
