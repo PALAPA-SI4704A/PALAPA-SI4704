@@ -227,6 +227,86 @@
 
         .submit:hover { background: var(--primary-dark); }
 
+        .btn-search {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0 16px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: background .2s ease;
+        }
+
+        .btn-search:hover:not(:disabled) {
+            background: var(--primary-dark);
+        }
+
+        .btn-search:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .search-results-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--surface);
+            border: 1px solid #dfe6ef;
+            border-radius: 12px;
+            max-height: 250px;
+            overflow-y: auto;
+            z-index: 9999;
+            margin-top: 6px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+            display: none;
+            padding: 6px 0;
+        }
+
+        .search-result-item {
+            padding: 10px 16px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: background-color 0.2s ease, color 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text);
+            text-align: left;
+            border-bottom: 1px solid #f3f5f8;
+        }
+
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+
+        .search-result-item:hover {
+            background-color: #f0f7ff;
+            color: var(--primary-dark);
+        }
+
+        .search-result-icon {
+            color: var(--primary);
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin {
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+
+
         @media (max-width: 980px) {
             .layout {
                 flex-direction: column;
@@ -286,6 +366,18 @@
 
                 <div class="field">
                     <label>Lokasi <span class="req">*</span></label>
+                    <div class="search-container" style="position: relative; margin-bottom: 10px;">
+                        <div style="position: relative; display: flex; gap: 8px;">
+                            <div style="position: relative; flex: 1;">
+                                <input id="search-location" type="text" placeholder="Cari nama jalan, kota, atau tempat kejadian..." autocomplete="off">
+                                <button id="clear-search" type="button" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 18px; cursor: pointer; color: var(--muted); display: none;">&times;</button>
+                            </div>
+                            <button id="btn-search-location" class="btn-search" type="button">
+                                <i class="ph ph-magnifying-glass"></i> Cari
+                            </button>
+                        </div>
+                        <div id="search-results" class="search-results-list"></div>
+                    </div>
                     <div id="map" style="height: 300px; border-radius: 8px; margin-bottom: 10px; z-index: 1; border: 1px solid #dfe6ef;"></div>
                     <div class="coord-row">
                         <input id="latitude" name="latitude" type="text" required
@@ -406,6 +498,98 @@
             });
         });
     }
+
+    // Location Search Functionality
+    const searchInput = document.getElementById('search-location');
+    const clearSearchBtn = document.getElementById('clear-search');
+    const btnSearchLocation = document.getElementById('btn-search-location');
+    const searchResults = document.getElementById('search-results');
+
+    function performSearch() {
+        const query = searchInput.value.trim();
+        if (query.length < 3) {
+            alert('Masukkan minimal 3 karakter untuk mencari.');
+            return;
+        }
+
+        btnSearchLocation.disabled = true;
+        btnSearchLocation.innerHTML = '<i class="ph ph-circle-notch animate-spin"></i> Mencari...';
+
+        searchResults.innerHTML = '<div style="padding: 12px; font-size: 13px; color: var(--muted); text-align: center;"><i class="ph ph-circle-notch animate-spin"></i> Mencari lokasi...</div>';
+        searchResults.style.display = 'block';
+
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`;
+
+        fetch(url, {
+            headers: {
+                'Accept-Language': 'id-ID,id;q=0.9,en;q=0.8'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            searchResults.innerHTML = '';
+            if (data.length === 0) {
+                searchResults.innerHTML = '<div style="padding: 12px; font-size: 13px; color: var(--danger); text-align: center;">Lokasi tidak ditemukan.</div>';
+                return;
+            }
+
+            data.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'search-result-item';
+                div.innerHTML = `
+                    <i class="ph ph-map-pin search-result-icon"></i>
+                    <span>${item.display_name}</span>
+                `;
+                div.addEventListener('click', function() {
+                    const lat = parseFloat(item.lat);
+                    const lon = parseFloat(item.lon);
+                    updateMarker(lat, lon);
+                    map.setView([lat, lon], 15);
+                    searchInput.value = item.display_name;
+                    searchResults.style.display = 'none';
+                });
+                searchResults.appendChild(div);
+            });
+        })
+        .catch(err => {
+            console.error(err);
+            searchResults.innerHTML = '<div style="padding: 12px; font-size: 13px; color: var(--danger); text-align: center;">Gagal mencari lokasi. Coba lagi.</div>';
+        })
+        .finally(() => {
+            btnSearchLocation.disabled = false;
+            btnSearchLocation.innerHTML = '<i class="ph ph-magnifying-glass"></i> Cari';
+        });
+    }
+
+    btnSearchLocation.addEventListener('click', performSearch);
+    searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            performSearch();
+        }
+    });
+
+    searchInput.addEventListener('input', function() {
+        if (this.value.length > 0) {
+            clearSearchBtn.style.display = 'block';
+        } else {
+            clearSearchBtn.style.display = 'none';
+            searchResults.style.display = 'none';
+        }
+    });
+
+    clearSearchBtn.addEventListener('click', function() {
+        searchInput.value = '';
+        clearSearchBtn.style.display = 'none';
+        searchResults.style.display = 'none';
+        searchInput.focus();
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !searchResults.contains(e.target) && !btnSearchLocation.contains(e.target)) {
+            searchResults.style.display = 'none';
+        }
+    });
 </script>
 </body>
 </html>
