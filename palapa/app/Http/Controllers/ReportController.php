@@ -167,7 +167,7 @@ class ReportController extends Controller
             }
         }
 
-        Report::create([
+        $report = Report::create([
             'admin_id' => null,
             'user_id' => Auth::id(),
             'title' => $validated['title'],
@@ -216,33 +216,7 @@ class ReportController extends Controller
      */
     public function history(Report $report)
     {
-        // DATA DUMMY STATUS
-        $statusHistories = [
-            [
-                'id' => 1,
-                'status_awal' => null,
-                'status_baru' => 'pending',
-                'catatan' => 'Laporan berhasil dibuat oleh pelapor.',
-                'diubah_oleh' => 'Aska (Pelapor)',
-                'tanggal_ubah' => '2026-05-26 08:00:00'
-            ],
-            [
-                'id' => 2,
-                'status_awal' => 'pending',
-                'status_baru' => 'diproses',
-                'catatan' => 'Laporan sedang diverifikasi oleh admin dan diteruskan ke petugas lapangan.',
-                'diubah_oleh' => 'Admin Sistem',
-                'tanggal_ubah' => '2026-05-26 08:02:00'
-            ],
-            [
-                'id' => 3,
-                'status_awal' => 'diproses',
-                'status_baru' => 'selesai',
-                'catatan' => 'Asap Tebal sudah ditangani oleh pihak berwenang',
-                'diubah_oleh' => 'Petugas Lapangan',
-                'tanggal_ubah' => '2026-05-26 10:00:00'
-            ]
-        ];
+        $statusHistories = $report->statusHistories()->orderBy('id', 'asc')->get();
 
         return view('reports.history', compact('report', 'statusHistories'));
     }
