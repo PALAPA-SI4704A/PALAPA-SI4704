@@ -54,7 +54,7 @@
 
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 24px;
         }
 
@@ -77,6 +77,10 @@
         .stat-card:nth-child(1) { background: #eef4f9; } /* Laporan Masuk Hari Ini */
         .stat-card:nth-child(2) { background: #eefaf3; } /* Laporan Menunggu Verifikasi */
         .stat-card:nth-child(3) { background: #fff5f5; } /* Laporan Sedang ditangani */
+        .stat-card:nth-child(4) { background: #fffcf0; } /* Laporan Valid */
+        .stat-card:nth-child(5) { background: #fbf0ff; } /* Laporan Selesai */
+        .stat-card:nth-child(6) { background: #fff0f0; } /* Laporan Ditolak */
+        .stat-card:nth-child(7) { background: #f0f7ff; } /* Total Laporan */
 
         .stat-card h3 {
             margin: 0;
@@ -274,14 +278,47 @@
                 <p class="value">{{ $menungguVerifikasi }}</p>
             </div>
             <div class="stat-card">
-                <h3>Laporan Sedang ditangani</h3>
+                <h3>Laporan Sedang Ditangani</h3>
                 <p class="value">{{ $sedangDitangani }}</p>
+            </div>
+            <div class="stat-card">
+                <h3>Laporan Valid</h3>
+                <p class="value">{{ $laporanValid }}</p>
+            </div>
+            <div class="stat-card">
+                <h3>Laporan Selesai</h3>
+                <p class="value">{{ $laporanSelesai }}</p>
+            </div>
+            <div class="stat-card">
+                <h3>Laporan Ditolak</h3>
+                <p class="value">{{ $laporanDitolak }}</p>
+            </div>
+            <div class="stat-card">
+                <h3>Total Laporan</h3>
+                <p class="value">{{ $totalLaporan }}</p>
             </div>
         </div>
 
         <!-- Chart Section -->
         <div class="section">
-            <h2 class="section-title">Laporan Karhutla Perhari</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+                <h2 class="section-title" style="margin: 0;">Laporan Karhutla Per Periode</h2>
+                <form id="chartFilterForm" method="GET" action="{{ route('admin.dashboard') }}" style="margin: 0;">
+                    @if(request('date')) <input type="hidden" name="date" value="{{ request('date') }}"> @endif
+                    @if(request('status')) <input type="hidden" name="status" value="{{ request('status') }}"> @endif
+                    @if(request('location')) <input type="hidden" name="location" value="{{ request('location') }}"> @endif
+                    
+                    <div class="filter-group" style="padding: 4px 8px; margin: 0; display: inline-flex; align-items: center; gap: 8px; background: white; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 13px;">
+                        <i class="ph ph-calendar-blank" style="color: #a0aec0; font-size: 16px;"></i>
+                        <select name="period" class="filter-select" onchange="this.form.submit()" style="border: none; font-size: 13px; font-family: inherit; background: transparent; outline: none; color: #4a5568;">
+                            <option value="7days" {{ request('period') == '7days' || !request('period') ? 'selected' : '' }}>7 Hari Terakhir</option>
+                            <option value="30days" {{ request('period') == '30days' ? 'selected' : '' }}>30 Hari Terakhir</option>
+                            <option value="month" {{ request('period') == 'month' ? 'selected' : '' }}>Bulan Ini</option>
+                            <option value="year" {{ request('period') == 'year' ? 'selected' : '' }}>Tahun Ini</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
             <div class="chart-container">
                 <canvas id="karhutlaChart"></canvas>
             </div>
@@ -292,6 +329,9 @@
             <h2 class="section-title">Laporan Masuk</h2>
             
             <form class="filters" method="GET" action="{{ route('admin.dashboard') }}">
+                @if(request('period'))
+                    <input type="hidden" name="period" value="{{ request('period') }}">
+                @endif
                 <div class="filter-group">
                     <i class="ph ph-calendar"></i>
                     <input type="date" name="date" class="filter-select" value="{{ request('date') }}" onchange="this.form.submit()">
@@ -360,6 +400,16 @@
                                 <span class="badge {{ $statusClass }}">
                                     @if($report->status == 'pending') Menunggu Verifikasi @else {{ ucfirst($report->status) }} @endif
                                 </span>
+                                @if(in_array($report->status, ['diproses', 'selesai']) && $report->penugasans->isNotEmpty())
+                                    <div style="font-size: 11px; color: #4a5568; margin-top: 6px; display: flex; flex-direction: column; gap: 2px;">
+                                        <span style="font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                                            <i class="ph ph-user-helmet" style="font-size: 12px; color: #718096;"></i> Petugas:
+                                        </span>
+                                        @foreach($report->penugasans as $p)
+                                            <span style="color: #2d3748; padding-left: 2px;">• {{ $p->petugas?->users_name }}</span>
+                                        @endforeach
+                                    </div>
+                                @endif
                             </td>
                             <td>{{ $report->created_at->format('d/m/Y') }}</td>
                             <td><a href="{{ route('admin.reports.show', $report) }}" class="btn-link">[Lihat]</a></td>

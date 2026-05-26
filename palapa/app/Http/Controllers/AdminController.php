@@ -24,7 +24,7 @@ class AdminController extends Controller
         }
 
         // 2. Query Laporan Masuk
-        $query = Report::with('pelapor')->latest('report_id');
+        $query = Report::with(['pelapor', 'penugasans.petugas'])->latest('report_id');
 
         // Filter Tanggal
         if ($request->filled('date')) {
@@ -52,48 +52,110 @@ class AdminController extends Controller
 
         // 3. Menghitung Data Statistik
         $today = Carbon::today();
-        
-        // Laporan Masuk Hari Ini
+        $totalLaporan = Report::count();
         $laporanHariIni = Report::whereDate('created_at', $today)->count();
-
-        // Laporan Menunggu Verifikasi (status pending)
         $menungguVerifikasi = Report::where('status', 'pending')->count();
-
-        // Laporan Sedang ditangani (status diproses)
+        $laporanValid = Report::where('status', 'valid')->count();
         $sedangDitangani = Report::where('status', 'diproses')->count();
+        $laporanSelesai = Report::where('status', 'selesai')->count();
+        $laporanDitolak = Report::where('status', 'ditolak')->count();
 
-        // 4. Data untuk Line Chart Laporan Karhutla per hari (7 hari terakhir)
+        // 4. Data untuk Line Chart Laporan Karhutla per periode
+        $period = $request->input('period', '7days');
         $chartLabels = [];
         $chartCounts = [];
         
-        // Mengisi array tanggal 7 hari terakhir (hari ini, kemarin, dan 5 hari ke belakang)
-        for ($i = 6; $i >= 0; $i--) {
-            $date = Carbon::now()->subDays($i);
-            $dateStr = $date->format('Y-m-d');
-            
-            // Format label hari
-            if ($i === 0) {
-                $label = 'Hari Ini';
-            } elseif ($i === 1) {
-                $label = 'Kemarin';
-            } else {
-                $label = $date->locale('id')->isoFormat('D MMMM');
+        if ($period === '30days') {
+            for ($i = 29; $i >= 0; $i--) {
+                $date = Carbon::now()->subDays($i);
+                $dateStr = $date->format('Y-m-d');
+                $label = $date->locale('id')->isoFormat('D MMM');
+                $chartLabels[] = $label;
+                $chartCounts[$dateStr] = 0;
             }
             
-            $chartLabels[] = $label;
-            $chartCounts[$dateStr] = 0;
-        }
+            $dbChartData = Report::select(DB::raw('DATE(created_at) as date_only'), DB::raw('count(*) as count'))
+                ->where('created_at', '>=', Carbon::now()->subDays(29)->startOfDay())
+                ->groupBy('date_only')
+                ->get();
 
-        // Ambil data laporan 7 hari terakhir dari DB
-        $dbChartData = Report::select(DB::raw('DATE(created_at) as date_only'), DB::raw('count(*) as count'))
-            ->where('created_at', '>=', Carbon::now()->subDays(6)->startOfDay())
-            ->groupBy('date_only')
-            ->get();
+            foreach ($dbChartData as $data) {
+                $dateKey = $data->date_only;
+                if (isset($chartCounts[$dateKey])) {
+                    $chartCounts[$dateKey] = $data->count;
+                }
+            }
+        } elseif ($period === 'month') {
+            $daysInMonth = Carbon::now()->daysInMonth;
+            $startOfMonth = Carbon::now()->startOfMonth();
+            for ($day = 1; $day <= $daysInMonth; $day++) {
+                $date = Carbon::now()->day($day);
+                $dateStr = $date->format('Y-m-d');
+                $label = $date->locale('id')->isoFormat('D MMM');
+                $chartLabels[] = $label;
+                $chartCounts[$dateStr] = 0;
+            }
+            
+            $dbChartData = Report::select(DB::raw('DATE(created_at) as date_only'), DB::raw('count(*) as count'))
+                ->where('created_at', '>=', $startOfMonth)
+                ->groupBy('date_only')
+                ->get();
 
-        foreach ($dbChartData as $data) {
-            $dateKey = $data->date_only;
-            if (isset($chartCounts[$dateKey])) {
-                $chartCounts[$dateKey] = $data->count;
+            foreach ($dbChartData as $data) {
+                $dateKey = $data->date_only;
+                if (isset($chartCounts[$dateKey])) {
+                    $chartCounts[$dateKey] = $data->count;
+                }
+            }
+        } elseif ($period === 'year') {
+            $startOfYear = Carbon::now()->startOfYear();
+            for ($m = 1; $m <= 12; $m++) {
+                $date = Carbon::now()->month($m);
+                $monthStr = $date->format('Y-m');
+                $label = $date->locale('id')->isoFormat('MMMM');
+                $chartLabels[] = $label;
+                $chartCounts[$monthStr] = 0;
+            }
+            
+            $dbChartData = Report::select(DB::raw("DATE_FORMAT(created_at, '%Y-%m') as month_only"), DB::raw('count(*) as count'))
+                ->where('created_at', '>=', $startOfYear)
+                ->groupBy('month_only')
+                ->get();
+
+            foreach ($dbChartData as $data) {
+                $monthKey = $data->month_only;
+                if (isset($chartCounts[$monthKey])) {
+                    $chartCounts[$monthKey] = $data->count;
+                }
+            }
+        } else {
+            // Default 7days
+            for ($i = 6; $i >= 0; $i--) {
+                $date = Carbon::now()->subDays($i);
+                $dateStr = $date->format('Y-m-d');
+                
+                if ($i === 0) {
+                    $label = 'Hari Ini';
+                } elseif ($i === 1) {
+                    $label = 'Kemarin';
+                } else {
+                    $label = $date->locale('id')->isoFormat('D MMMM');
+                }
+                
+                $chartLabels[] = $label;
+                $chartCounts[$dateStr] = 0;
+            }
+
+            $dbChartData = Report::select(DB::raw('DATE(created_at) as date_only'), DB::raw('count(*) as count'))
+                ->where('created_at', '>=', Carbon::now()->subDays(6)->startOfDay())
+                ->groupBy('date_only')
+                ->get();
+
+            foreach ($dbChartData as $data) {
+                $dateKey = $data->date_only;
+                if (isset($chartCounts[$dateKey])) {
+                    $chartCounts[$dateKey] = $data->count;
+                }
             }
         }
         
@@ -101,9 +163,13 @@ class AdminController extends Controller
 
         return view('admin.dashboard', compact(
             'laporanMasuk',
+            'totalLaporan',
             'laporanHariIni',
             'menungguVerifikasi',
+            'laporanValid',
             'sedangDitangani',
+            'laporanSelesai',
+            'laporanDitolak',
             'chartLabels',
             'chartDataValues'
         ));
@@ -118,7 +184,7 @@ class AdminController extends Controller
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
 
-        $report->load('pelapor');
+        $report->load(['pelapor', 'penugasans.petugas']);
         $petugasTersedia = User::where('role', 'petugas')->get();
 
         return view('admin.reports.show', compact('report', 'petugasTersedia'));

@@ -348,6 +348,62 @@
         </div>
         @endif
 
+        <!-- Riwayat / Status Penugasan Petugas -->
+        @if($report->penugasans->isNotEmpty())
+        <div class="main-panel" style="margin-bottom: 24px;">
+            <h2 class="section-title">Status Penugasan Petugas</h2>
+            <p style="margin-bottom: 16px; color: #718096; font-size: 14px;">Daftar petugas yang ditugaskan beserta status pekerjaannya.</p>
+
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Petugas</th>
+                            <th>Waktu Ditugaskan</th>
+                            <th>Status Penugasan</th>
+                            <th>Waktu Selesai</th>
+                            <th>Bukti Penanganan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($report->penugasans as $penugasan)
+                        <tr>
+                            <td>
+                                <div class="petugas-info">
+                                    <div class="petugas-avatar">👩‍🚒</div>
+                                    {{ $penugasan->petugas?->users_name }}
+                                </div>
+                            </td>
+                            <td>
+                                {{ $penugasan->assigned_at ? \Carbon\Carbon::parse($penugasan->assigned_at)->format('d F Y, H:i') : '-' }}
+                            </td>
+                            <td>
+                                @if($penugasan->completed_at)
+                                    <span class="badge badge-selesai">Selesai</span>
+                                @else
+                                    <span class="badge badge-diproses">Sedang Bertugas</span>
+                                @endif
+                            </td>
+                            <td>
+                                {{ $penugasan->completed_at ? \Carbon\Carbon::parse($penugasan->completed_at)->format('d F Y, H:i') : '-' }}
+                            </td>
+                            <td>
+                                @if($penugasan->bukti_photo)
+                                    <a href="{{ route('reports.photo', ['path' => $penugasan->bukti_photo]) }}" target="_blank" class="btn-link" style="display: inline-flex; align-items: center; gap: 4px;">
+                                        <i class="ph ph-image"></i> Lihat Bukti Foto
+                                    </a>
+                                @else
+                                    <span style="color: #a0aec0; font-style: italic;">Belum ada foto</span>
+                                @endif
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @endif
+
         <!-- Penugasan Petugas (Tampil Jika Status 'valid', 'diproses', atau 'selesai') -->
         @if(in_array($report->status, ['valid', 'diproses', 'selesai']))
         <div class="main-panel">
