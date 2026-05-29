@@ -187,9 +187,10 @@
                 <a href="{{ route('reports.index', ['status' => 'semua', 'search' => $currentSearch]) }}" class="filter-btn {{ $currentStatus === 'semua' ? 'active' : '' }}">Semua</a>
                 <a href="{{ route('reports.index', ['status' => 'pending', 'search' => $currentSearch]) }}" class="filter-btn {{ $currentStatus === 'pending' ? 'active' : '' }}">Pending</a>
                 <a href="{{ route('reports.index', ['status' => 'valid', 'search' => $currentSearch]) }}" class="filter-btn {{ $currentStatus === 'valid' ? 'active' : '' }}">Valid</a>
+                <a href="{{ route('reports.index', ['status' => 'ditolak', 'search' => $currentSearch]) }}" class="filter-btn {{ $currentStatus === 'ditolak' ? 'active' : '' }}">Ditolak</a>
                 <a href="{{ route('reports.index', ['status' => 'diproses', 'search' => $currentSearch]) }}" class="filter-btn {{ $currentStatus === 'diproses' ? 'active' : '' }}">Diproses</a>
                 <a href="{{ route('reports.index', ['status' => 'selesai', 'search' => $currentSearch]) }}" class="filter-btn {{ $currentStatus === 'selesai' ? 'active' : '' }}">Selesai</a>
-                <a href="{{ route('reports.index', ['status' => 'ditolak', 'search' => $currentSearch]) }}" class="filter-btn {{ $currentStatus === 'ditolak' ? 'active' : '' }}">Ditolak</a>
+                
             </div>
 
             <form class="search-form" method="GET" action="{{ route('reports.index') }}" style="display: flex; gap: 8px;">
