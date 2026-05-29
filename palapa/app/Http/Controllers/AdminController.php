@@ -206,6 +206,8 @@ class AdminController extends Controller
             'rejection_reason' => 'required_if:status,ditolak|string|max:500'
         ]);
 
+        $oldStatus = $report->status;
+
         $data = ['status' => $request->status];
         if ($request->status === 'ditolak') {
             $data['rejection_reason'] = $request->rejection_reason;
@@ -214,6 +216,25 @@ class AdminController extends Controller
         $report->update($data);
         
         Log::info('Admin report verified successfully', ['new_status' => $report->status]);
+
+        $roleLabel = match (Auth::user()->role) {
+            'masyarakat' => 'Pelapor',
+            'petugas' => 'Admin Sistem',
+            'admin' => 'Admin Sistem',
+            default => ucfirst(Auth::user()->role)
+        };
+
+        $catatan = $request->status === 'ditolak'
+            ? 'Laporan ditolak. Alasan: ' . $request->rejection_reason
+            : 'Laporan telah diverifikasi dan dinyatakan valid.';
+
+        $report->statusHistories()->create([
+            'status_awal' => $oldStatus,
+            'status_baru' => $request->status,
+            'catatan' => $catatan,
+            'diubah_oleh' => Auth::user()->users_name . ' (' . $roleLabel . ')',
+            'tanggal_ubah' => now(),
+        ]);
 
         return redirect()->back()->with('success', 'Laporan berhasil diverifikasi menjadi: ' . ucfirst($request->status));
     }
@@ -239,7 +260,23 @@ class AdminController extends Controller
         ]);
 
         // Perbarui status laporan menjadi diproses
+        $oldStatus = $report->status;
         $report->update(['status' => 'diproses']);
+
+        $roleLabel = match (Auth::user()->role) {
+            'masyarakat' => 'Pelapor',
+            'petugas' => 'Admin Sistem',
+            'admin' => 'Admin Sistem',
+            default => ucfirst(Auth::user()->role)
+        };
+
+        $report->statusHistories()->create([
+            'status_awal' => $oldStatus,
+            'status_baru' => 'diproses',
+            'catatan' => 'Laporan sedang diverifikasi oleh admin dan diteruskan ke petugas lapangan.',
+            'diubah_oleh' => Auth::user()->users_name . ' (' . $roleLabel . ')',
+            'tanggal_ubah' => now(),
+        ]);
 
         return redirect()->back()->with('success', 'Petugas ' . $petugas->users_name . ' berhasil ditugaskan.');
     }

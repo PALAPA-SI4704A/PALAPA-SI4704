@@ -369,7 +369,7 @@
                         <tbody>
                             @forelse ($reports as $report)
                                 <tr>
-                                    <td>#{{ $report->id }}</td>
+                                    <td>#{{ $report->report_id }}</td>
                                     <td>
                                         @if(strtolower($report->status) == 'selesai')
                                             <span class="badge selesai"><i class="ph ph-check-circle"></i> Selesai</span>

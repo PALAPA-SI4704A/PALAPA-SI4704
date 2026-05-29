@@ -218,7 +218,11 @@ class ReportController extends Controller
     {
         $statusHistories = $report->statusHistories()->orderBy('id', 'asc')->get();
 
-        return view('reports.history', compact('report', 'statusHistories'));
+        return response()
+            ->view('reports.history', compact('report', 'statusHistories'))
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', '0');
     }
 
     /**

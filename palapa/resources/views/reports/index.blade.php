@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <link rel="icon" type="image/png" href="{{ asset('images/favicon.png') }}">
     <title>Daftar Laporan - Palapa</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -186,6 +189,7 @@
                 <a href="{{ route('reports.index', ['status' => 'valid', 'search' => $currentSearch]) }}" class="filter-btn {{ $currentStatus === 'valid' ? 'active' : '' }}">Valid</a>
                 <a href="{{ route('reports.index', ['status' => 'diproses', 'search' => $currentSearch]) }}" class="filter-btn {{ $currentStatus === 'diproses' ? 'active' : '' }}">Diproses</a>
                 <a href="{{ route('reports.index', ['status' => 'selesai', 'search' => $currentSearch]) }}" class="filter-btn {{ $currentStatus === 'selesai' ? 'active' : '' }}">Selesai</a>
+                <a href="{{ route('reports.index', ['status' => 'ditolak', 'search' => $currentSearch]) }}" class="filter-btn {{ $currentStatus === 'ditolak' ? 'active' : '' }}">Ditolak</a>
             </div>
 
             <form class="search-form" method="GET" action="{{ route('reports.index') }}" style="display: flex; gap: 8px;">

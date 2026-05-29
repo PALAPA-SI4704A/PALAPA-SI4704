@@ -123,4 +123,110 @@ class ReportVerificationTest extends TestCase
             'rejection_reason' => 'Laporan terindikasi fiktif'
         ]);
     }
+
+    public function test_admin_can_verify_a_valid_report_and_creates_status_history(): void
+    {
+        $admin = User::create([
+            'users_name' => 'Admin Utama',
+            'email' => 'admin@palapa.com',
+            'password' => bcrypt('password'),
+            'role' => 'admin',
+            'phone' => '081234567899'
+        ]);
+
+        $pelapor = User::create([
+            'users_name' => 'Warga Pelapor',
+            'email' => 'warga@palapa.com',
+            'password' => bcrypt('password123'),
+            'role' => 'masyarakat',
+            'phone' => '089876543210'
+        ]);
+
+        $report = Report::create([
+            'user_id' => $pelapor->users_id,
+            'title' => 'Kebakaran Semak',
+            'description' => 'Ada api kecil di semak-semak',
+            'latitude' => '-6.200000',
+            'longitude' => '106.816666',
+            'address' => 'Jalan Kebayoran',
+            'status' => 'pending',
+        ]);
+
+        $response = $this->actingAs($admin)
+                         ->post(route('admin.reports.verify', $report->report_id), [
+                             'status' => 'valid'
+                         ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('reports', [
+            'report_id' => $report->report_id,
+            'status' => 'valid'
+        ]);
+
+        $this->assertDatabaseHas('status_histories', [
+            'report_id' => $report->report_id,
+            'status_awal' => 'pending',
+            'status_baru' => 'valid',
+            'catatan' => 'Laporan telah diverifikasi dan dinyatakan valid.',
+            'diubah_oleh' => 'Admin Utama (Admin Sistem)'
+        ]);
+    }
+
+    public function test_admin_can_assign_petugas_and_creates_status_history(): void
+    {
+        $admin = User::create([
+            'users_name' => 'Admin Utama',
+            'email' => 'admin@palapa.com',
+            'password' => bcrypt('password'),
+            'role' => 'admin',
+            'phone' => '081234567899'
+        ]);
+
+        $petugas = User::create([
+            'users_name' => 'Petugas Lapangan',
+            'email' => 'petugas@palapa.com',
+            'password' => bcrypt('password'),
+            'role' => 'petugas',
+            'phone' => '081234567890'
+        ]);
+
+        $pelapor = User::create([
+            'users_name' => 'Warga Pelapor',
+            'email' => 'warga@palapa.com',
+            'password' => bcrypt('password123'),
+            'role' => 'masyarakat',
+            'phone' => '089876543210'
+        ]);
+
+        $report = Report::create([
+            'user_id' => $pelapor->users_id,
+            'title' => 'Kebakaran Semak',
+            'description' => 'Ada api kecil di semak-semak',
+            'latitude' => '-6.200000',
+            'longitude' => '106.816666',
+            'address' => 'Jalan Kebayoran',
+            'status' => 'pending',
+        ]);
+
+        $response = $this->actingAs($admin)
+                         ->post(route('admin.reports.assign', [$report->report_id, $petugas->users_id]));
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('reports', [
+            'report_id' => $report->report_id,
+            'status' => 'diproses'
+        ]);
+
+        $this->assertDatabaseHas('status_histories', [
+            'report_id' => $report->report_id,
+            'status_awal' => 'pending',
+            'status_baru' => 'diproses',
+            'catatan' => 'Laporan sedang diverifikasi oleh admin dan diteruskan ke petugas lapangan.',
+            'diubah_oleh' => 'Admin Utama (Admin Sistem)'
+        ]);
+    }
 }
