@@ -326,6 +326,85 @@ class AdminController extends Controller
     }
 
     /**
+     * Import data petugas dari file CSV
+     */
+    public function importPetugas(Request $request)
+    {
+        if (Auth::user()->role !== 'admin') {
+            abort(403, 'Anda tidak memiliki akses ke halaman ini.');
+        }
+
+        $request->validate([
+            'file' => 'required|mimes:csv,txt|max:2048',
+        ]);
+
+        $file = $request->file('file');
+        $handle = fopen($file->getPathname(), "r");
+
+        $header = true;
+        $successCount = 0;
+        $skippedCount = 0;
+        $skippedDetails = [];
+        $importedData = [];
+        
+        $rowNumber = 1;
+        while (($row = fgetcsv($handle, 1000, ",")) !== false) {
+            if ($header) {
+                $header = false;
+                $rowNumber++;
+                continue; // Abaikan baris pertama (header)
+            }
+
+            // Asumsi format CSV: NAMA, EMAIL, NO TELEPON, PASSWORD
+            if (count($row) >= 4) {
+                $email = trim($row[1]);
+                if (empty($email)) {
+                    $skippedCount++;
+                    $skippedDetails[] = "Baris $rowNumber: Email kosong.";
+                } elseif (!User::where('email', $email)->exists()) {
+                    try {
+                        User::create([
+                            'users_name' => trim($row[0]),
+                            'email'      => $email,
+                            'phone'      => trim($row[2]),
+                            'password'   => bcrypt(trim($row[3])),
+                            'role'       => 'petugas',
+                        ]);
+                        $successCount++;
+                        $importedData[] = [
+                            'name' => trim($row[0]),
+                            'email' => $email,
+                            'phone' => trim($row[2])
+                        ];
+                    } catch (\Exception $e) {
+                        $skippedCount++;
+                        $skippedDetails[] = "Baris $rowNumber: Gagal menyimpan data ($email).";
+                    }
+                } else {
+                    $skippedCount++;
+                    $skippedDetails[] = "Baris $rowNumber: Email sudah terdaftar ($email).";
+                }
+            } else {
+                if (!empty(array_filter($row))) {
+                    $skippedCount++;
+                    $skippedDetails[] = "Baris $rowNumber: Format kolom tidak lengkap.";
+                }
+            }
+            $rowNumber++;
+        }
+        fclose($handle);
+
+        return redirect()->route('admin.users.index', ['role' => 'petugas'])->with([
+            'success' => $successCount . ' data petugas berhasil diimpor.',
+            'import_summary' => [
+                'skipped' => $skippedCount,
+                'details' => $skippedDetails,
+                'imported_data' => $importedData
+            ]
+        ]);
+    }
+
+    /**
      * Simpan perubahan data pengguna
      */
     public function usersUpdate(Request $request, User $user)

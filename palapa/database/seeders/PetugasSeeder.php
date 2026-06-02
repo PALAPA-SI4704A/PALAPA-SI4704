@@ -10,22 +10,26 @@ class PetugasSeeder extends Seeder
 {
     public function run(): void
     {
-        User::create([
-            'users_name' => 'Petugas Utama',
-            'email' => 'petugas@example.com',
-            'password' => Hash::make('password'),
-            'role' => 'petugas',
-            'phone' => '081234567890',
-        ]);
-
-        for ($i = 1; $i <= 10; $i++) {
-            User::create([
-                'users_name' => 'Petugas ' . $i,
-                'email' => 'petugas' . $i . '@example.com',
+        User::updateOrCreate(
+            ['email' => 'petugas@example.com'],
+            [
+                'users_name' => 'Petugas Utama',
                 'password' => Hash::make('password'),
                 'role' => 'petugas',
-                'phone' => '08123456789' . $i,
-            ]);
+                'phone' => '081234567890',
+            ]
+        );
+
+        for ($i = 1; $i <= 10; $i++) {
+            User::updateOrCreate(
+                ['email' => 'petugas' . $i . '@example.com'],
+                [
+                    'users_name' => 'Petugas ' . $i,
+                    'password' => Hash::make('password'),
+                    'role' => 'petugas',
+                    'phone' => '08123456789' . $i,
+                ]
+            );
         }
     }
 }
