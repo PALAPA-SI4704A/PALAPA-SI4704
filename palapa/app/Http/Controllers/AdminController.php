@@ -345,6 +345,7 @@ class AdminController extends Controller
         $successCount = 0;
         $skippedCount = 0;
         $skippedDetails = [];
+        $importedData = [];
         
         $rowNumber = 1;
         while (($row = fgetcsv($handle, 1000, ",")) !== false) {
@@ -370,6 +371,11 @@ class AdminController extends Controller
                             'role'       => 'petugas',
                         ]);
                         $successCount++;
+                        $importedData[] = [
+                            'name' => trim($row[0]),
+                            'email' => $email,
+                            'phone' => trim($row[2])
+                        ];
                     } catch (\Exception $e) {
                         $skippedCount++;
                         $skippedDetails[] = "Baris $rowNumber: Gagal menyimpan data ($email).";
@@ -392,7 +398,8 @@ class AdminController extends Controller
             'success' => $successCount . ' data petugas berhasil diimpor.',
             'import_summary' => [
                 'skipped' => $skippedCount,
-                'details' => $skippedDetails
+                'details' => $skippedDetails,
+                'imported_data' => $importedData
             ]
         ]);
     }

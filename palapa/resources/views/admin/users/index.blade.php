@@ -316,6 +316,42 @@
         
         @if(session('import_summary'))
             @php $summary = session('import_summary'); @endphp
+            
+            {{-- Bagian Preview Data Berhasil --}}
+            @if(isset($summary['imported_data']) && count($summary['imported_data']) > 0)
+                <div style="background: #f0fdf4; color: #166534; padding: 14px 20px; border-radius: 12px; font-weight: 500; display: flex; flex-direction: column; gap: 10px; border: 1px solid #bbf7d0; margin-bottom: 8px; font-size: 13px;">
+                    <div style="display: flex; align-items: center; gap: 8px; font-weight: 600;">
+                        <i class="ph ph-check-circle" style="font-size: 20px;"></i>
+                        Preview Data Berhasil Diimpor (Total: {{ count($summary['imported_data']) }})
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12px; background: white; border-radius: 8px; overflow: hidden; border: 1px solid #dcfce7;">
+                            <thead>
+                                <tr style="background: #dcfce7; padding: 0;">
+                                    <th style="padding: 8px 12px; text-align: left; border-bottom: 1px solid #bbf7d0; background: #dcfce7;">Nama</th>
+                                    <th style="padding: 8px 12px; text-align: left; border-bottom: 1px solid #bbf7d0; background: #dcfce7;">Email</th>
+                                    <th style="padding: 8px 12px; text-align: left; border-bottom: 1px solid #bbf7d0; background: #dcfce7;">Telepon</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach(array_slice($summary['imported_data'], 0, 5) as $data)
+                                    <tr>
+                                        <td style="padding: 8px 12px; border-bottom: 1px solid #f0fdf4;">{{ $data['name'] }}</td>
+                                        <td style="padding: 8px 12px; border-bottom: 1px solid #f0fdf4;">{{ $data['email'] }}</td>
+                                        <td style="padding: 8px 12px; border-bottom: 1px solid #f0fdf4;">{{ $data['phone'] }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    @if(count($summary['imported_data']) > 5)
+                        <div style="font-size: 12px; color: #15803d; margin-top: 4px;">
+                            ...dan {{ count($summary['imported_data']) - 5 }} data lainnya berhasil diimpor.
+                        </div>
+                    @endif
+                </div>
+            @endif
+
             @if($summary['skipped'] > 0)
                 <div style="background: #fffaf0; color: #c05621; padding: 14px 20px; border-radius: 12px; font-weight: 500; display: flex; flex-direction: column; gap: 10px; border: 1px solid #feebc8; margin-bottom: 8px; font-size: 13px;">
                     <div style="display: flex; align-items: center; gap: 8px; font-weight: 600;">
