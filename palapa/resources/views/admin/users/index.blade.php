@@ -254,18 +254,39 @@
                 {{ session('success') }}
             </div>
         @endif
+        
+        @if($errors->any())
+            <div style="background: #fed7d7; color: #c53030; padding: 14px 20px; border-radius: 12px; font-weight: 600; display: flex; align-items: flex-start; gap: 10px; border: 1px solid #feb2b2; margin-bottom: 8px;">
+                <i class="ph ph-warning-circle" style="font-size: 22px; margin-top: 2px;"></i>
+                <ul style="margin: 0; padding-left: 18px; list-style-type: disc;">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
 
         <div class="section">
             <h2 class="section-title">Manajemen Pengguna</h2>
 
             <!-- Tab Navigation (Petugas vs Masyarakat) -->
-            <div class="tabs-container">
-                <a href="{{ route('admin.users.index', ['role' => 'petugas', 'search' => request('search')]) }}" class="tab-btn {{ $activeRole === 'petugas' ? 'active' : '' }}">
-                    <i class="ph ph-shield-star" style="font-size: 18px;"></i> Data Petugas
-                </a>
-                <a href="{{ route('admin.users.index', ['role' => 'masyarakat', 'search' => request('search')]) }}" class="tab-btn {{ $activeRole === 'masyarakat' ? 'active' : '' }}">
-                    <i class="ph ph-users" style="font-size: 18px;"></i> Data Masyarakat
-                </a>
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #edf2f7; margin-bottom: 24px; padding-bottom: 0px;">
+                <div class="tabs-container" style="border-bottom: none; margin-bottom: 0; padding-bottom: 0;">
+                    <a href="{{ route('admin.users.index', ['role' => 'petugas', 'search' => request('search')]) }}" class="tab-btn {{ $activeRole === 'petugas' ? 'active' : '' }}">
+                        <i class="ph ph-shield-star" style="font-size: 18px;"></i> Data Petugas
+                    </a>
+                    <a href="{{ route('admin.users.index', ['role' => 'masyarakat', 'search' => request('search')]) }}" class="tab-btn {{ $activeRole === 'masyarakat' ? 'active' : '' }}">
+                        <i class="ph ph-users" style="font-size: 18px;"></i> Data Masyarakat
+                    </a>
+                </div>
+
+                @if($activeRole === 'petugas')
+                <div style="padding-bottom: 12px; margin-bottom: -2px;">
+                    <button type="button" onclick="document.getElementById('importModal').style.display='flex'" style="background: var(--primary); color: white; border: none; border-radius: 8px; padding: 10px 16px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.2s;">
+                        <i class="ph ph-upload-simple" style="font-size: 16px;"></i> Import Petugas (CSV)
+                    </button>
+                </div>
+                @endif
             </div>
             
             <form class="filters" method="GET" action="{{ route('admin.users.index') }}">
@@ -327,6 +348,22 @@
         </div>
 
     </main>
+
+    <!-- Modal Import -->
+    <div id="importModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4); align-items: center; justify-content: center;">
+        <div style="background-color: #fefefe; margin: auto; padding: 24px; border: 1px solid #888; width: 400px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); position: relative; top: -10%;">
+            <h3 style="margin-top: 0; color: #0f66aa; font-size: 18px;">Import Data Petugas</h3>
+            <p style="font-size: 13px; color: #718096; margin-bottom: 16px;">Unggah file CSV dengan format kolom:<br><strong style="color: #4a5568;">Nama, Email, No Telepon, Password</strong><br><small>* Baris pertama akan diabaikan (header).</small></p>
+            <form action="{{ route('admin.users.import') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <input type="file" name="file" accept=".csv,.txt" required style="margin-bottom: 24px; font-size: 13px; width: 100%; border: 1px dashed #cbd5e0; padding: 16px; border-radius: 8px;">
+                <div style="display: flex; justify-content: flex-end; gap: 12px;">
+                    <button type="button" onclick="document.getElementById('importModal').style.display='none'" style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 16px; cursor: pointer; font-size: 13px; font-weight: 600; color: #4a5568;">Batal</button>
+                    <button type="submit" style="background: var(--primary); color: white; border: none; border-radius: 8px; padding: 8px 16px; cursor: pointer; font-size: 13px; font-weight: 600;">Import</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 </body>
 </html>

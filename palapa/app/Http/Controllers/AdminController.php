@@ -326,6 +326,52 @@ class AdminController extends Controller
     }
 
     /**
+     * Import data petugas dari file CSV
+     */
+    public function importPetugas(Request $request)
+    {
+        if (Auth::user()->role !== 'admin') {
+            abort(403, 'Anda tidak memiliki akses ke halaman ini.');
+        }
+
+        $request->validate([
+            'file' => 'required|mimes:csv,txt|max:2048',
+        ]);
+
+        $file = $request->file('file');
+        $handle = fopen($file->getPathname(), "r");
+
+        $header = true;
+        $count = 0;
+        
+        while (($row = fgetcsv($handle, 1000, ",")) !== false) {
+            if ($header) {
+                $header = false;
+                continue; // Abaikan baris pertama (header)
+            }
+
+            // Asumsi format CSV: NAMA, EMAIL, NO TELEPON, PASSWORD
+            if (count($row) >= 4) {
+                $email = trim($row[1]);
+                // Cek apakah email sudah ada di sistem
+                if (!User::where('email', $email)->exists()) {
+                    User::create([
+                        'users_name' => trim($row[0]),
+                        'email'      => $email,
+                        'phone'      => trim($row[2]),
+                        'password'   => bcrypt(trim($row[3])),
+                        'role'       => 'petugas',
+                    ]);
+                    $count++;
+                }
+            }
+        }
+        fclose($handle);
+
+        return redirect()->route('admin.users.index', ['role' => 'petugas'])->with('success', $count . ' data petugas berhasil diimpor.');
+    }
+
+    /**
      * Simpan perubahan data pengguna
      */
     public function usersUpdate(Request $request, User $user)
