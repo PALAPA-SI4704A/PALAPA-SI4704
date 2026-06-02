@@ -101,6 +101,7 @@ class ReportController extends Controller
                 'latitude' => (string) $request->query('latitude', ''),
                 'longitude' => (string) $request->query('longitude', ''),
                 'photo_temp' => (string) $request->query('photo_temp', ''),
+                'fire_level' => (string) $request->query('fire_level', ''),
             ],
         ]);
     }
@@ -127,6 +128,7 @@ class ReportController extends Controller
                 'latitude' => $validated['latitude'],
                 'longitude' => $validated['longitude'],
                 'photo_temp' => $photoTempPath,
+                'fire_level' => $validated['fire_level'],
             ],
         ]);
     }
@@ -177,6 +179,7 @@ class ReportController extends Controller
             'longitude' => $validated['longitude'],
             'address' => $address,
             'status' => 'pending',
+            'fire_level' => $validated['fire_level'],
         ]);
 
         return redirect()->route('profile')->with('success', 'Laporan berhasil dikirim');
@@ -242,6 +245,7 @@ class ReportController extends Controller
                 'latitude' => $request->query('latitude') ?? $report->latitude,
                 'longitude' => $request->query('longitude') ?? $report->longitude,
                 'photo_temp' => $request->query('photo_temp') ?? '',
+                'fire_level' => $request->query('fire_level') ?? $report->fire_level,
             ]
         ]);
     }
@@ -273,6 +277,7 @@ class ReportController extends Controller
                 'latitude' => $validated['latitude'],
                 'longitude' => $validated['longitude'],
                 'photo_temp' => $photoTempPath,
+                'fire_level' => $validated['fire_level'],
             ],
         ]);
     }
@@ -309,6 +314,7 @@ class ReportController extends Controller
             'photo' => $photoPath,
             'latitude' => $validated['latitude'],
             'longitude' => $validated['longitude'],
+            'fire_level' => $validated['fire_level'],
         ];
 
         if ($report->latitude !== $validated['latitude'] || $report->longitude !== $validated['longitude']) {

@@ -331,6 +331,117 @@
                 font-size: 28px;
             }
         }
+
+        /* Fire Level Radio Cards */
+        .fire-level-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .fire-level-card {
+            border: 2px solid #dfe6ef;
+            border-radius: 16px;
+            padding: 16px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .fire-level-card input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .fire-level-card .level-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: 700;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+
+        .fire-level-card .level-header i {
+            font-size: 18px;
+        }
+
+        .fire-level-card .level-desc {
+            font-size: 11px;
+            color: #637188;
+            line-height: 1.4;
+        }
+
+        /* Hover & Checked Styles per Level */
+        /* Low */
+        .fire-level-card.level-low:hover {
+            border-color: #a0aec0;
+            background: #f7fafc;
+        }
+        .fire-level-card.level-low input[type="radio"]:checked + .card-content {
+            color: #4a5568;
+        }
+        .fire-level-card.level-low:has(input[type="radio"]:checked) {
+            border-color: #4a5568;
+            background: #edf2f7;
+            box-shadow: 0 4px 12px rgba(74, 85, 104, 0.15);
+        }
+        .fire-level-card.level-low .level-header { color: #4a5568; }
+
+        /* Medium */
+        .fire-level-card.level-medium:hover {
+            border-color: #ed8936;
+            background: #fffaf0;
+        }
+        .fire-level-card.level-medium:has(input[type="radio"]:checked) {
+            border-color: #dd6b20;
+            background: #fffaf0;
+            box-shadow: 0 4px 12px rgba(221, 107, 32, 0.15);
+        }
+        .fire-level-card.level-medium .level-header { color: #dd6b20; }
+
+        /* High */
+        .fire-level-card.level-high:hover {
+            border-color: #e53e3e;
+            background: #fff5f5;
+        }
+        .fire-level-card.level-high:has(input[type="radio"]:checked) {
+            border-color: #c53030;
+            background: #fff5f5;
+            box-shadow: 0 4px 12px rgba(197, 48, 48, 0.15);
+        }
+        .fire-level-card.level-high .level-header { color: #c53030; }
+
+        /* Critical */
+        .fire-level-card.level-critical:hover {
+            border-color: #9b2c2c;
+            background: #fff5f5;
+        }
+        .fire-level-card.level-critical:has(input[type="radio"]:checked) {
+            border-color: #742a2a;
+            background: #ffebeb;
+            box-shadow: 0 4px 12px rgba(116, 42, 42, 0.2);
+            animation: pulse-border 1.5s infinite alternate;
+        }
+        .fire-level-card.level-critical .level-header { color: #9b2c2c; }
+
+        @keyframes pulse-border {
+            0% { box-shadow: 0 4px 12px rgba(116, 42, 42, 0.15); }
+            100% { box-shadow: 0 4px 20px rgba(116, 42, 42, 0.35); border-color: #9b2c2c; }
+        }
+
+        @media (max-width: 768px) {
+            .fire-level-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -404,6 +515,52 @@
                             @endif
                         </div>
                     </label>
+                </div>
+
+                <div class="field">
+                    <label>Tingkat Keparahan Kebakaran (Level) <span class="req">*</span></label>
+                    <div class="fire-level-grid">
+                        <label class="fire-level-card level-low">
+                            <input type="radio" name="fire_level" value="low" {{ old('fire_level', $prefill['fire_level'] ?? '') === 'low' ? 'checked' : '' }} required>
+                            <span class="card-content">
+                                <span class="level-header">
+                                    <span>Low</span>
+                                    <i class="ph ph-info"></i>
+                                </span>
+                                <span class="level-desc">Api baru menyala, False alarm, sampah terbakar, atau laporan tidak valid.</span>
+                            </span>
+                        </label>
+                        <label class="fire-level-card level-medium">
+                            <input type="radio" name="fire_level" value="medium" {{ old('fire_level', $prefill['fire_level'] ?? '') === 'medium' ? 'checked' : '' }} required>
+                            <span class="card-content">
+                                <span class="level-header">
+                                    <span>Medium</span>
+                                    <i class="ph ph-warning"></i>
+                                </span>
+                                <span class="level-desc">Asap terdeteksi, titik api kecil (terkendali).</span>
+                            </span>
+                        </label>
+                        <label class="fire-level-card level-high">
+                            <input type="radio" name="fire_level" value="high" {{ old('fire_level', $prefill['fire_level'] ?? '') === 'high' ? 'checked' : '' }} required>
+                            <span class="card-content">
+                                <span class="level-header">
+                                    <span>High</span>
+                                    <i class="ph ph-flame"></i>
+                                </span>
+                                <span class="level-desc">Titik api terlihat, belum meluas, area vegetasi terbuka.</span>
+                            </span>
+                        </label>
+                        <label class="fire-level-card level-critical">
+                            <input type="radio" name="fire_level" value="critical" {{ old('fire_level', $prefill['fire_level'] ?? '') === 'critical' ? 'checked' : '' }} required>
+                            <span class="card-content">
+                                <span class="level-header">
+                                    <span>Critical</span>
+                                    <i class="ph ph-skull"></i>
+                                </span>
+                                <span class="level-desc">Kebakaran aktif, meluas cepat, mengancam permukiman/fasilitas publik.</span>
+                            </span>
+                        </label>
+                    </div>
                 </div>
 
                 <div class="field">
