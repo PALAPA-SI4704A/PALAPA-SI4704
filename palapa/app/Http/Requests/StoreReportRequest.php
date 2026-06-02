@@ -20,6 +20,7 @@ class StoreReportRequest extends FormRequest
             'photo_temp' => 'nullable|string',
             'latitude' => 'required|numeric|between:-90,90',
             'longitude' => 'required|numeric|between:-180,180',
+            'fire_level' => 'required|in:low,medium,high,critical',
         ];
     }
 
@@ -37,6 +38,8 @@ class StoreReportRequest extends FormRequest
             'longitude.required' => 'Longitude wajib diisi.',
             'longitude.numeric' => 'Longitude harus berupa angka.',
             'longitude.between' => 'Longitude harus berada di antara -180 sampai 180.',
+            'fire_level.required' => 'Tingkat keparahan kebakaran wajib dipilih.',
+            'fire_level.in' => 'Tingkat keparahan kebakaran tidak valid.',
         ];
     }
 }

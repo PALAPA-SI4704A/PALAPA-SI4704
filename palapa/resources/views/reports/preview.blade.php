@@ -208,6 +208,26 @@
                     <div id="map-preview" style="height: 200px; border-radius: 8px; border: 1px solid #dfe6ef; margin-top: 8px; z-index: 1;"></div>
                 </div>
                 <div class="item">
+                    <strong>Tingkat Keparahan Kebakaran</strong>
+                    @php
+                        $levelColors = [
+                            'low' => 'background: #edf2f7; color: #4a5568;',
+                            'medium' => 'background: #fffaf0; color: #dd6b20;',
+                            'high' => 'background: #fff5f5; color: #c53030;',
+                            'critical' => 'background: #ffebeb; color: #9b2c2c; border: 1px solid #9b2c2c;'
+                        ];
+                        $levelLabels = [
+                            'low' => 'Low',
+                            'medium' => 'Medium',
+                            'high' => 'High',
+                            'critical' => 'Critical'
+                        ];
+                    @endphp
+                    <span class="badge" style="{{ $levelColors[$data['fire_level']] ?? '' }}">
+                        {{ $levelLabels[$data['fire_level']] ?? ucfirst($data['fire_level']) }}
+                    </span>
+                </div>
+                <div class="item">
                     <strong>Status Awal</strong>
                     <span class="badge">pending</span>
                 </div>
@@ -234,6 +254,7 @@
                     <input type="hidden" name="latitude" value="{{ $data['latitude'] }}">
                     <input type="hidden" name="longitude" value="{{ $data['longitude'] }}">
                     <input type="hidden" name="photo_temp" value="{{ $data['photo_temp'] ?? '' }}">
+                    <input type="hidden" name="fire_level" value="{{ $data['fire_level'] }}">
                     <button type="submit" class="btn btn-outline">Edit Kembali</button>
                 </form>
 
@@ -245,6 +266,7 @@
                     <input type="hidden" name="latitude" value="{{ $data['latitude'] }}">
                     <input type="hidden" name="longitude" value="{{ $data['longitude'] }}">
                     <input type="hidden" name="photo_temp" value="{{ $data['photo_temp'] ?? '' }}">
+                    <input type="hidden" name="fire_level" value="{{ $data['fire_level'] }}">
                     <button type="submit" class="btn btn-primary">Confirm dan Simpan Perubahan</button>
                 </form>
             @else
@@ -254,6 +276,7 @@
                     <input type="hidden" name="latitude" value="{{ $data['latitude'] }}">
                     <input type="hidden" name="longitude" value="{{ $data['longitude'] }}">
                     <input type="hidden" name="photo_temp" value="{{ $data['photo_temp'] ?? '' }}">
+                    <input type="hidden" name="fire_level" value="{{ $data['fire_level'] }}">
                     <button type="submit" class="btn btn-outline">Edit Kembali</button>
                 </form>
 
@@ -264,6 +287,7 @@
                     <input type="hidden" name="latitude" value="{{ $data['latitude'] }}">
                     <input type="hidden" name="longitude" value="{{ $data['longitude'] }}">
                     <input type="hidden" name="photo_temp" value="{{ $data['photo_temp'] ?? '' }}">
+                    <input type="hidden" name="fire_level" value="{{ $data['fire_level'] }}">
                     <button type="submit" class="btn btn-primary">Confirm dan Simpan</button>
                 </form>
             @endif

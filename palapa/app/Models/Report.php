@@ -8,7 +8,7 @@ class Report extends Model {
     use HasFactory;
 
     protected $primaryKey = 'report_id';
-    protected $fillable = ['admin_id', 'user_id', 'title', 'description', 'photo', 'latitude', 'longitude', 'address', 'status', 'rejection_reason'];
+    protected $fillable = ['admin_id', 'user_id', 'title', 'description', 'photo', 'latitude', 'longitude', 'address', 'status', 'rejection_reason', 'fire_level'];
 
     public function pelapor() { return $this->belongsTo(User::class, 'user_id', 'users_id'); }
     public function admin() { return $this->belongsTo(User::class, 'admin_id', 'users_id'); }

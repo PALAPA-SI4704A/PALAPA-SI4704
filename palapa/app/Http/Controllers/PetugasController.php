@@ -157,4 +157,44 @@ class PetugasController extends Controller
 
         return redirect()->back()->with('success', 'Laporan berhasil diverifikasi menjadi: ' . ucfirst($request->status));
     }
+
+    public function updateStatus(Request $request, Report $report)
+    {
+        if (Auth::user()->role !== 'petugas') {
+            abort(403, 'Anda tidak memiliki akses ke halaman ini.');
+        }
+
+        $request->validate([
+            'status' => 'required|in:pending,valid,ditolak,diproses,selesai',
+            'catatan' => 'nullable|string|max:500'
+        ]);
+
+        $oldStatus = $report->status;
+        $newStatus = $request->status;
+
+        $report->update(['status' => $newStatus]);
+
+        $roleLabel = 'Petugas Pemadam';
+
+        $statusMappingLabel = match($newStatus) {
+            'pending' => 'Pending',
+            'valid' => 'Verified',
+            'ditolak' => 'Invalid',
+            'diproses' => 'In Progress',
+            'selesai' => 'Resolved',
+            default => ucfirst($newStatus)
+        };
+
+        $catatan = $request->catatan ?: 'Status penanganan laporan diperbarui menjadi ' . $statusMappingLabel . ' oleh petugas.';
+
+        $report->statusHistories()->create([
+            'status_awal' => $oldStatus,
+            'status_baru' => $newStatus,
+            'catatan' => $catatan,
+            'diubah_oleh' => Auth::user()->users_name . ' (' . $roleLabel . ')',
+            'tanggal_ubah' => now(),
+        ]);
+
+        return redirect()->back()->with('success', 'Status laporan berhasil diperbarui menjadi: ' . $statusMappingLabel);
+    }
 }

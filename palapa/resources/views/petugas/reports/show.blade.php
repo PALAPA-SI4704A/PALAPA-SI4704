@@ -233,16 +233,49 @@
                 <div class="detail-box">
                     <span class="detail-label">STATUS</span>
                     @php
-                        $statusClass = 'badge-baru';
-                        if($report->status == 'diproses') $statusClass = 'badge-diproses';
-                        if($report->status == 'selesai') $statusClass = 'badge-selesai';
-                        if($report->status == 'valid') $statusClass = 'badge-selesai';
-                        if($report->status == 'ditolak') $statusClass = 'badge-ditolak';
+                        $statusColors = [
+                            'ditolak' => 'background: #fed7d7; color: #c53030; border: 1px solid #feb2b2;', // Invalid - Merah
+                            'pending' => 'background: #e2e8f0; color: #4a5568; border: 1px solid #cbd5e0;', // Pending - Abu-abu
+                            'valid' => 'background: #c6f6d5; color: #2f855a; border: 1px solid #9ae6b4;',   // Verified - Hijau
+                            'diproses' => 'background: #fefcbf; color: #b7791f; border: 1px solid #fbd38d;', // In Progress - Kuning
+                            'selesai' => 'background: #ebf8ff; color: #2b6cb0; border: 1px solid #bee3f8;',  // Resolved - Biru
+                        ];
+                        $statusLabels = [
+                            'ditolak' => 'Invalid',
+                            'pending' => 'Pending',
+                            'valid' => 'Verified',
+                            'diproses' => 'In Progress',
+                            'selesai' => 'Resolved',
+                        ];
                     @endphp
-                    <span class="badge {{ $statusClass }}">
-                        @if($report->status == 'diproses') 🕒 @endif
-                        {{ ucfirst($report->status) }}
+                    <span class="badge" style="{{ $statusColors[$report->status] ?? 'background: #e2e8f0; color: #4a5568;' }}">
+                        {{ $statusLabels[$report->status] ?? ucfirst($report->status) }}
                     </span>
+                </div>
+
+                <div class="detail-box">
+                    <span class="detail-label">LEVEL KEBAKARAN</span>
+                    @if($report->fire_level)
+                        @php
+                            $levelColors = [
+                                'low' => 'background: #edf2f7; color: #4a5568; border: 1px solid #cbd5e0;',
+                                'medium' => 'background: #fffaf0; color: #dd6b20; border: 1px solid #fbd38d;',
+                                'high' => 'background: #fff5f5; color: #c53030; border: 1px solid #feb2b2;',
+                                'critical' => 'background: #ffebeb; color: #9b2c2c; border: 1px solid #feb2b2;'
+                            ];
+                            $levelLabels = [
+                                'low' => 'Low',
+                                'medium' => 'Medium',
+                                'high' => 'High',
+                                'critical' => 'Critical'
+                            ];
+                        @endphp
+                        <span class="badge" style="{{ $levelColors[$report->fire_level] ?? '' }}">
+                            {{ $levelLabels[$report->fire_level] ?? ucfirst($report->fire_level) }}
+                        </span>
+                    @else
+                        <span style="font-style: italic; color: #a0aec0; font-size: 13px;">Tidak ditentukan</span>
+                    @endif
                 </div>
                 
                 <div class="detail-box">
@@ -302,44 +335,81 @@
             </div>
         </div>
 
-        @if($report->status === 'pending')
-        <div class="main-panel" style="margin-bottom: 24px;" x-data="{ showRejectForm: false }">
-            <h2 class="section-title">Verifikasi Laporan</h2>
-            <p style="margin-bottom: 16px; color: #718096; font-size: 14px;">Pastikan laporan ini valid sebelum menugaskan petugas lapangan.</p>
+        <!-- Form Update Status Penanganan Laporan (Khusus Petugas) -->
+        <div class="main-panel" style="margin-bottom: 24px;">
+            <h2 class="section-title">Update Status Penanganan</h2>
+            <p style="margin-bottom: 16px; color: #718096; font-size: 14px;">Petugas pemadam dapat memperbarui status penanganan laporan secara langsung.</p>
             
-            <div style="display: flex; align-items: center; gap: 16px; margin-top: 16px;" x-show="!showRejectForm">
-                <form action="{{ route('petugas.reports.verify', $report->report_id) }}" method="POST" style="margin: 0;">
-                    @csrf
-                    <input type="hidden" name="status" value="valid">
-                    <button type="submit" style="background: #2f855a; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(47, 133, 90, 0.2); transition: background 0.2s;" onmouseover="this.style.background='#276749'" onmouseout="this.style.background='#2f855a'">
-                        <i class="ph ph-check-circle" style="font-size: 18px;"></i> Laporan Valid
-                    </button>
-                </form>
-                <button type="button" @click="showRejectForm = true" style="background: white; color: #e53e3e; border: 1px solid #e53e3e; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; margin: 0;" onmouseover="this.style.background='#fff5f5'" onmouseout="this.style.background='white'">
-                    <i class="ph ph-x-circle" style="font-size: 18px;"></i> Tolak Laporan
-                </button>
-            </div>
+            <form action="{{ route('petugas.reports.updateStatus', $report->report_id) }}" method="POST" style="margin: 0; display: flex; flex-direction: column; gap: 16px;">
+                @csrf
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px;">
+                    <label style="border: 2px solid #e2e8f0; border-radius: 12px; padding: 12px; cursor: pointer; display: flex; flex-direction: column; gap: 6px; transition: all 0.2s;" onmouseover="this.style.borderColor='#cbd5e0'" onmouseout="if(!this.querySelector('input').checked) this.style.borderColor='#e2e8f0'" class="status-option">
+                        <input type="radio" name="status" value="pending" {{ $report->status === 'pending' ? 'checked' : '' }} style="margin: 0; accent-color: #4a5568;" required>
+                        <span style="font-weight: 700; font-size: 13px; color: #4a5568;">Pending</span>
+                        <span style="font-size: 11px; color: #718096;">Belum direview</span>
+                    </label>
 
-            <div x-show="showRejectForm" style="display: none; background: #fff5f5; padding: 16px; border-radius: 8px; border: 1px solid #fed7d7; margin-top: 12px;">
-                <form action="{{ route('petugas.reports.verify', $report->report_id) }}" method="POST">
-                    @csrf
-                    <input type="hidden" name="status" value="ditolak">
-                    <div style="margin-bottom: 12px;">
-                        <label style="display: block; font-size: 14px; font-weight: 600; color: #c53030; margin-bottom: 8px;">Alasan Penolakan</label>
-                        <textarea name="rejection_reason" required rows="3" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0; font-family: inherit; font-size: 14px;" placeholder="Masukkan alasan mengapa laporan ini ditolak..."></textarea>
-                    </div>
-                    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-                        <button type="submit" style="background: #e53e3e; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600;">
-                            Konfirmasi Tolak
-                        </button>
-                        <button type="button" @click="showRejectForm = false" style="background: #cbd5e0; color: #4a5568; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600;">
-                            Batal
-                        </button>
-                    </div>
-                </form>
-            </div>
+                    <label style="border: 2px solid #e2e8f0; border-radius: 12px; padding: 12px; cursor: pointer; display: flex; flex-direction: column; gap: 6px; transition: all 0.2s;" onmouseover="this.style.borderColor='#cbd5e0'" onmouseout="if(!this.querySelector('input').checked) this.style.borderColor='#e2e8f0'" class="status-option">
+                        <input type="radio" name="status" value="valid" {{ $report->status === 'valid' ? 'checked' : '' }} style="margin: 0; accent-color: #2f855a;" required>
+                        <span style="font-weight: 700; font-size: 13px; color: #2f855a;">Verified</span>
+                        <span style="font-size: 11px; color: #718096;">Laporan Valid</span>
+                    </label>
+
+                    <label style="border: 2px solid #e2e8f0; border-radius: 12px; padding: 12px; cursor: pointer; display: flex; flex-direction: column; gap: 6px; transition: all 0.2s;" onmouseover="this.style.borderColor='#cbd5e0'" onmouseout="if(!this.querySelector('input').checked) this.style.borderColor='#e2e8f0'" class="status-option">
+                        <input type="radio" name="status" value="diproses" {{ $report->status === 'diproses' ? 'checked' : '' }} style="margin: 0; accent-color: #b7791f;" required>
+                        <span style="font-weight: 700; font-size: 13px; color: #b7791f;">In Progress</span>
+                        <span style="font-size: 11px; color: #718096;">Sedang ditangani</span>
+                    </label>
+
+                    <label style="border: 2px solid #e2e8f0; border-radius: 12px; padding: 12px; cursor: pointer; display: flex; flex-direction: column; gap: 6px; transition: all 0.2s;" onmouseover="this.style.borderColor='#cbd5e0'" onmouseout="if(!this.querySelector('input').checked) this.style.borderColor='#e2e8f0'" class="status-option">
+                        <input type="radio" name="status" value="selesai" {{ $report->status === 'selesai' ? 'checked' : '' }} style="margin: 0; accent-color: #2b6cb0;" required>
+                        <span style="font-weight: 700; font-size: 13px; color: #2b6cb0;">Resolved</span>
+                        <span style="font-size: 11px; color: #718096;">Sudah selesai</span>
+                    </label>
+
+                    <label style="border: 2px solid #e2e8f0; border-radius: 12px; padding: 12px; cursor: pointer; display: flex; flex-direction: column; gap: 6px; transition: all 0.2s;" onmouseover="this.style.borderColor='#cbd5e0'" onmouseout="if(!this.querySelector('input').checked) this.style.borderColor='#e2e8f0'" class="status-option">
+                        <input type="radio" name="status" value="ditolak" {{ $report->status === 'ditolak' ? 'checked' : '' }} style="margin: 0; accent-color: #c53030;" required>
+                        <span style="font-weight: 700; font-size: 13px; color: #c53030;">Invalid</span>
+                        <span style="font-size: 11px; color: #718096;">Tidak valid / hoax</span>
+                    </label>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                    <label style="font-size: 13px; font-weight: 700; color: #4a5568;">Catatan Tindakan / Deskripsi Penanganan (Opsional)</label>
+                    <textarea name="catatan" rows="3" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; font-family: inherit; font-size: 13px; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#1f76c2'" onblur="this.style.borderColor='#e2e8f0'" placeholder="Masukkan catatan penanganan lapangan, misalnya: armada pemadam telah dikerahkan ke lokasi..."></textarea>
+                </div>
+
+                <button type="submit" style="background: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 6px rgba(31, 118, 194, 0.15); transition: background 0.2s; width: fit-content;" onmouseover="this.style.background='var(--primary-dark)'" onmouseout="this.style.background='var(--primary)'">
+                    <i class="ph ph-floppy-disk" style="font-size: 18px;"></i> Simpan Perubahan Status
+                </button>
+            </form>
         </div>
-        @endif
+
+        <script>
+            // Highlight selected status option card on load and on change
+            document.addEventListener('DOMContentLoaded', () => {
+                const radios = document.querySelectorAll('input[name="status"]');
+                const updateBorders = () => {
+                    radios.forEach(radio => {
+                        const card = radio.closest('.status-option');
+                        if (radio.checked) {
+                            const val = radio.value;
+                            if (val === 'pending') card.style.borderColor = '#4a5568';
+                            if (val === 'valid') card.style.borderColor = '#2f855a';
+                            if (val === 'diproses') card.style.borderColor = '#b7791f';
+                            if (val === 'selesai') card.style.borderColor = '#2b6cb0';
+                            if (val === 'ditolak') card.style.borderColor = '#c53030';
+                            card.style.background = '#f7fafc';
+                        } else {
+                            card.style.borderColor = '#e2e8f0';
+                            card.style.background = '#fff';
+                        }
+                    });
+                };
+                radios.forEach(radio => radio.addEventListener('change', updateBorders));
+                updateBorders();
+            });
+        </script>
 
         @if(in_array($report->status, ['valid', 'diproses', 'selesai']))
         <div>

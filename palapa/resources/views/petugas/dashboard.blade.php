@@ -288,13 +288,24 @@
                             <td>{{ $report->latitude }}, {{ $report->longitude }}</td>
                             <td>
                                 @php
-                                    $statusClass = 'badge-baru';
-                                    if($report->status == 'diproses') $statusClass = 'badge-diproses';
-                                    if($report->status == 'selesai') $statusClass = 'badge-selesai';
-                                    if($report->status == 'valid') $statusClass = 'badge-selesai';
-                                    if($report->status == 'ditolak') $statusClass = 'badge-ditolak';
+                                    $statusColors = [
+                                        'ditolak' => 'background: #fed7d7; color: #c53030; border: 1px solid #feb2b2;', // Invalid - Merah
+                                        'pending' => 'background: #e2e8f0; color: #4a5568; border: 1px solid #cbd5e0;', // Pending - Abu-abu
+                                        'valid' => 'background: #c6f6d5; color: #2f855a; border: 1px solid #9ae6b4;',   // Verified - Hijau
+                                        'diproses' => 'background: #fefcbf; color: #b7791f; border: 1px solid #fbd38d;', // In Progress - Kuning
+                                        'selesai' => 'background: #ebf8ff; color: #2b6cb0; border: 1px solid #bee3f8;',  // Resolved - Biru
+                                    ];
+                                    $statusLabels = [
+                                        'ditolak' => 'Invalid',
+                                        'pending' => 'Pending',
+                                        'valid' => 'Verified',
+                                        'diproses' => 'In Progress',
+                                        'selesai' => 'Resolved',
+                                    ];
                                 @endphp
-                                <span class="badge {{ $statusClass }}">{{ ucfirst($report->status) }}</span>
+                                <span class="badge" style="{{ $statusColors[$report->status] ?? 'background: #e2e8f0; color: #4a5568;' }}">
+                                    {{ $statusLabels[$report->status] ?? ucfirst($report->status) }}
+                                </span>
                             </td>
                             <td>{{ $report->created_at->format('d/m/Y') }}</td>
                             <td><a href="{{ route('petugas.reports.show', $report) }}" class="btn-link">[Lihat]</a></td>
