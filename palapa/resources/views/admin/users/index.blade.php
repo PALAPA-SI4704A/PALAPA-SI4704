@@ -179,26 +179,85 @@
             margin-top: 24px;
             display: flex;
             justify-content: center;
+            width: 100%;
         }
 
-        /* Simple styling to override default Laravel pagination style if needed */
-        .pagination-container nav {
-            display: flex;
-            gap: 4px;
+        /* Mengatur ukuran Ikon SVG di pagination */
+        .pagination-container svg {
+            width: 18px;
+            height: 18px;
         }
-        .pagination-container nav a, .pagination-container nav span {
-            padding: 8px 14px;
-            border-radius: 8px;
-            border: 1px solid #e2e8f0;
+
+        /* Menyembunyikan tampilan mobile default Laravel yang menumpuk */
+        .pagination-container nav > div.sm\:hidden {
+            display: none;
+        }
+        
+        /* Layout untuk kontainer halaman (1, 2, 3...) */
+        .pagination-container nav > div.hidden.sm\:flex-1.sm\:flex {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        /* Teks "Showing 1 to 10 of 20 results" */
+        .pagination-container p.text-sm {
+            font-size: 13px;
+            color: #718096;
+            margin: 0;
+        }
+
+        /* Kontainer deretan angka halaman */
+        .pagination-container .relative.z-0.inline-flex {
+            display: inline-flex;
+            gap: 6px;
+            box-shadow: none !important;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        /* Style untuk setiap kotak angka halaman dan panah */
+        .pagination-container .relative.z-0.inline-flex > a,
+        .pagination-container .relative.z-0.inline-flex > span {
+            display: inline-flex !important;
+            align-items: center;
+            justify-content: center;
+            min-width: 36px;
+            height: 36px;
+            padding: 0 14px !important;
+            border-radius: 8px !important;
+            border: 1px solid #e2e8f0 !important;
             background: white;
             color: #4a5568;
             text-decoration: none;
             font-size: 13px;
+            font-weight: 600;
+            margin: 0 !important;
+            box-shadow: none !important;
         }
-        .pagination-container nav .active {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
+
+        /* Efek hover pada kotak angka */
+        .pagination-container .relative.z-0.inline-flex > a:hover {
+            background: #f8fafc;
+            color: var(--primary);
+            border-color: #cbd5e0 !important;
+        }
+
+        /* Style untuk angka halaman yang sedang aktif */
+        .pagination-container .relative.z-0.inline-flex > span[aria-current="page"] > span,
+        .pagination-container .relative.z-0.inline-flex > span[aria-current="page"] {
+            background: var(--primary) !important;
+            color: white !important;
+            border-color: var(--primary) !important;
+            cursor: default;
+        }
+
+        /* Reset padding & border pada span di dalam span (bawaan Laravel) agar tidak bertumpuk ganda */
+        .pagination-container .relative.z-0.inline-flex > span > span {
+            border: none !important;
+            padding: 0 !important;
+            background: transparent !important;
         }
 
         .tabs-container {
@@ -255,6 +314,26 @@
             </div>
         @endif
         
+        @if(session('import_summary'))
+            @php $summary = session('import_summary'); @endphp
+            @if($summary['skipped'] > 0)
+                <div style="background: #fffaf0; color: #c05621; padding: 14px 20px; border-radius: 12px; font-weight: 500; display: flex; flex-direction: column; gap: 10px; border: 1px solid #feebc8; margin-bottom: 8px; font-size: 13px;">
+                    <div style="display: flex; align-items: center; gap: 8px; font-weight: 600;">
+                        <i class="ph ph-warning-circle" style="font-size: 20px;"></i>
+                        Hasil Validasi: Terdapat {{ $summary['skipped'] }} data yang dilewati/gagal diimpor
+                    </div>
+                    <ul style="margin: 0; padding-left: 24px; list-style-type: disc;">
+                        @foreach(array_slice($summary['details'], 0, 10) as $detail)
+                            <li>{{ $detail }}</li>
+                        @endforeach
+                        @if(count($summary['details']) > 10)
+                            <li>...dan {{ count($summary['details']) - 10 }} data lainnya.</li>
+                        @endif
+                    </ul>
+                </div>
+            @endif
+        @endif
+
         @if($errors->any())
             <div style="background: #fed7d7; color: #c53030; padding: 14px 20px; border-radius: 12px; font-weight: 600; display: flex; align-items: flex-start; gap: 10px; border: 1px solid #feb2b2; margin-bottom: 8px;">
                 <i class="ph ph-warning-circle" style="font-size: 22px; margin-top: 2px;"></i>
