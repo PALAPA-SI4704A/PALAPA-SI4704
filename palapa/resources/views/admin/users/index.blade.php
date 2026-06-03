@@ -443,7 +443,16 @@
                                 </span>
                             </td>
                             <td>
-                                <a href="{{ route('admin.users.edit', $user->users_id) }}" class="btn-link">[Edit]</a>
+                                <div style="display: flex; gap: 8px; align-items: center;">
+                                    <a href="{{ route('admin.users.edit', $user->users_id) }}" class="btn-link">[Edit]</a>
+                                    @if($user->users_id !== Auth::id())
+                                    <form action="{{ route('admin.users.destroy', $user->users_id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data pengguna ini?');" style="margin: 0;">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" style="background: none; border: none; color: #e53e3e; cursor: pointer; font-size: 14px; padding: 0;">[Hapus]</button>
+                                    </form>
+                                    @endif
+                                </div>
                             </td>
                         </tr>
                         @empty

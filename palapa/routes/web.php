@@ -50,10 +50,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/admin/reports/{report}', [AdminController::class, 'show'])->name('admin.reports.show');
     Route::post('/admin/reports/{report}/verify', [AdminController::class, 'verify'])->name('admin.reports.verify');
     Route::post('/admin/reports/{report}/assign/{petugas}', [AdminController::class, 'assign'])->name('admin.reports.assign');
+    Route::delete('/admin/reports/{report}', [AdminController::class, 'destroy'])->name('admin.reports.destroy');
     Route::get('/admin/users', [AdminController::class, 'usersIndex'])->name('admin.users.index');
     Route::post('/admin/users/import-petugas', [AdminController::class, 'importPetugas'])->name('admin.users.import');
     Route::get('/admin/users/{user}/edit', [AdminController::class, 'usersEdit'])->name('admin.users.edit');
     Route::put('/admin/users/{user}', [AdminController::class, 'usersUpdate'])->name('admin.users.update');
+    Route::delete('/admin/users/{user}', [AdminController::class, 'usersDestroy'])->name('admin.users.destroy');
 });
 
 Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');

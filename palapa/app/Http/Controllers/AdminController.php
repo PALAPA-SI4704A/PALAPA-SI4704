@@ -429,4 +429,37 @@ class AdminController extends Controller
 
         return redirect()->route('admin.users.index')->with('success', 'Data pengguna ' . $user->users_name . ' berhasil diperbarui.');
     }
+
+    /**
+     * Hapus laporan (data tidak valid)
+     */
+    public function destroy(Report $report)
+    {
+        if (Auth::user()->role !== 'admin') {
+            abort(403, 'Anda tidak memiliki akses ke halaman ini.');
+        }
+
+        $report->delete();
+
+        return redirect()->route('admin.dashboard')->with('success', 'Laporan berhasil dihapus.');
+    }
+
+    /**
+     * Hapus data pengguna (user/petugas) tidak valid
+     */
+    public function usersDestroy(User $user)
+    {
+        if (Auth::user()->role !== 'admin') {
+            abort(403, 'Anda tidak memiliki akses ke halaman ini.');
+        }
+
+        // Prevent admin from deleting themselves
+        if ($user->users_id === Auth::id()) {
+            return redirect()->back()->with('error', 'Anda tidak dapat menghapus akun Anda sendiri.');
+        }
+
+        $user->delete();
+
+        return redirect()->back()->with('success', 'Data pengguna berhasil dihapus.');
+    }
 }
