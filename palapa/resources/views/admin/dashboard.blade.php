@@ -412,7 +412,16 @@
                                 @endif
                             </td>
                             <td>{{ $report->created_at->format('d/m/Y') }}</td>
-                            <td><a href="{{ route('admin.reports.show', $report) }}" class="btn-link">[Lihat]</a></td>
+                            <td>
+                                <div style="display: flex; gap: 8px; align-items: center;">
+                                    <a href="{{ route('admin.reports.show', $report) }}" class="btn-link">[Lihat]</a>
+                                    <form action="{{ route('admin.reports.destroy', $report->report_id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus laporan tidak valid ini?');" style="margin: 0;">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" style="background: none; border: none; color: #e53e3e; cursor: pointer; font-size: 14px; padding: 0;">[Hapus]</button>
+                                    </form>
+                                </div>
+                            </td>
                         </tr>
                         @empty
                         <tr>
