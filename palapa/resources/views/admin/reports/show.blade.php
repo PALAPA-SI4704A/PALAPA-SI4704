@@ -227,9 +227,18 @@
                 </div>
             @endif
 
-            <div class="report-header">
-                <h1 class="report-title">{{ $report->title ?? 'Laporan Titik Api' }}</h1>
-                <p class="report-subtitle">#{{ $report->report_id }} Detail Laporan</p>
+            <div class="report-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <h1 class="report-title">{{ $report->title ?? 'Laporan Titik Api' }}</h1>
+                    <p class="report-subtitle">#{{ $report->report_id }} Detail Laporan</p>
+                </div>
+                <form action="{{ route('admin.reports.destroy', $report->report_id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus laporan tidak valid ini?');" style="margin: 0;">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" style="background: white; color: #e53e3e; border: 1px solid #e53e3e; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; box-shadow: 0 1px 2px rgba(229, 62, 62, 0.1);" onmouseover="this.style.background='#fff5f5'" onmouseout="this.style.background='white'">
+                        <i class="ph ph-trash" style="font-size: 18px;"></i> Hapus Laporan
+                    </button>
+                </form>
             </div>
 
             <div class="report-details-grid">

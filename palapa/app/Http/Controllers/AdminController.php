@@ -206,6 +206,8 @@ class AdminController extends Controller
             'rejection_reason' => 'required_if:status,ditolak|string|max:500'
         ]);
 
+        $oldStatus = $report->status;
+
         $data = ['status' => $request->status];
         if ($request->status === 'ditolak') {
             $data['rejection_reason'] = $request->rejection_reason;
@@ -214,6 +216,25 @@ class AdminController extends Controller
         $report->update($data);
         
         Log::info('Admin report verified successfully', ['new_status' => $report->status]);
+
+        $roleLabel = match (Auth::user()->role) {
+            'masyarakat' => 'Pelapor',
+            'petugas' => 'Admin Sistem',
+            'admin' => 'Admin Sistem',
+            default => ucfirst(Auth::user()->role)
+        };
+
+        $catatan = $request->status === 'ditolak'
+            ? 'Laporan ditolak. Alasan: ' . $request->rejection_reason
+            : 'Laporan telah diverifikasi dan dinyatakan valid.';
+
+        $report->statusHistories()->create([
+            'status_awal' => $oldStatus,
+            'status_baru' => $request->status,
+            'catatan' => $catatan,
+            'diubah_oleh' => Auth::user()->users_name . ' (' . $roleLabel . ')',
+            'tanggal_ubah' => now(),
+        ]);
 
         return redirect()->back()->with('success', 'Laporan berhasil diverifikasi menjadi: ' . ucfirst($request->status));
     }
@@ -239,7 +260,23 @@ class AdminController extends Controller
         ]);
 
         // Perbarui status laporan menjadi diproses
+        $oldStatus = $report->status;
         $report->update(['status' => 'diproses']);
+
+        $roleLabel = match (Auth::user()->role) {
+            'masyarakat' => 'Pelapor',
+            'petugas' => 'Admin Sistem',
+            'admin' => 'Admin Sistem',
+            default => ucfirst(Auth::user()->role)
+        };
+
+        $report->statusHistories()->create([
+            'status_awal' => $oldStatus,
+            'status_baru' => 'diproses',
+            'catatan' => 'Laporan sedang diverifikasi oleh admin dan diteruskan ke petugas lapangan.',
+            'diubah_oleh' => Auth::user()->users_name . ' (' . $roleLabel . ')',
+            'tanggal_ubah' => now(),
+        ]);
 
         return redirect()->back()->with('success', 'Petugas ' . $petugas->users_name . ' berhasil ditugaskan.');
     }
@@ -289,6 +326,85 @@ class AdminController extends Controller
     }
 
     /**
+     * Import data petugas dari file CSV
+     */
+    public function importPetugas(Request $request)
+    {
+        if (Auth::user()->role !== 'admin') {
+            abort(403, 'Anda tidak memiliki akses ke halaman ini.');
+        }
+
+        $request->validate([
+            'file' => 'required|mimes:csv,txt|max:2048',
+        ]);
+
+        $file = $request->file('file');
+        $handle = fopen($file->getPathname(), "r");
+
+        $header = true;
+        $successCount = 0;
+        $skippedCount = 0;
+        $skippedDetails = [];
+        $importedData = [];
+        
+        $rowNumber = 1;
+        while (($row = fgetcsv($handle, 1000, ",")) !== false) {
+            if ($header) {
+                $header = false;
+                $rowNumber++;
+                continue; // Abaikan baris pertama (header)
+            }
+
+            // Asumsi format CSV: NAMA, EMAIL, NO TELEPON, PASSWORD
+            if (count($row) >= 4) {
+                $email = trim($row[1]);
+                if (empty($email)) {
+                    $skippedCount++;
+                    $skippedDetails[] = "Baris $rowNumber: Email kosong.";
+                } elseif (!User::where('email', $email)->exists()) {
+                    try {
+                        User::create([
+                            'users_name' => trim($row[0]),
+                            'email'      => $email,
+                            'phone'      => trim($row[2]),
+                            'password'   => bcrypt(trim($row[3])),
+                            'role'       => 'petugas',
+                        ]);
+                        $successCount++;
+                        $importedData[] = [
+                            'name' => trim($row[0]),
+                            'email' => $email,
+                            'phone' => trim($row[2])
+                        ];
+                    } catch (\Exception $e) {
+                        $skippedCount++;
+                        $skippedDetails[] = "Baris $rowNumber: Gagal menyimpan data ($email).";
+                    }
+                } else {
+                    $skippedCount++;
+                    $skippedDetails[] = "Baris $rowNumber: Email sudah terdaftar ($email).";
+                }
+            } else {
+                if (!empty(array_filter($row))) {
+                    $skippedCount++;
+                    $skippedDetails[] = "Baris $rowNumber: Format kolom tidak lengkap.";
+                }
+            }
+            $rowNumber++;
+        }
+        fclose($handle);
+
+        return redirect()->route('admin.users.index', ['role' => 'petugas'])->with([
+            'success' => $successCount . ' data petugas berhasil diimpor.',
+            'import_summary' => [
+                'skipped' => $skippedCount,
+                'details' => $skippedDetails,
+                'imported_data' => $importedData
+            ]
+        ]);
+    }
+
+    /**
      * Simpan perubahan data pengguna
      */
     public function usersUpdate(Request $request, User $user)
@@ -312,5 +428,38 @@ class AdminController extends Controller
         $user->save();
 
         return redirect()->route('admin.users.index')->with('success', 'Data pengguna ' . $user->users_name . ' berhasil diperbarui.');
+    }
+
+    /**
+     * Hapus laporan (data tidak valid)
+     */
+    public function destroy(Report $report)
+    {
+        if (Auth::user()->role !== 'admin') {
+            abort(403, 'Anda tidak memiliki akses ke halaman ini.');
+        }
+
+        $report->delete();
+
+        return redirect()->route('admin.dashboard')->with('success', 'Laporan berhasil dihapus.');
+    }
+
+    /**
+     * Hapus data pengguna (user/petugas) tidak valid
+     */
+    public function usersDestroy(User $user)
+    {
+        if (Auth::user()->role !== 'admin') {
+            abort(403, 'Anda tidak memiliki akses ke halaman ini.');
+        }
+
+        // Prevent admin from deleting themselves
+        if ($user->users_id === Auth::id()) {
+            return redirect()->back()->with('error', 'Anda tidak dapat menghapus akun Anda sendiri.');
+        }
+
+        $user->delete();
+
+        return redirect()->back()->with('success', 'Data pengguna berhasil dihapus.');
     }
 }

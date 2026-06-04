@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <link rel="icon" type="image/png" href="{{ asset('images/favicon.png') }}">
     <title>Daftar Laporan - Palapa</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -184,8 +187,10 @@
                 <a href="{{ route('reports.index', ['status' => 'semua', 'search' => $currentSearch]) }}" class="filter-btn {{ $currentStatus === 'semua' ? 'active' : '' }}">Semua</a>
                 <a href="{{ route('reports.index', ['status' => 'pending', 'search' => $currentSearch]) }}" class="filter-btn {{ $currentStatus === 'pending' ? 'active' : '' }}">Pending</a>
                 <a href="{{ route('reports.index', ['status' => 'valid', 'search' => $currentSearch]) }}" class="filter-btn {{ $currentStatus === 'valid' ? 'active' : '' }}">Valid</a>
+                <a href="{{ route('reports.index', ['status' => 'ditolak', 'search' => $currentSearch]) }}" class="filter-btn {{ $currentStatus === 'ditolak' ? 'active' : '' }}">Ditolak</a>
                 <a href="{{ route('reports.index', ['status' => 'diproses', 'search' => $currentSearch]) }}" class="filter-btn {{ $currentStatus === 'diproses' ? 'active' : '' }}">Diproses</a>
                 <a href="{{ route('reports.index', ['status' => 'selesai', 'search' => $currentSearch]) }}" class="filter-btn {{ $currentStatus === 'selesai' ? 'active' : '' }}">Selesai</a>
+                
             </div>
 
             <form class="search-form" method="GET" action="{{ route('reports.index') }}" style="display: flex; gap: 8px;">
@@ -203,6 +208,7 @@
                 <tr>
                     <th>Judul</th>
                     <th>Lokasi</th>
+                    <th>Level</th>
                     <th>Status</th>
                     <th>Foto</th>
                     <th>Dikirim</th>
@@ -218,6 +224,29 @@
                                 {{ \Illuminate\Support\Str::limit($report->address, 60) }}
                             @else
                                 {{ $report->latitude }}, {{ $report->longitude }}
+                            @endif
+                        </td>
+                        <td>
+                            @if($report->fire_level)
+                                @php
+                                    $levelColors = [
+                                        'low' => 'background: #edf2f7; color: #4a5568;',
+                                        'medium' => 'background: #fffaf0; color: #dd6b20;',
+                                        'high' => 'background: #fff5f5; color: #c53030;',
+                                        'critical' => 'background: #ffebeb; color: #9b2c2c; border: 1px solid #9b2c2c;'
+                                    ];
+                                    $levelLabels = [
+                                        'low' => 'Low',
+                                        'medium' => 'Medium',
+                                        'high' => 'High',
+                                        'critical' => 'Critical'
+                                    ];
+                                @endphp
+                                <span class="badge" style="{{ $levelColors[$report->fire_level] ?? '' }}">
+                                    {{ $levelLabels[$report->fire_level] ?? ucfirst($report->fire_level) }}
+                                </span>
+                            @else
+                                -
                             @endif
                         </td>
                         <td>
@@ -240,7 +269,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="empty">Belum ada laporan.</td>
+                        <td colspan="7" class="empty">Belum ada laporan.</td>
                     </tr>
                 @endforelse
                 </tbody>
