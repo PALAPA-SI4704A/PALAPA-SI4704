@@ -338,17 +338,25 @@
         <!-- Form Update Status Penanganan Laporan (Khusus Petugas) -->
         <div class="main-panel" style="margin-bottom: 24px;">
             <h2 class="section-title">Update Status Penanganan</h2>
-            <p style="margin-bottom: 16px; color: #718096; font-size: 14px;">Petugas pemadam dapat memperbarui status penanganan laporan secara langsung.</p>
+            <p style="margin-bottom: 16px; color: #718096; font-size: 14px;">Petugas pemadam dapat memperbarui status penanganan laporan secara langsung. Laporan yang sudah "Resolved" atau "Invalid" tidak dapat diubah lagi.</p>
             
-            <form action="{{ route('petugas.reports.updateStatus', $report->report_id) }}" method="POST" style="margin: 0; display: flex; flex-direction: column; gap: 16px;">
+            @if($report->status === 'selesai' || $report->status === 'ditolak')
+            <div style="background: #fef5e7; border: 1px solid #f5d547; border-radius: 8px; padding: 12px; margin-bottom: 16px; color: #856404;">
+                <strong>⚠️ Perhatian:</strong> Laporan dengan status {{ $report->status === 'selesai' ? 'Resolved' : 'Invalid' }} tidak dapat diubah lagi.
+            </div>
+            @else
+            <form action="{{ route('petugas.reports.updateStatus', $report->report_id) }}" method="POST" style="margin: 0; display: flex; flex-direction: column; gap: 16px;" enctype="multipart/form-data" id="statusUpdateForm">
                 @csrf
+                
+                @if($errors->any())
+                <div style="background: #fff5f5; border: 1px solid #fed7d7; border-radius: 8px; padding: 12px; color: #c53030;">
+                    @foreach($errors->all() as $error)
+                        <div>• {{ $error }}</div>
+                    @endforeach
+                </div>
+                @endif
+                
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px;">
-                    <label style="border: 2px solid #e2e8f0; border-radius: 12px; padding: 12px; cursor: pointer; display: flex; flex-direction: column; gap: 6px; transition: all 0.2s;" onmouseover="this.style.borderColor='#cbd5e0'" onmouseout="if(!this.querySelector('input').checked) this.style.borderColor='#e2e8f0'" class="status-option">
-                        <input type="radio" name="status" value="pending" {{ $report->status === 'pending' ? 'checked' : '' }} style="margin: 0; accent-color: #4a5568;" required>
-                        <span style="font-weight: 700; font-size: 13px; color: #4a5568;">Pending</span>
-                        <span style="font-size: 11px; color: #718096;">Belum direview</span>
-                    </label>
-
                     <label style="border: 2px solid #e2e8f0; border-radius: 12px; padding: 12px; cursor: pointer; display: flex; flex-direction: column; gap: 6px; transition: all 0.2s;" onmouseover="this.style.borderColor='#cbd5e0'" onmouseout="if(!this.querySelector('input').checked) this.style.borderColor='#e2e8f0'" class="status-option">
                         <input type="radio" name="status" value="valid" {{ $report->status === 'valid' ? 'checked' : '' }} style="margin: 0; accent-color: #2f855a;" required>
                         <span style="font-weight: 700; font-size: 13px; color: #2f855a;">Verified</span>
@@ -374,27 +382,60 @@
                     </label>
                 </div>
 
+                <!-- Conditional field untuk petugas assignment saat status "diproses" -->
+                <div id="petugasField" style="display: none; flex-direction: column; gap: 6px;">
+                    <label style="font-size: 13px; font-weight: 700; color: #4a5568;">Pilih Petugas <span style="color: #c53030;">*</span></label>
+                    <select name="petugas_id" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; font-family: inherit; font-size: 13px; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#1f76c2'" onblur="this.style.borderColor='#e2e8f0'">
+                        <option value="">-- Pilih Petugas --</option>
+                        @forelse($petugasTersedia as $petugas)
+                            <option value="{{ $petugas->users_id }}" {{ old('petugas_id') == $petugas->users_id ? 'selected' : '' }}>
+                                {{ $petugas->users_name }}
+                            </option>
+                        @empty
+                            <option value="" disabled>Tidak ada petugas tersedia</option>
+                        @endforelse
+                    </select>
+                </div>
+
+                <!-- Field untuk catatan -->
                 <div style="display: flex; flex-direction: column; gap: 6px;">
-                    <label style="font-size: 13px; font-weight: 700; color: #4a5568;">Catatan Tindakan / Deskripsi Penanganan (Opsional)</label>
-                    <textarea name="catatan" rows="3" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; font-family: inherit; font-size: 13px; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#1f76c2'" onblur="this.style.borderColor='#e2e8f0'" placeholder="Masukkan catatan penanganan lapangan, misalnya: armada pemadam telah dikerahkan ke lokasi..."></textarea>
+                    <label style="font-size: 13px; font-weight: 700; color: #4a5568;">Catatan Tindakan / Deskripsi Penanganan <span id="catatanRequired" style="color: #c53030; display: none;">*</span></label>
+                    <textarea name="catatan" rows="3" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; font-family: inherit; font-size: 13px; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#1f76c2'" onblur="this.style.borderColor='#e2e8f0'" placeholder="Masukkan catatan penanganan lapangan, misalnya: armada pemadam telah dikerahkan ke lokasi..." value="{{ old('catatan') }}"></textarea>
+                </div>
+
+                <!-- Field untuk bukti foto (kondisional untuk status "selesai") -->
+                <div id="buktiPhotoField" style="display: none; flex-direction: column; gap: 6px;">
+                    <label style="font-size: 13px; font-weight: 700; color: #4a5568;">Unggah Bukti Foto Penanganan <span style="color: #c53030;">*</span></label>
+                    <div style="border: 2px dashed #cbd5e0; border-radius: 8px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.2s;" id="dropZone" onmouseover="this.style.borderColor='#1f76c2'; this.style.backgroundColor='#f0f4f8'" onmouseout="this.style.borderColor='#cbd5e0'; this.style.backgroundColor='transparent'">
+                        <i class="ph ph-cloud-arrow-up" style="font-size: 32px; color: #4a5568; display: block; margin-bottom: 8px;"></i>
+                        <p style="margin: 0; color: #4a5568; font-weight: 600;">Klik atau drag file gambar ke sini</p>
+                        <p style="margin: 4px 0 0 0; color: #718096; font-size: 12px;">Format: JPG, PNG, GIF | Max: 2 MB</p>
+                        <input type="file" name="bukti_foto" id="buktiPhotoInput" accept="image/*" style="display: none;">
+                    </div>
+                    <div id="photoPreview" style="display: none; margin-top: 12px;">
+                        <img id="previewImage" src="" alt="Preview" style="max-width: 100%; max-height: 200px; border-radius: 8px;">
+                    </div>
                 </div>
 
                 <button type="submit" style="background: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 6px rgba(31, 118, 194, 0.15); transition: background 0.2s; width: fit-content;" onmouseover="this.style.background='var(--primary-dark)'" onmouseout="this.style.background='var(--primary)'">
                     <i class="ph ph-floppy-disk" style="font-size: 18px;"></i> Simpan Perubahan Status
                 </button>
             </form>
+            @endif
         </div>
 
         <script>
             // Highlight selected status option card on load and on change
             document.addEventListener('DOMContentLoaded', () => {
                 const radios = document.querySelectorAll('input[name="status"]');
+                const dropZone = document.getElementById('dropZone');
+                const buktiPhotoInput = document.getElementById('buktiPhotoInput');
+                
                 const updateBorders = () => {
                     radios.forEach(radio => {
                         const card = radio.closest('.status-option');
                         if (radio.checked) {
                             const val = radio.value;
-                            if (val === 'pending') card.style.borderColor = '#4a5568';
                             if (val === 'valid') card.style.borderColor = '#2f855a';
                             if (val === 'diproses') card.style.borderColor = '#b7791f';
                             if (val === 'selesai') card.style.borderColor = '#2b6cb0';
@@ -405,9 +446,82 @@
                             card.style.background = '#fff';
                         }
                     });
+                    
+                    // Toggle petugas field visibility
+                    const diprosesRadio = document.querySelector('input[name="status"][value="diproses"]');
+                    const petugasField = document.getElementById('petugasField');
+                    const catatanRequired = document.getElementById('catatanRequired');
+                    const catatanTextarea = document.querySelector('textarea[name="catatan"]');
+                    const selesaiRadio = document.querySelector('input[name="status"][value="selesai"]');
+                    const buktiPhotoField = document.getElementById('buktiPhotoField');
+                    
+                    // Show/hide petugas field for diproses
+                    if (diprosesRadio && diprosesRadio.checked) {
+                        petugasField.style.display = 'flex';
+                        catatanRequired.style.display = 'inline';
+                        catatanTextarea.setAttribute('required', 'required');
+                        buktiPhotoField.style.display = 'none';
+                        buktiPhotoInput.removeAttribute('required');
+                    } else if (selesaiRadio && selesaiRadio.checked) {
+                        petugasField.style.display = 'none';
+                        catatanRequired.style.display = 'inline';
+                        catatanTextarea.setAttribute('required', 'required');
+                        buktiPhotoField.style.display = 'flex';
+                        buktiPhotoInput.setAttribute('required', 'required');
+                    } else {
+                        petugasField.style.display = 'none';
+                        catatanRequired.style.display = 'inline';
+                        catatanTextarea.setAttribute('required', 'required');
+                        buktiPhotoField.style.display = 'none';
+                        buktiPhotoInput.removeAttribute('required');
+                    }
                 };
+                
                 radios.forEach(radio => radio.addEventListener('change', updateBorders));
                 updateBorders();
+                
+                // Handle file drop zone
+                dropZone.addEventListener('click', () => buktiPhotoInput.click());
+                
+                buktiPhotoInput.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            document.getElementById('previewImage').src = event.target.result;
+                            document.getElementById('photoPreview').style.display = 'block';
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+                
+                dropZone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    dropZone.style.borderColor = '#1f76c2';
+                    dropZone.style.backgroundColor = '#f0f4f8';
+                });
+                
+                dropZone.addEventListener('dragleave', () => {
+                    dropZone.style.borderColor = '#cbd5e0';
+                    dropZone.style.backgroundColor = 'transparent';
+                });
+                
+                dropZone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    dropZone.style.borderColor = '#cbd5e0';
+                    dropZone.style.backgroundColor = 'transparent';
+                    
+                    const files = e.dataTransfer.files;
+                    if (files.length > 0) {
+                        buktiPhotoInput.files = files;
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            document.getElementById('previewImage').src = event.target.result;
+                            document.getElementById('photoPreview').style.display = 'block';
+                        };
+                        reader.readAsDataURL(files[0]);
+                    }
+                });
             });
         </script>
 
