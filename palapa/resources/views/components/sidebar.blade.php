@@ -115,8 +115,8 @@
         background: none;
         border: none;
         cursor: pointer;
-        text-decoration: none; /* Tambahan agar tidak ada garis bawah jika jadi link */
-        display: flex; /* Memastikan ikon di tengah */
+        text-decoration: none;
+        display: flex;
         align-items: center;
         justify-content: center;
     }
@@ -289,8 +289,6 @@
             <p class="name">{{ auth()->check() ? auth()->user()->users_name : 'John Smith' }}</p>
             <p class="email">{{ auth()->check() ? auth()->user()->email : 'johnsm1th@gmail.com' }}</p>
         </div>
-        
-        <!-- Diubah menjadi tag <a> yang mengarah ke route notifikasi -->
         <a href="{{ route('notifikasi.index') }}" class="profile-bell" title="Notifikasi">
             <i class="ph ph-bell"></i>
         </a>
@@ -303,17 +301,20 @@
             <a class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}" href="{{ route('admin.dashboard') }}">
                 <i class="ph ph-squares-four icon"></i> <span class="menu-text">Beranda</span>
             </a>
-            <a href="{{ route('profile') }}">
+            <a class="{{ request()->routeIs('profile') ? 'active' : '' }}" href="{{ route('profile') }}">
                 <i class="ph ph-user icon"></i> <span class="menu-text">Profil Saya</span>
             </a>
-            
+
             <div class="divider"></div>
-            
+
             <a class="{{ request()->routeIs('admin.dashboard') && !request()->filled('status') ? 'active' : '' }}" href="{{ route('admin.dashboard') }}">
                 <i class="ph ph-folder-open icon"></i> <span class="menu-text">Laporan Masuk</span>
             </a>
             <a class="{{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}">
                 <i class="ph ph-database icon"></i> <span class="menu-text">Manajemen Data</span>
+            </a>
+            <a class="{{ request()->routeIs('admin.tren-distribusi') ? 'active' : '' }}" href="{{ route('admin.tren-distribusi') }}">
+                <i class="ph ph-chart-line icon"></i> <span class="menu-text">Tren & Distribusi</span>
             </a>
         @elseif(auth()->check() && auth()->user()->role === 'petugas')
             <a class="{{ request()->routeIs('petugas.dashboard') ? 'active' : '' }}" href="{{ route('petugas.dashboard') }}">
@@ -322,9 +323,9 @@
             <a href="{{ route('profile') }}">
                 <i class="ph ph-user icon"></i> <span class="menu-text">Profil Saya</span>
             </a>
-            
+
             <div class="divider"></div>
-            
+
             <a href="#">
                 <i class="ph ph-folder-open icon"></i> <span class="menu-text">Laporan Masuk</span>
             </a>
@@ -341,9 +342,9 @@
             <a class="{{ request()->routeIs('profile') ? 'active' : '' }}" href="{{ route('profile') }}">
                 <i class="ph ph-user icon"></i> <span class="menu-text">Profil Saya</span>
             </a>
-            
+
             <div class="divider"></div>
-            
+
             <a class="{{ request()->routeIs('reports.index') ? 'active' : '' }}" href="{{ route('reports.index') }}">
                 <i class="ph ph-folder-open icon"></i> <span class="menu-text">Laporan Masuk</span>
             </a>
