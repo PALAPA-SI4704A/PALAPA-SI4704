@@ -8,9 +8,23 @@
         display: flex;
         flex-direction: column;
         transition: width 0.3s ease, padding 0.3s ease;
-        overflow: hidden;
+        overflow-y: auto;
         flex-shrink: 0;
         z-index: 50;
+        position: sticky;
+        top: 16px;
+        height: calc(100vh - 32px);
+    }
+    
+    .sidebar::-webkit-scrollbar {
+        width: 4px;
+    }
+    .sidebar::-webkit-scrollbar-thumb {
+        background: #cbd5e0;
+        border-radius: 4px;
+    }
+    .sidebar::-webkit-scrollbar-track {
+        background: transparent;
     }
     
     .sidebar.collapsed {
@@ -241,6 +255,8 @@
             width: 100% !important;
             height: auto !important;
             flex-direction: column;
+            position: relative !important;
+            top: 0 !important;
         }
         .sidebar.collapsed {
             width: 100% !important;
@@ -303,13 +319,10 @@
             <a class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}" href="{{ route('admin.dashboard') }}">
                 <i class="ph ph-squares-four icon"></i> <span class="menu-text">Beranda</span>
             </a>
-            <a href="{{ route('profile') }}">
-                <i class="ph ph-user icon"></i> <span class="menu-text">Profil Saya</span>
-            </a>
             
             <div class="divider"></div>
             
-            <a class="{{ request()->routeIs('admin.dashboard') && !request()->filled('status') ? 'active' : '' }}" href="{{ route('admin.dashboard') }}">
+            <a class="{{ request()->routeIs('admin.reports.index') ? 'active' : '' }}" href="{{ route('admin.reports.index') }}">
                 <i class="ph ph-folder-open icon"></i> <span class="menu-text">Laporan Masuk</span>
             </a>
             <a class="{{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}">
@@ -318,18 +331,6 @@
         @elseif(auth()->check() && auth()->user()->role === 'petugas')
             <a class="{{ request()->routeIs('petugas.dashboard') ? 'active' : '' }}" href="{{ route('petugas.dashboard') }}">
                 <i class="ph ph-squares-four icon"></i> <span class="menu-text">Beranda</span>
-            </a>
-            <a href="{{ route('profile') }}">
-                <i class="ph ph-user icon"></i> <span class="menu-text">Profil Saya</span>
-            </a>
-            
-            <div class="divider"></div>
-            
-            <a href="#">
-                <i class="ph ph-folder-open icon"></i> <span class="menu-text">Laporan Masuk</span>
-            </a>
-            <a href="#">
-                <i class="ph ph-database icon"></i> <span class="menu-text">Manajemen Data</span>
             </a>
         @else
             <a class="{{ request()->routeIs('beranda') ? 'active' : '' }}" href="{{ route('beranda') }}">
@@ -340,15 +341,6 @@
             </a>
             <a class="{{ request()->routeIs('profile') ? 'active' : '' }}" href="{{ route('profile') }}">
                 <i class="ph ph-user icon"></i> <span class="menu-text">Profil Saya</span>
-            </a>
-            
-            <div class="divider"></div>
-            
-            <a class="{{ request()->routeIs('reports.index') ? 'active' : '' }}" href="{{ route('reports.index') }}">
-                <i class="ph ph-folder-open icon"></i> <span class="menu-text">Laporan Masuk</span>
-            </a>
-            <a href="#">
-                <i class="ph ph-database icon"></i> <span class="menu-text">Manajemen Data</span>
             </a>
         @endif
     </nav>
