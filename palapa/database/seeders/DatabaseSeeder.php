@@ -24,16 +24,11 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        User::updateOrCreate(
-            ['email' => 'admin@example.com'],
-            [
-                'users_name' => 'Admin Utama',
-                'password' => \Illuminate\Support\Facades\Hash::make('password'),
-                'role' => 'admin',
-                'phone' => '081234567891',
-            ]
-        );
-
-        $this->call(PetugasSeeder::class);
+        $this->call([
+            AdminSeeder::class,
+            PetugasSeeder::class,
+            WargaSeeder::class,
+            ReportSeeder::class,
+        ]);
     }
 }
