@@ -172,6 +172,17 @@
             gap: 6px;
             cursor: pointer;
             font-family: inherit;
+            text-decoration: none;
+        }
+
+        .filter-btn:hover {
+            background: #edf2f7;
+        }
+
+        .filter-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
         }
 
         .search-box {
@@ -344,15 +355,28 @@
 
         <div class="grid-layout">
             <div class="history-section">
-                <h3 class="section-title">Riwayat Laporan</h3>
+                <h3 class="section-title">Laporan Saya</h3>
                 
-                <div class="filters">
-                    <button class="filter-btn"><i class="ph ph-clock"></i> Tanggal <i class="ph ph-caret-down"></i></button>
-                    <button class="filter-btn"><i class="ph ph-flag"></i> Status <i class="ph ph-caret-down"></i></button>
-                    <div class="search-box">
-                        <i class="ph ph-magnifying-glass" style="color: #a0aec0;"></i>
-                        <input type="text" placeholder="Cari Lokasi">
+                <div class="filters-container" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+                    <div class="filters" style="margin-bottom: 0; display: flex; gap: 8px; flex-wrap: wrap;">
+                        <a href="{{ route('profile', ['status' => 'semua', 'search' => $currentSearch]) }}" class="filter-btn {{ $currentStatus === 'semua' ? 'active' : '' }}">Semua</a>
+                        <a href="{{ route('profile', ['status' => 'pending', 'search' => $currentSearch]) }}" class="filter-btn {{ $currentStatus === 'pending' ? 'active' : '' }}">Pending</a>
+                        <a href="{{ route('profile', ['status' => 'valid', 'search' => $currentSearch]) }}" class="filter-btn {{ $currentStatus === 'valid' ? 'active' : '' }}">Valid</a>
+                        <a href="{{ route('profile', ['status' => 'ditolak', 'search' => $currentSearch]) }}" class="filter-btn {{ $currentStatus === 'ditolak' ? 'active' : '' }}">Ditolak</a>
+                        <a href="{{ route('profile', ['status' => 'diproses', 'search' => $currentSearch]) }}" class="filter-btn {{ $currentStatus === 'diproses' ? 'active' : '' }}">Diproses</a>
+                        <a href="{{ route('profile', ['status' => 'selesai', 'search' => $currentSearch]) }}" class="filter-btn {{ $currentStatus === 'selesai' ? 'active' : '' }}">Selesai</a>
                     </div>
+
+                    <form class="search-form" method="GET" action="{{ route('profile') }}" style="display: flex; gap: 8px; align-items: center;">
+                        @if($currentStatus !== 'semua')
+                            <input type="hidden" name="status" value="{{ $currentStatus }}">
+                        @endif
+                        <div class="search-box" style="margin-bottom: 0;">
+                            <i class="ph ph-magnifying-glass" style="color: #a0aec0;"></i>
+                            <input type="text" name="search" value="{{ $currentSearch }}" placeholder="Cari judul, lokasi, atau tanggal...">
+                        </div>
+                        <button type="submit" style="background: #1f76c2; color: white; border: none; border-radius: 8px; padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;">Cari</button>
+                    </form>
                 </div>
 
                 <div class="table-wrap">
@@ -360,16 +384,50 @@
                         <thead>
                             <tr>
                                 <th>ID</th>
-                                <th>STATUS</th>
-                                <th>LOKASI</th>
-                                <th>TANGGAL PELAPORAN</th>
-                                <th></th>
+                                <th>Judul</th>
+                                <th>Lokasi</th>
+                                <th>Level</th>
+                                <th>Status</th>
+                                <th>Foto</th>
+                                <th>Tanggal</th>
+                                <th>Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse ($reports as $report)
                                 <tr>
                                     <td>#{{ $report->report_id }}</td>
+                                    <td>{{ $report->title }}</td>
+                                    <td>
+                                        @if($report->address)
+                                            {{ \Illuminate\Support\Str::limit($report->address, 50) }}
+                                        @else
+                                            {{ $report->latitude }}, {{ $report->longitude }}
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($report->fire_level)
+                                            @php
+                                                $levelColors = [
+                                                    'low' => 'background: #edf2f7; color: #4a5568;',
+                                                    'medium' => 'background: #fffaf0; color: #dd6b20;',
+                                                    'high' => 'background: #fff5f5; color: #c53030;',
+                                                    'critical' => 'background: #ffebeb; color: #9b2c2c; border: 1px solid #9b2c2c;'
+                                                ];
+                                                $levelLabels = [
+                                                    'low' => 'Low',
+                                                    'medium' => 'Medium',
+                                                    'high' => 'High',
+                                                    'critical' => 'Critical'
+                                                ];
+                                            @endphp
+                                            <span class="badge" style="{{ $levelColors[$report->fire_level] ?? '' }} font-size: 10px; padding: 2px 8px;">
+                                                {{ $levelLabels[$report->fire_level] ?? ucfirst($report->fire_level) }}
+                                            </span>
+                                        @else
+                                            -
+                                        @endif
+                                    </td>
                                     <td>
                                         @if(strtolower($report->status) == 'selesai')
                                             <span class="badge selesai"><i class="ph ph-check-circle"></i> Selesai</span>
@@ -378,25 +436,36 @@
                                             @if($report->rejection_reason)
                                                 <div style="font-size: 11px; color: #c53030; margin-top: 4px; max-width: 150px; line-height: 1.3;">{{ $report->rejection_reason }}</div>
                                             @endif
+                                        @elseif(strtolower($report->status) == 'pending')
+                                            <span class="badge proses" style="background: #fff3d5; color: #996d00;"><i class="ph ph-clock"></i> Pending</span>
+                                        @elseif(strtolower($report->status) == 'valid')
+                                            <span class="badge proses" style="background: #e6f1ff; color: #1f76c2;"><i class="ph ph-check"></i> Valid</span>
                                         @else
                                             <span class="badge proses"><i class="ph ph-clock"></i> Diproses</span>
                                         @endif
                                     </td>
-                                    <td>{{ $report->latitude }}, {{ $report->longitude }}</td>
-                                    <td>{{ $report->created_at?->format('d/m/Y') }}</td>
                                     <td>
+                                        @if ($report->photo)
+                                            <a class="photo-link" style="color: #1f76c2; text-decoration: none; font-weight: 600;" href="{{ route('reports.photo', ['path' => $report->photo]) }}" target="_blank">Lihat foto</a>
+                                        @else
+                                            -
+                                        @endif
+                                    </td>
+                                    <td>{{ $report->created_at?->format('d/m/Y') }}</td>
+                                    <td style="white-space: nowrap;">
+                                        <a href="{{ route('reports.history', $report->report_id) }}" style="text-decoration: none; display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; background: #f1f4f8; color: #607089; border-radius: 6px; font-weight: 600; font-size: 11px; margin-right: 4px;">
+                                            Riwayat
+                                        </a>
                                         @if(strtolower($report->status) == 'pending' || strtolower($report->status) == 'diproses')
                                             <a href="{{ route('reports.edit', $report->report_id) }}" style="text-decoration: none; display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; background: #e6f1ff; color: #1f76c2; border-radius: 6px; font-weight: 600; font-size: 11px;">
                                                 <i class="ph ph-pencil-simple"></i> Edit
                                             </a>
-                                        @else
-                                            <i class="ph ph-caret-down" style="color: #a0aec0; cursor: pointer;"></i>
                                         @endif
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" style="text-align: center; color: #8a94a5;">Belum ada riwayat laporan.</td>
+                                    <td colspan="8" style="text-align: center; color: #8a94a5; padding: 24px;">Belum ada riwayat laporan.</td>
                                 </tr>
                             @endforelse
                         </tbody>

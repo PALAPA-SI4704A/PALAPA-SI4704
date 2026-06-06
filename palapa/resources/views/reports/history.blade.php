@@ -184,7 +184,7 @@
                 <h1>Riwayat Status</h1>
                 <p class="sub">{{ $report->title }}</p>
             </div>
-            <a href="{{ route('reports.index') }}" class="btn-back">← Kembali</a>
+            <a href="{{ route('profile') }}" class="btn-back">← Kembali</a>
         </div>
 
         <ul class="timeline">
