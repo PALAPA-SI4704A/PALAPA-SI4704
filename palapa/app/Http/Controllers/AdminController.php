@@ -445,7 +445,10 @@ class AdminController extends Controller
 
         // Perbarui status laporan menjadi diproses
         $oldStatus = $report->status;
-        $report->update(['status' => 'diproses']);
+        $report->update([
+            'status' => 'diproses',
+            'assigned_petugas_id' => $petugas->users_id,
+        ]);
 
         $roleLabel = match (Auth::user()->role) {
             'masyarakat' => 'Pelapor',
@@ -461,6 +464,20 @@ class AdminController extends Controller
             'diubah_oleh' => Auth::user()->users_name . ' (' . $roleLabel . ')',
             'tanggal_ubah' => now(),
         ]);
+
+        // Kirim notifikasi ke pelapor (warga)
+        if ($report->user_id) {
+            \App\Http\Controllers\NotifikasiController::createNotification(
+                $report->user_id,
+                'Laporan "' . $report->title . '" Anda sedang ditangani oleh petugas.'
+            );
+        }
+
+        // Kirim notifikasi ke petugas
+        \App\Http\Controllers\NotifikasiController::createNotification(
+            $petugas->users_id,
+            'Anda ditugaskan untuk menangani laporan: "' . $report->title . '".'
+        );
 
         return redirect()->back()->with('success', 'Petugas ' . $petugas->users_name . ' berhasil ditugaskan.');
     }
