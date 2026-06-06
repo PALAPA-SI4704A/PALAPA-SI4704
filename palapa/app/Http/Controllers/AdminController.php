@@ -23,8 +23,10 @@ class AdminController extends Controller
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
 
-        // 2. Query Laporan Masuk
-        $query = Report::with(['pelapor', 'penugasans.petugas'])->latest('report_id');
+        // 2. Query Laporan Masuk (Only unfinished reports on the dashboard)
+        $query = Report::with(['pelapor', 'penugasans.petugas'])
+            ->whereNotIn('status', ['selesai', 'ditolak'])
+            ->latest('report_id');
 
         // Filter Tanggal
         if ($request->filled('date')) {
@@ -612,7 +614,45 @@ class AdminController extends Controller
 
         $report->delete();
 
-        return redirect()->route('admin.dashboard')->with('success', 'Laporan berhasil dihapus.');
+        return redirect()->back()->with('success', 'Laporan berhasil dihapus.');
+    }
+
+    /**
+     * Tampilkan daftar seluruh laporan (semua status) untuk admin
+     */
+    public function reportsIndex(Request $request)
+    {
+        if (Auth::user()->role !== 'admin') {
+            abort(403, 'Anda tidak memiliki akses ke halaman ini.');
+        }
+
+        $query = Report::with(['pelapor', 'penugasans.petugas'])->latest('report_id');
+
+        // Filter Tanggal
+        if ($request->filled('date')) {
+            $query->whereDate('created_at', $request->date);
+        }
+
+        // Filter Status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Filter Pencarian Lokasi/Judul/Deskripsi
+        if ($request->filled('location')) {
+            $location = $request->location;
+            $query->where(function ($q) use ($location) {
+                $q->where('latitude', 'like', "%{$location}%")
+                  ->orWhere('longitude', 'like', "%{$location}%")
+                  ->orWhere('title', 'like', "%{$location}%")
+                  ->orWhere('description', 'like', "%{$location}%")
+                  ->orWhere('address', 'like', "%{$location}%");
+            });
+        }
+
+        $laporanMasuk = $query->get();
+
+        return view('admin.reports.index', compact('laporanMasuk'));
     }
 
     /**

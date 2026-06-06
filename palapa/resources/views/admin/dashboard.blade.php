@@ -229,6 +229,12 @@
         .badge-selesai { background: #c6f6d5; color: #2f855a; }
         .badge-valid { background: #e2fbf0; color: #2b6cb0; }
         .badge-ditolak { background: #fed7d7; color: #c53030; }
+        
+        /* Urgency Badges */
+        .badge-low { background: #e6f4ea; color: #137333; }
+        .badge-medium { background: #fff3cd; color: #856404; }
+        .badge-high { background: #fce8e6; color: #c5221f; }
+        .badge-critical { background: #feebec; color: #c53030; font-weight: 800; border: 1px dashed #c53030; }
 
         .btn-link:hover {
             color: var(--primary-dark);
@@ -545,8 +551,8 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>FOTO</th>
+                            <th>DESKRIPSI</th>
+                            <th>URGENSI</th>
                             <th>LOKASI</th>
                             <th>STATUS</th>
                             <th>TANGGAL PELAPORAN</th>
@@ -556,15 +562,18 @@
                     <tbody>
                         @forelse($laporanMasuk as $report)
                         <tr>
-                            <td>#{{ $report->report_id }}</td>
+                            <td>{{ Str::limit($report->description, 50) }}</td>
                             <td>
-                                @if($report->photo)
-                                    <img src="{{ route('reports.photo', ['path' => $report->photo]) }}" class="table-img" alt="Foto Laporan">
-                                @else
-                                    <div class="table-img" style="background:#e2e8f0; display:flex; align-items:center; justify-content:center; color:#a0aec0;">
-                                        <i class="ph ph-image-square" style="font-size: 20px;"></i>
-                                    </div>
-                                @endif
+                                @php
+                                    $urgencyClass = 'badge-low';
+                                    $urgencyText = 'Rendah';
+                                    if($report->fire_level == 'medium') { $urgencyClass = 'badge-medium'; $urgencyText = 'Sedang'; }
+                                    elseif($report->fire_level == 'high') { $urgencyClass = 'badge-high'; $urgencyText = 'Tinggi'; }
+                                    elseif($report->fire_level == 'critical') { $urgencyClass = 'badge-critical'; $urgencyText = 'Kritis'; }
+                                @endphp
+                                <span class="badge {{ $urgencyClass }}">
+                                    {{ $urgencyText }}
+                                </span>
                             </td>
                             <td>
                                 @if($report->address)

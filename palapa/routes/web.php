@@ -47,6 +47,7 @@ Route::middleware('auth')->group(function () {
 
     // Admin Routes
     Route::get('/admin/dashboard', [AdminController::class, 'index'])->name('admin.dashboard');
+    Route::get('/admin/reports', [AdminController::class, 'reportsIndex'])->name('admin.reports.index');
     Route::get('/admin/reports/{report}', [AdminController::class, 'show'])->name('admin.reports.show');
     Route::post('/admin/reports/{report}/verify', [AdminController::class, 'verify'])->name('admin.reports.verify');
     Route::post('/admin/reports/{report}/assign/{petugas}', [AdminController::class, 'assign'])->name('admin.reports.assign');
