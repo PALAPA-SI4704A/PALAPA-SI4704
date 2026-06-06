@@ -483,6 +483,92 @@ class AdminController extends Controller
     }
 
     /**
+     * Ubah penugasan petugas ke petugas lain
+     */
+    public function reassign(Report $report, User $petugas)
+    {
+        if (Auth::user()->role !== 'admin') {
+            abort(403, 'Anda tidak memiliki akses ke halaman ini.');
+        }
+
+        // Pastikan role user yang ditugaskan adalah petugas
+        if ($petugas->role !== 'petugas') {
+            return redirect()->back()->withErrors(['error' => 'User yang ditunjuk bukan merupakan Petugas Lapangan.']);
+        }
+
+        // Ambil petugas lama (dari assigned_petugas_id)
+        $oldPetugasId = $report->assigned_petugas_id;
+        $oldPetugas = User::find($oldPetugasId);
+
+        // Jika petugas yang baru sama dengan petugas lama, tidak perlu diubah
+        if ($oldPetugasId === $petugas->users_id) {
+            return redirect()->back()->with('success', 'Petugas ini sudah ditugaskan pada laporan ini.');
+        }
+
+        // Mulai transaksi database untuk menjamin konsistensi
+        DB::transaction(function () use ($report, $petugas, $oldPetugasId, $oldPetugas) {
+            // Hapus penugasan aktif (yang belum selesai) untuk laporan ini
+            Penugasan::where('report_id', $report->report_id)
+                ->whereNull('completed_at')
+                ->delete();
+
+            // Buat penugasan baru untuk petugas baru
+            $report->penugasans()->create([
+                'petugas_id' => $petugas->users_id,
+                'assigned_at' => now()
+            ]);
+
+            // Update assigned_petugas_id di tabel reports
+            $report->update([
+                'assigned_petugas_id' => $petugas->users_id,
+            ]);
+
+            $roleLabel = match (Auth::user()->role) {
+                'masyarakat' => 'Pelapor',
+                'petugas' => 'Admin Sistem',
+                'admin' => 'Admin Sistem',
+                default => ucfirst(Auth::user()->role)
+            };
+
+            $oldName = $oldPetugas ? $oldPetugas->users_name : 'Petugas Sebelumnya';
+
+            // Tambahkan catatan ke riwayat status
+            $report->statusHistories()->create([
+                'status_awal' => 'diproses',
+                'status_baru' => 'diproses',
+                'catatan' => 'Penugasan petugas diubah dari ' . $oldName . ' menjadi ' . $petugas->users_name . '.',
+                'diubah_oleh' => Auth::user()->users_name . ' (' . $roleLabel . ')',
+                'tanggal_ubah' => now(),
+            ]);
+        });
+
+        // Kirim notifikasi ke petugas lama bahwa penugasannya dibatalkan
+        if ($oldPetugas) {
+            \App\Http\Controllers\NotifikasiController::createNotification(
+                $oldPetugas->users_id,
+                'Penugasan Anda untuk laporan: "' . $report->title . '" telah dialihkan ke petugas lain.'
+            );
+        }
+
+        // Kirim notifikasi ke petugas baru
+        \App\Http\Controllers\NotifikasiController::createNotification(
+            $petugas->users_id,
+            'Anda ditugaskan untuk menangani laporan: "' . $report->title . '".'
+        );
+
+        // Kirim notifikasi ke pelapor (warga)
+        if ($report->user_id) {
+            \App\Http\Controllers\NotifikasiController::createNotification(
+                $report->user_id,
+                'Petugas penanganan laporan "' . $report->title . '" Anda telah diubah menjadi ' . $petugas->users_name . '.'
+            );
+        }
+
+        return redirect()->back()->with('success', 'Penugasan berhasil diubah ke ' . $petugas->users_name . '.');
+    }
+
+
+    /**
      * Tampilkan daftar semua pengguna
      */
     public function usersIndex(Request $request)

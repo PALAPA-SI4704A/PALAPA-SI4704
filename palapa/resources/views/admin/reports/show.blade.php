@@ -467,10 +467,16 @@
                                     @if($currentlyAssigned)
                                         <span style="font-weight:600; color:#b7791f; font-size:12px;">Sedang Bertugas</span>
                                     @else
-                                        <form action="{{ route('admin.reports.assign', ['report' => $report->report_id, 'petugas' => $petugas->users_id]) }}" method="POST">
-                                            @csrf
-                                            <button type="submit" class="btn-action">[Tugaskan Tambahan]</button>
-                                        </form>
+                                        <div style="display: flex; gap: 8px; align-items: center;">
+                                            <form action="{{ route('admin.reports.assign', ['report' => $report->report_id, 'petugas' => $petugas->users_id]) }}" method="POST" style="margin: 0;">
+                                                @csrf
+                                                <button type="submit" class="btn-action">[Tugaskan Tambahan]</button>
+                                            </form>
+                                            <form action="{{ route('admin.reports.reassign', ['report' => $report->report_id, 'petugas' => $petugas->users_id]) }}" method="POST" style="margin: 0;" onsubmit="return confirm('Apakah Anda yakin ingin mengubah penugasan ke petugas ini?');">
+                                                @csrf
+                                                <button type="submit" class="btn-action" style="color: #dd6b20;">[Ubah Penugasan]</button>
+                                            </form>
+                                        </div>
                                     @endif
                                 @else
                                     <span style="color:#a0aec0; font-size:12px;">Laporan Selesai</span>
