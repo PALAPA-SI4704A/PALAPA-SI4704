@@ -18,6 +18,11 @@ class ReportController extends Controller
      */
     public function index(Request $request)
     {
+        return $this->profile($request);
+    }
+
+    public function profile(Request $request)
+    {
         $query = Report::where('user_id', Auth::id())->latest('report_id');
 
         if ($request->filled('search')) {
@@ -77,16 +82,7 @@ class ReportController extends Controller
         $currentStatus = $request->status ?? 'semua';
         $currentSearch = $request->search ?? '';
 
-        return view('reports.index', compact('reports', 'currentStatus', 'currentSearch'));
-    }
-
-    public function profile()
-    {
-        $reports = Report::where('user_id', Auth::user()->users_id)
-            ->latest('report_id')
-            ->get();
-
-        return view('profile', compact('reports'));
+        return view('profile', compact('reports', 'currentStatus', 'currentSearch'));
     }
 
     /**
