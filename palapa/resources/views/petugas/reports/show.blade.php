@@ -335,6 +335,45 @@
             </div>
         </div>
 
+        <!-- Form Verifikasi (Hanya Tampil Jika Status 'pending') -->
+        @if($report->status === 'pending')
+        <div class="main-panel" style="margin-bottom: 24px;" x-data="{ showRejectForm: false }">
+            <h2 class="section-title">Verifikasi Laporan</h2>
+            <p style="margin-bottom: 16px; color: #718096; font-size: 14px;">Tentukan validitas laporan masuk ini sebelum ditugaskan kepada petugas di lapangan.</p>
+            
+            <div style="display: flex; align-items: center; gap: 16px; margin-top: 16px;" x-show="!showRejectForm">
+                <form action="{{ route('petugas.reports.verify', $report->report_id) }}" method="POST" style="margin: 0;">
+                    @csrf
+                    <input type="hidden" name="status" value="valid">
+                    <button type="submit" style="background: #2f855a; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(47, 133, 90, 0.2); transition: background 0.2s;" onmouseover="this.style.background='#276749'" onmouseout="this.style.background='#2f855a'">
+                        <i class="ph ph-check-circle" style="font-size: 18px;"></i> Laporan Valid
+                    </button>
+                </form>
+                <button type="button" @click="showRejectForm = true" style="background: white; color: #e53e3e; border: 1px solid #e53e3e; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; margin: 0;" onmouseover="this.style.background='#fff5f5'" onmouseout="this.style.background='white'">
+                    <i class="ph ph-x-circle" style="font-size: 18px;"></i> Tolak Laporan
+                </button>
+            </div>
+
+            <div x-show="showRejectForm" style="display: none; background: #fff5f5; padding: 16px; border-radius: 8px; border: 1px solid #fed7d7; margin-top: 12px;">
+                <form action="{{ route('petugas.reports.verify', $report->report_id) }}" method="POST">
+                    @csrf
+                    <input type="hidden" name="status" value="ditolak">
+                    <div style="margin-bottom: 12px;">
+                        <label style="display: block; font-size: 14px; font-weight: 600; color: #c53030; margin-bottom: 8px;">Alasan Penolakan</label>
+                        <textarea name="rejection_reason" required rows="3" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0; font-family: inherit; font-size: 14px;" placeholder="Masukkan alasan mengapa laporan ini ditolak..."></textarea>
+                    </div>
+                    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                        <button type="submit" style="background: #e53e3e; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                            Konfirmasi Tolak
+                        </button>
+                        <button type="button" @click="showRejectForm = false" style="background: #cbd5e0; color: #4a5568; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                            Batal
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        @else
         <!-- Form Update Status Penanganan Laporan (Khusus Petugas) -->
         <div class="main-panel" style="margin-bottom: 24px;">
             <h2 class="section-title">Update Status Penanganan</h2>
@@ -423,6 +462,7 @@
             </form>
             @endif
         </div>
+        @endif
 
         <script>
             // Highlight selected status option card on load and on change
@@ -600,5 +640,4 @@
     });
 </script>
 </body>
-</html>y>
 </html>

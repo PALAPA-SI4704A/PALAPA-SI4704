@@ -464,6 +464,7 @@
                     <form id="chartFilterForm" method="GET" action="{{ route('admin.dashboard') }}" style="margin: 0;">
                         @if(request('date')) <input type="hidden" name="date" value="{{ request('date') }}"> @endif
                         @if(request('status')) <input type="hidden" name="status" value="{{ request('status') }}"> @endif
+                        @if(request('region')) <input type="hidden" name="region" value="{{ request('region') }}"> @endif
                         @if(request('location')) <input type="hidden" name="location" value="{{ request('location') }}"> @endif
                         
                         <div class="filter-group" style="padding: 4px 8px; margin: 0; display: inline-flex; align-items: center; gap: 8px; background: white; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 13px;">
@@ -536,6 +537,23 @@
                         <option value="diproses" {{ request('status') == 'diproses' ? 'selected' : '' }}>Diproses</option>
                         <option value="ditolak" {{ request('status') == 'ditolak' ? 'selected' : '' }}>Ditolak</option>
                         <option value="selesai" {{ request('status') == 'selesai' ? 'selected' : '' }}>Selesai</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <i class="ph ph-map-pin"></i>
+                    <select name="region" class="filter-select" onchange="this.form.submit()">
+                        <option value="">Wilayah</option>
+                        <option value="Pontianak" {{ request('region') == 'Pontianak' ? 'selected' : '' }}>Pontianak</option>
+                        <option value="Samarinda" {{ request('region') == 'Samarinda' ? 'selected' : '' }}>Samarinda</option>
+                        <option value="Balikpapan" {{ request('region') == 'Balikpapan' ? 'selected' : '' }}>Balikpapan</option>
+                        <option value="Palangka Raya" {{ request('region') == 'Palangka Raya' ? 'selected' : '' }}>Palangka Raya</option>
+                        <option value="Banjarmasin" {{ request('region') == 'Banjarmasin' ? 'selected' : '' }}>Banjarmasin</option>
+                        <option value="Tarakan" {{ request('region') == 'Tarakan' ? 'selected' : '' }}>Tarakan</option>
+                        <option value="Tanjung Selor" {{ request('region') == 'Tanjung Selor' ? 'selected' : '' }}>Tanjung Selor</option>
+                        <option value="Ketapang" {{ request('region') == 'Ketapang' ? 'selected' : '' }}>Ketapang</option>
+                        <option value="Singkawang" {{ request('region') == 'Singkawang' ? 'selected' : '' }}>Singkawang</option>
+                        <option value="Banjarbaru" {{ request('region') == 'Banjarbaru' ? 'selected' : '' }}>Banjarbaru</option>
                     </select>
                 </div>
                 

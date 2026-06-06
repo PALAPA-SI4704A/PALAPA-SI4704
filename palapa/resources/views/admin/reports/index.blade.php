@@ -232,6 +232,23 @@
                         <option value="selesai" {{ request('status') == 'selesai' ? 'selected' : '' }}>Selesai</option>
                     </select>
                 </div>
+
+                <div class="filter-group">
+                    <i class="ph ph-map-pin"></i>
+                    <select name="region" class="filter-select" onchange="this.form.submit()">
+                        <option value="">Wilayah</option>
+                        <option value="Pontianak" {{ request('region') == 'Pontianak' ? 'selected' : '' }}>Pontianak</option>
+                        <option value="Samarinda" {{ request('region') == 'Samarinda' ? 'selected' : '' }}>Samarinda</option>
+                        <option value="Balikpapan" {{ request('region') == 'Balikpapan' ? 'selected' : '' }}>Balikpapan</option>
+                        <option value="Palangka Raya" {{ request('region') == 'Palangka Raya' ? 'selected' : '' }}>Palangka Raya</option>
+                        <option value="Banjarmasin" {{ request('region') == 'Banjarmasin' ? 'selected' : '' }}>Banjarmasin</option>
+                        <option value="Tarakan" {{ request('region') == 'Tarakan' ? 'selected' : '' }}>Tarakan</option>
+                        <option value="Tanjung Selor" {{ request('region') == 'Tanjung Selor' ? 'selected' : '' }}>Tanjung Selor</option>
+                        <option value="Ketapang" {{ request('region') == 'Ketapang' ? 'selected' : '' }}>Ketapang</option>
+                        <option value="Singkawang" {{ request('region') == 'Singkawang' ? 'selected' : '' }}>Singkawang</option>
+                        <option value="Banjarbaru" {{ request('region') == 'Banjarbaru' ? 'selected' : '' }}>Banjarbaru</option>
+                    </select>
+                </div>
                 
                 <div class="filter-group search-box">
                     <i class="ph ph-magnifying-glass"></i>
