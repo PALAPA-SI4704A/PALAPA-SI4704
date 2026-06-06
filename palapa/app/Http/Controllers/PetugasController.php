@@ -152,6 +152,8 @@ class PetugasController extends Controller
             'status_awal' => $oldStatus,
             'status_baru' => $request->status,
             'catatan' => $catatan,
+            'diubah_oleh' => Auth::user()->users_name . ' (' . $roleLabel . ')',
+            'tanggal_ubah' => now(),
         ]);
 
         return redirect()->back()->with('success', 'Laporan berhasil diverifikasi menjadi: ' . ucfirst($request->status));
