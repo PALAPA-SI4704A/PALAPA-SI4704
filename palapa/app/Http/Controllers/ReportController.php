@@ -213,9 +213,19 @@ class ReportController extends Controller
     /**
      * Show the status history of the specified resource (PLP-12 Mock Data).
      */
-    public function history(Report $report)
+    public function history(Request $request, Report $report)
     {
         $statusHistories = $report->statusHistories()->orderBy('id', 'asc')->get();
+
+        if ($request->wantsJson() || $request->ajax()) {
+            $statusHistories->each(function ($history) {
+                $history->formatted_date = \Carbon\Carbon::parse($history->tanggal_ubah)->translatedFormat('d F Y, H:i');
+            });
+            return response()->json([
+                'report' => $report,
+                'statusHistories' => $statusHistories
+            ]);
+        }
 
         return response()
             ->view('reports.history', compact('report', 'statusHistories'))
