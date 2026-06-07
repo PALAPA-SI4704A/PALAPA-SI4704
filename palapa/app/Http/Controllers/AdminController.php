@@ -19,14 +19,25 @@ class AdminController extends Controller
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
 
-        // 2. Query Laporan Masuk (Only unfinished reports on the dashboard)
-        $query = Report::with(['pelapor', 'penugasans.petugas'])
-            ->whereNotIn('status', ['selesai', 'ditolak'])
-            ->latest('report_id');
+        // 2. Query Laporan Masuk (Default to unfinished reports on the dashboard if status is not filtered)
+        $query = Report::with(['pelapor', 'penugasans.petugas']);
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        } else {
+            $query->whereNotIn('status', ['selesai', 'ditolak']);
+        }
+
+        $query->latest('report_id');
 
         if ($request->filled('date')) {
             $query->whereDate('created_at', $request->date);
         }
+
+        // Filter Wilayah
+        if ($request->filled('region')) {
+            $region = $request->region;
+            $query->where('address', 'like', "%{$region}%");
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
@@ -149,9 +160,16 @@ class AdminController extends Controller
                 $chartLabels[] = $date->locale('id')->isoFormat('MMMM');
                 $chartCounts[$date->format('Y-m')] = 0;
             }
-            $dbChartData = Report::select(DB::raw("DATE_FORMAT(created_at, '%Y-%m') as month_only"), DB::raw('count(*) as count'))
-                ->where('created_at', '>=', Carbon::now()->startOfYear())
-                ->groupBy('month_only')->get();
+            
+            $monthDateFormat = DB::getDriverName() === 'sqlite'
+                ? "strftime('%Y-%m', created_at) as month_only"
+                : "DATE_FORMAT(created_at, '%Y-%m') as month_only";
+
+            $dbChartData = Report::select(DB::raw($monthDateFormat), DB::raw('count(*) as count'))
+                ->where('created_at', '>=', $startOfYear)
+                ->groupBy('month_only')
+                ->get();
+
             foreach ($dbChartData as $data) {
                 if (isset($chartCounts[$data->month_only])) $chartCounts[$data->month_only] = $data->count;
             }
@@ -612,7 +630,7 @@ class AdminController extends Controller
         }
         $report->delete();
 
-        return redirect()->back()->with('success', 'Laporan berhasil dihapus.');
+        return redirect()->route('admin.dashboard')->with('success', 'Laporan berhasil dihapus.');
     }
 
     /**
@@ -634,6 +652,12 @@ class AdminController extends Controller
         // Filter Status
         if ($request->filled('status')) {
             $query->where('status', $request->status);
+        }
+
+        // Filter Wilayah
+        if ($request->filled('region')) {
+            $region = $request->region;
+            $query->where('address', 'like', "%{$region}%");
         }
 
         // Filter Pencarian Lokasi/Judul/Deskripsi

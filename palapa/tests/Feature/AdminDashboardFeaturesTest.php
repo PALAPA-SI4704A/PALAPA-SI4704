@@ -147,4 +147,77 @@ class AdminDashboardFeaturesTest extends TestCase
         $responseCompleted->assertSee('Selesai');
         $responseCompleted->assertSee('Lihat Bukti Foto');
     }
+
+    /**
+     * Test admin can filter reports by region, status, and date.
+     */
+    public function test_admin_can_filter_reports_by_region_status_and_date(): void
+    {
+        $admin = User::create([
+            'users_name' => 'Admin Filter Test',
+            'email' => 'admin.filter@palapa.com',
+            'password' => bcrypt('password'),
+            'role' => 'admin',
+            'phone' => '081234567899'
+        ]);
+
+        $pelapor = User::create([
+            'users_name' => 'Warga Filter Test',
+            'email' => 'warga.filter@palapa.com',
+            'password' => bcrypt('password'),
+            'role' => 'masyarakat',
+            'phone' => '081234567898'
+        ]);
+
+        // Report 1: Pontianak, valid, created today
+        $report1 = Report::create([
+            'user_id' => $pelapor->users_id,
+            'title' => 'Kebakaran Pontianak',
+            'description' => 'Kebakaran di Pontianak Barat',
+            'latitude' => '-0.026330',
+            'longitude' => '109.342500',
+            'address' => 'Jl. Gajah Mada, Pontianak',
+            'status' => 'valid',
+            'created_at' => now(),
+        ]);
+
+        // Report 2: Samarinda, selesai, created yesterday
+        $report2 = Report::create([
+            'user_id' => $pelapor->users_id,
+            'title' => 'Kebakaran Samarinda',
+            'description' => 'Kebakaran di Samarinda Ulu',
+            'latitude' => '-0.502106',
+            'longitude' => '117.153661',
+            'address' => 'Jl. Bhayangkara, Samarinda',
+            'status' => 'selesai',
+        ]);
+        $report2->created_at = now()->subDay();
+        $report2->save();
+
+        $this->actingAs($admin);
+
+        // 1. Filter by Region (Pontianak)
+        $responseRegion = $this->get(route('admin.dashboard', ['region' => 'Pontianak']));
+        $responseRegion->assertStatus(200);
+        $responseRegion->assertSee('Kebakaran di Pontianak Barat');
+        $responseRegion->assertDontSee('Kebakaran di Samarinda Ulu');
+
+        // 2. Filter by Status (selesai)
+        $responseStatus = $this->get(route('admin.dashboard', ['status' => 'selesai']));
+        $responseStatus->assertStatus(200);
+        $responseStatus->assertSee('Kebakaran di Samarinda Ulu');
+        $responseStatus->assertDontSee('Kebakaran di Pontianak Barat');
+
+        // 3. Filter by Date (yesterday)
+        $responseDate = $this->get(route('admin.dashboard', ['date' => now()->subDay()->format('Y-m-d'), 'status' => 'selesai']));
+        $responseDate->assertStatus(200);
+        $responseDate->assertSee('Kebakaran di Samarinda Ulu');
+        $responseDate->assertDontSee('Kebakaran di Pontianak Barat');
+
+        // 4. Test on index page too
+        $responseIndex = $this->get(route('admin.reports.index', ['region' => 'Samarinda']));
+        $responseIndex->assertStatus(200);
+        $responseIndex->assertSee('Kebakaran di Samarinda Ulu');
+        $responseIndex->assertDontSee('Kebakaran di Pontianak Barat');
+    }
 }
