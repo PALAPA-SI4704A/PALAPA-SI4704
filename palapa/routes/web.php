@@ -51,6 +51,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/admin/reports/{report}', [AdminController::class, 'show'])->name('admin.reports.show');
     Route::post('/admin/reports/{report}/verify', [AdminController::class, 'verify'])->name('admin.reports.verify');
     Route::post('/admin/reports/{report}/assign/{petugas}', [AdminController::class, 'assign'])->name('admin.reports.assign');
+    Route::post('/admin/reports/{report}/reassign/{petugas}', [AdminController::class, 'reassign'])->name('admin.reports.reassign');
     Route::delete('/admin/reports/{report}', [AdminController::class, 'destroy'])->name('admin.reports.destroy');
     Route::get('/admin/users', [AdminController::class, 'usersIndex'])->name('admin.users.index');
     Route::post('/admin/users/import-petugas', [AdminController::class, 'importPetugas'])->name('admin.users.import');

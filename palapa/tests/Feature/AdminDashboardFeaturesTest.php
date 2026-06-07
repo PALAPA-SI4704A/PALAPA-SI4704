@@ -220,4 +220,101 @@ class AdminDashboardFeaturesTest extends TestCase
         $responseIndex->assertSee('Kebakaran di Samarinda Ulu');
         $responseIndex->assertDontSee('Kebakaran di Pontianak Barat');
     }
+
+    /**
+     * Test admin can reassign petugas and updates database state properly.
+     */
+    public function test_admin_can_reassign_petugas_and_creates_status_history(): void
+    {
+        // 1. Setup Admin
+        $admin = User::create([
+            'users_name' => 'Admin Utama',
+            'email' => 'admin@palapa.com',
+            'password' => bcrypt('password'),
+            'role' => 'admin',
+            'phone' => '081234567899'
+        ]);
+
+        // 2. Setup 2 Petugas
+        $petugas1 = User::create([
+            'users_name' => 'Petugas Satu',
+            'email' => 'petugas1@palapa.com',
+            'password' => bcrypt('password'),
+            'role' => 'petugas',
+            'phone' => '081234567891'
+        ]);
+
+        $petugas2 = User::create([
+            'users_name' => 'Petugas Dua',
+            'email' => 'petugas2@palapa.com',
+            'password' => bcrypt('password'),
+            'role' => 'petugas',
+            'phone' => '081234567892'
+        ]);
+
+        // 3. Setup Pelapor and Report
+        $pelapor = User::create([
+            'users_name' => 'Warga Pelapor',
+            'email' => 'warga@palapa.com',
+            'password' => bcrypt('password123'),
+            'role' => 'masyarakat',
+            'phone' => '089876543210'
+        ]);
+
+        $report = Report::create([
+            'user_id' => $pelapor->users_id,
+            'title' => 'Kebakaran Hutan Kalimantan',
+            'description' => 'Titik api terdeteksi sangat besar',
+            'latitude' => '-1.250000',
+            'longitude' => '116.830000',
+            'address' => 'Balikpapan',
+            'status' => 'diproses',
+            'assigned_petugas_id' => $petugas1->users_id,
+        ]);
+
+        // Create initial penugasan for petugas1
+        $penugasan1 = Penugasan::create([
+            'report_id' => $report->report_id,
+            'petugas_id' => $petugas1->users_id,
+            'assigned_at' => now(),
+        ]);
+
+        // Act: Reassign to petugas2
+        $response = $this->actingAs($admin)
+                         ->post(route('admin.reports.reassign', [$report->report_id, $petugas2->users_id]));
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        // Assert that the assigned petugas in reports is now petugas2
+        $this->assertDatabaseHas('reports', [
+            'report_id' => $report->report_id,
+            'assigned_petugas_id' => $petugas2->users_id,
+            'status' => 'diproses'
+        ]);
+
+        // Assert that the old penugasan for petugas1 has been deleted or completed
+        $this->assertDatabaseMissing('penugasan', [
+            'report_id' => $report->report_id,
+            'petugas_id' => $petugas1->users_id,
+            'completed_at' => null
+        ]);
+
+        // Assert that a new penugasan for petugas2 is created
+        $this->assertDatabaseHas('penugasan', [
+            'report_id' => $report->report_id,
+            'petugas_id' => $petugas2->users_id,
+            'completed_at' => null
+        ]);
+
+        // Assert status history records the change
+        $this->assertDatabaseHas('status_histories', [
+            'report_id' => $report->report_id,
+            'status_awal' => 'diproses',
+            'status_baru' => 'diproses',
+            'catatan' => 'Penugasan petugas diubah dari Petugas Satu menjadi Petugas Dua.',
+            'diubah_oleh' => 'Admin Utama (Admin Sistem)'
+        ]);
+    }
 }
+
