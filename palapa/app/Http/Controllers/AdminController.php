@@ -481,7 +481,10 @@ class AdminController extends Controller
 
         $report->penugasans()->create(['petugas_id' => $petugas->users_id, 'assigned_at' => now()]);
         $oldStatus = $report->status;
-        $report->update(['status' => 'diproses']);
+        $report->update([
+            'status' => 'diproses',
+            'assigned_petugas_id' => $petugas->users_id,
+        ]);
 
         // Kirim notifikasi ke pelapor (PBI 15)
         \App\Http\Controllers\NotifikasiController::createNotification(
@@ -503,6 +506,20 @@ class AdminController extends Controller
             'diubah_oleh' => Auth::user()->users_name . ' (' . $roleLabel . ')',
             'tanggal_ubah' => now(),
         ]);
+
+        // Kirim notifikasi ke pelapor (warga)
+        if ($report->user_id) {
+            \App\Http\Controllers\NotifikasiController::createNotification(
+                $report->user_id,
+                'Laporan "' . $report->title . '" Anda sedang ditangani oleh petugas.'
+            );
+        }
+
+        // Kirim notifikasi ke petugas
+        \App\Http\Controllers\NotifikasiController::createNotification(
+            $petugas->users_id,
+            'Anda ditugaskan untuk menangani laporan: "' . $report->title . '".'
+        );
 
         return redirect()->back()->with('success', 'Petugas ' . $petugas->users_name . ' berhasil ditugaskan.');
     }
