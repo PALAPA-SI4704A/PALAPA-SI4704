@@ -58,6 +58,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/admin/users/{user}/edit', [AdminController::class, 'usersEdit'])->name('admin.users.edit');
     Route::put('/admin/users/{user}', [AdminController::class, 'usersUpdate'])->name('admin.users.update');
     Route::delete('/admin/users/{user}', [AdminController::class, 'usersDestroy'])->name('admin.users.destroy');
+    Route::get('/admin/tren-distribusi', [AdminController::class, 'trenDistribusi'])->name('admin.tren-distribusi');
 });
 
 Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');

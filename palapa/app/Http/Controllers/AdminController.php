@@ -13,12 +13,8 @@ use Illuminate\Support\Facades\Log;
 
 class AdminController extends Controller
 {
-    /**
-     * Tampilkan halaman utama dashboard admin
-     */
     public function index(Request $request)
     {
-        // 1. Pengecekan Akses (Hanya Admin)
         if (Auth::user()->role !== 'admin') {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
@@ -34,7 +30,6 @@ class AdminController extends Controller
 
         $query->latest('report_id');
 
-        // Filter Tanggal
         if ($request->filled('date')) {
             $query->whereDate('created_at', $request->date);
         }
@@ -43,9 +38,9 @@ class AdminController extends Controller
         if ($request->filled('region')) {
             $region = $request->region;
             $query->where('address', 'like', "%{$region}%");
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
         }
-
-        // Filter Pencarian Lokasi/Judul/Deskripsi
         if ($request->filled('location')) {
             $location = $request->location;
             $query->where(function ($q) use ($location) {
@@ -59,7 +54,6 @@ class AdminController extends Controller
 
         $laporanMasuk = $query->get();
 
-        // 3. Menghitung Data Statistik
         $today = Carbon::today();
         $yesterday = Carbon::yesterday();
         $totalLaporan = Report::count();
@@ -133,57 +127,38 @@ class AdminController extends Controller
         // 5. Data untuk Line Chart Laporan Karhutla per periode
         $chartLabels = [];
         $chartCounts = [];
-        
+
         if ($period === '30days') {
             for ($i = 29; $i >= 0; $i--) {
                 $date = Carbon::now()->subDays($i);
-                $dateStr = $date->format('Y-m-d');
-                $label = $date->locale('id')->isoFormat('D MMM');
-                $chartLabels[] = $label;
-                $chartCounts[$dateStr] = 0;
+                $chartLabels[] = $date->locale('id')->isoFormat('D MMM');
+                $chartCounts[$date->format('Y-m-d')] = 0;
             }
-            
             $dbChartData = Report::select(DB::raw('DATE(created_at) as date_only'), DB::raw('count(*) as count'))
                 ->where('created_at', '>=', Carbon::now()->subDays(29)->startOfDay())
-                ->groupBy('date_only')
-                ->get();
-
+                ->groupBy('date_only')->get();
             foreach ($dbChartData as $data) {
-                $dateKey = $data->date_only;
-                if (isset($chartCounts[$dateKey])) {
-                    $chartCounts[$dateKey] = $data->count;
-                }
+                if (isset($chartCounts[$data->date_only])) $chartCounts[$data->date_only] = $data->count;
             }
         } elseif ($period === 'month') {
             $daysInMonth = Carbon::now()->daysInMonth;
             $startOfMonth = Carbon::now()->startOfMonth();
             for ($day = 1; $day <= $daysInMonth; $day++) {
                 $date = Carbon::now()->day($day);
-                $dateStr = $date->format('Y-m-d');
-                $label = $date->locale('id')->isoFormat('D MMM');
-                $chartLabels[] = $label;
-                $chartCounts[$dateStr] = 0;
+                $chartLabels[] = $date->locale('id')->isoFormat('D MMM');
+                $chartCounts[$date->format('Y-m-d')] = 0;
             }
-            
             $dbChartData = Report::select(DB::raw('DATE(created_at) as date_only'), DB::raw('count(*) as count'))
                 ->where('created_at', '>=', $startOfMonth)
-                ->groupBy('date_only')
-                ->get();
-
+                ->groupBy('date_only')->get();
             foreach ($dbChartData as $data) {
-                $dateKey = $data->date_only;
-                if (isset($chartCounts[$dateKey])) {
-                    $chartCounts[$dateKey] = $data->count;
-                }
+                if (isset($chartCounts[$data->date_only])) $chartCounts[$data->date_only] = $data->count;
             }
         } elseif ($period === 'year') {
-            $startOfYear = Carbon::now()->startOfYear();
             for ($m = 1; $m <= 12; $m++) {
                 $date = Carbon::now()->month($m);
-                $monthStr = $date->format('Y-m');
-                $label = $date->locale('id')->isoFormat('MMMM');
-                $chartLabels[] = $label;
-                $chartCounts[$monthStr] = 0;
+                $chartLabels[] = $date->locale('id')->isoFormat('MMMM');
+                $chartCounts[$date->format('Y-m')] = 0;
             }
             
             $monthDateFormat = DB::getDriverName() === 'sqlite'
@@ -196,42 +171,25 @@ class AdminController extends Controller
                 ->get();
 
             foreach ($dbChartData as $data) {
-                $monthKey = $data->month_only;
-                if (isset($chartCounts[$monthKey])) {
-                    $chartCounts[$monthKey] = $data->count;
-                }
+                if (isset($chartCounts[$data->month_only])) $chartCounts[$data->month_only] = $data->count;
             }
         } else {
-            // Default 7days
             for ($i = 6; $i >= 0; $i--) {
                 $date = Carbon::now()->subDays($i);
-                $dateStr = $date->format('Y-m-d');
-                
-                if ($i === 0) {
-                    $label = 'Hari Ini';
-                } elseif ($i === 1) {
-                    $label = 'Kemarin';
-                } else {
-                    $label = $date->locale('id')->isoFormat('D MMMM');
-                }
-                
+                if ($i === 0) $label = 'Hari Ini';
+                elseif ($i === 1) $label = 'Kemarin';
+                else $label = $date->locale('id')->isoFormat('D MMMM');
                 $chartLabels[] = $label;
-                $chartCounts[$dateStr] = 0;
+                $chartCounts[$date->format('Y-m-d')] = 0;
             }
-
             $dbChartData = Report::select(DB::raw('DATE(created_at) as date_only'), DB::raw('count(*) as count'))
                 ->where('created_at', '>=', Carbon::now()->subDays(6)->startOfDay())
-                ->groupBy('date_only')
-                ->get();
-
+                ->groupBy('date_only')->get();
             foreach ($dbChartData as $data) {
-                $dateKey = $data->date_only;
-                if (isset($chartCounts[$dateKey])) {
-                    $chartCounts[$dateKey] = $data->count;
-                }
+                if (isset($chartCounts[$data->date_only])) $chartCounts[$data->date_only] = $data->count;
             }
         }
-        
+
         $chartDataValues = array_values($chartCounts);
 
         // 6. Insight Otomatis (Automated Insights)
@@ -360,23 +318,108 @@ class AdminController extends Controller
     }
 
     /**
-     * Tampilkan detail laporan untuk Admin
+     * Tampilkan halaman tren & distribusi laporan (PBI 36 & 37)
      */
-    public function show(Report $report)
+    public function trenDistribusi(Request $request)
     {
         if (Auth::user()->role !== 'admin') {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
 
+        $period = $request->input('period', '7days');
+        $chartLabels = [];
+        $dateKeys = [];
+
+        if ($period === '30days') {
+            for ($i = 29; $i >= 0; $i--) {
+                $date = Carbon::now()->subDays($i);
+                $chartLabels[] = $date->locale('id')->isoFormat('D MMM');
+                $dateKeys[] = $date->format('Y-m-d');
+            }
+            $groupRaw = 'DATE(created_at)';
+            $rangeStart = Carbon::now()->subDays(29)->startOfDay();
+        } elseif ($period === 'year') {
+            for ($m = 1; $m <= 12; $m++) {
+                $date = Carbon::now()->month($m);
+                $chartLabels[] = $date->locale('id')->isoFormat('MMMM');
+                $dateKeys[] = $date->format('Y-m');
+            }
+            $groupRaw = "DATE_FORMAT(created_at, '%Y-%m')";
+            $rangeStart = Carbon::now()->startOfYear();
+        } else {
+            for ($i = 6; $i >= 0; $i--) {
+                $date = Carbon::now()->subDays($i);
+                $chartLabels[] = $i === 0 ? 'Hari Ini' : ($i === 1 ? 'Kemarin' : $date->locale('id')->isoFormat('D MMM'));
+                $dateKeys[] = $date->format('Y-m-d');
+            }
+            $groupRaw = 'DATE(created_at)';
+            $rangeStart = Carbon::now()->subDays(6)->startOfDay();
+        }
+
+        $statuses = ['pending', 'valid', 'diproses', 'selesai', 'ditolak'];
+        $trenByStatus = [];
+
+        foreach ($statuses as $status) {
+            $counts = array_fill_keys($dateKeys, 0);
+            $dbData = Report::select(DB::raw("$groupRaw as period_key"), DB::raw('count(*) as count'))
+                ->where('status', $status)
+                ->where('created_at', '>=', $rangeStart)
+                ->groupBy('period_key')
+                ->get();
+            foreach ($dbData as $d) {
+                if (isset($counts[$d->period_key])) {
+                    $counts[$d->period_key] = $d->count;
+                }
+            }
+            $trenByStatus[$status] = array_values($counts);
+        }
+
+        $statusLabels = ['Pending', 'Valid', 'Diproses', 'Selesai', 'Ditolak'];
+        $statusData = [
+            Report::where('status', 'pending')->count(),
+            Report::where('status', 'valid')->count(),
+            Report::where('status', 'diproses')->count(),
+            Report::where('status', 'selesai')->count(),
+            Report::where('status', 'ditolak')->count(),
+        ];
+
+        $wilayahRaw = Report::select('address', DB::raw('count(*) as count'))
+            ->whereNotNull('address')
+            ->where('address', '!=', '')
+            ->groupBy('address')
+            ->orderByDesc('count')
+            ->limit(20)
+            ->get();
+
+        $wilayahMap = [];
+        foreach ($wilayahRaw as $item) {
+            $parts = array_map('trim', explode(',', $item->address));
+            $wilayah = $parts[0] ?? 'Tidak diketahui';
+            $wilayahMap[$wilayah] = ($wilayahMap[$wilayah] ?? 0) + $item->count;
+        }
+        arsort($wilayahMap);
+        $wilayahMap = array_slice($wilayahMap, 0, 10);
+
+        $wilayahLabels = array_keys($wilayahMap);
+        $wilayahCounts = array_values($wilayahMap);
+
+        return view('admin.tren-distribusi', compact(
+            'chartLabels', 'trenByStatus', 'period',
+            'statusLabels', 'statusData',
+            'wilayahLabels', 'wilayahCounts'
+        ));
+    }
+
+    public function show(Report $report)
+    {
+        if (Auth::user()->role !== 'admin') {
+            abort(403, 'Anda tidak memiliki akses ke halaman ini.');
+        }
         $report->load(['pelapor', 'penugasans.petugas']);
         $petugasTersedia = User::where('role', 'petugas')->get();
-
         return view('admin.reports.show', compact('report', 'petugasTersedia'));
     }
 
-    /**
-     * Verifikasi laporan (Validasi atau Tolak)
-     */
     public function verify(Request $request, Report $report)
     {
         if (Auth::user()->role !== 'admin') {
@@ -391,14 +434,18 @@ class AdminController extends Controller
         ]);
 
         $oldStatus = $report->status;
-
         $data = ['status' => $request->status];
         if ($request->status === 'ditolak') {
             $data['rejection_reason'] = $request->rejection_reason;
         }
-
         $report->update($data);
-        
+
+        // Kirim notifikasi ke pelapor (PBI 15)
+        \App\Http\Controllers\NotifikasiController::createNotification(
+            $report->user_id,
+            'Status laporan Anda (#' . $report->report_id . ') telah diperbarui menjadi: ' . ucfirst($request->status) . '.'
+        );
+
         Log::info('Admin report verified successfully', ['new_status' => $report->status]);
 
         $roleLabel = match (Auth::user()->role) {
@@ -423,32 +470,27 @@ class AdminController extends Controller
         return redirect()->back()->with('success', 'Laporan berhasil diverifikasi menjadi: ' . ucfirst($request->status));
     }
 
-    /**
-     * Tugaskan petugas lapangan ke laporan
-     */
     public function assign(Report $report, User $petugas)
     {
         if (Auth::user()->role !== 'admin') {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
-
-        // Pastikan role user yang ditugaskan adalah petugas
         if ($petugas->role !== 'petugas') {
             return redirect()->back()->withErrors(['error' => 'User yang ditunjuk bukan merupakan Petugas Lapangan.']);
         }
 
-        // Simpan ke tabel penugasan
-        $report->penugasans()->create([
-            'petugas_id' => $petugas->users_id,
-            'assigned_at' => now()
-        ]);
-
-        // Perbarui status laporan menjadi diproses
+        $report->penugasans()->create(['petugas_id' => $petugas->users_id, 'assigned_at' => now()]);
         $oldStatus = $report->status;
         $report->update([
             'status' => 'diproses',
             'assigned_petugas_id' => $petugas->users_id,
         ]);
+
+        // Kirim notifikasi ke pelapor (PBI 15)
+        \App\Http\Controllers\NotifikasiController::createNotification(
+            $report->user_id,
+            'Laporan Anda (#' . $report->report_id . ') sedang diproses oleh petugas lapangan.'
+        );
 
         $roleLabel = match (Auth::user()->role) {
             'masyarakat' => 'Pelapor',
@@ -577,7 +619,6 @@ class AdminController extends Controller
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
 
-        // Tentukan role aktif (petugas atau masyarakat)
         $activeRole = $request->input('role', 'petugas');
         if (!in_array($activeRole, ['petugas', 'masyarakat'])) {
             $activeRole = 'petugas';
@@ -585,10 +626,9 @@ class AdminController extends Controller
 
         $query = User::where('role', $activeRole)->latest('users_id');
 
-        // Pencarian berdasarkan nama, email, telepon
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('users_name', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%")
                   ->orWhere('phone', 'like', "%{$search}%");
@@ -596,34 +636,24 @@ class AdminController extends Controller
         }
 
         $users = $query->paginate(15)->withQueryString();
-
         return view('admin.users.index', compact('users', 'activeRole'));
     }
 
-    /**
-     * Tampilkan form edit pengguna
-     */
     public function usersEdit(User $user)
     {
         if (Auth::user()->role !== 'admin') {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
-
         return view('admin.users.edit', compact('user'));
     }
 
-    /**
-     * Import data petugas dari file CSV
-     */
     public function importPetugas(Request $request)
     {
         if (Auth::user()->role !== 'admin') {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
 
-        $request->validate([
-            'file' => 'required|mimes:csv,txt|max:2048',
-        ]);
+        $request->validate(['file' => 'required|mimes:csv,txt|max:2048']);
 
         $file = $request->file('file');
         $handle = fopen($file->getPathname(), "r");
@@ -633,16 +663,10 @@ class AdminController extends Controller
         $skippedCount = 0;
         $skippedDetails = [];
         $importedData = [];
-        
         $rowNumber = 1;
-        while (($row = fgetcsv($handle, 1000, ",")) !== false) {
-            if ($header) {
-                $header = false;
-                $rowNumber++;
-                continue; // Abaikan baris pertama (header)
-            }
 
-            // Asumsi format CSV: NAMA, EMAIL, NO TELEPON, PASSWORD
+        while (($row = fgetcsv($handle, 1000, ",")) !== false) {
+            if ($header) { $header = false; $rowNumber++; continue; }
             if (count($row) >= 4) {
                 $email = trim($row[1]);
                 if (empty($email)) {
@@ -658,11 +682,7 @@ class AdminController extends Controller
                             'role'       => 'petugas',
                         ]);
                         $successCount++;
-                        $importedData[] = [
-                            'name' => trim($row[0]),
-                            'email' => $email,
-                            'phone' => trim($row[2])
-                        ];
+                        $importedData[] = ['name' => trim($row[0]), 'email' => $email, 'phone' => trim($row[2])];
                     } catch (\Exception $e) {
                         $skippedCount++;
                         $skippedDetails[] = "Baris $rowNumber: Gagal menyimpan data ($email).";
@@ -683,17 +703,10 @@ class AdminController extends Controller
 
         return redirect()->route('admin.users.index', ['role' => 'petugas'])->with([
             'success' => $successCount . ' data petugas berhasil diimpor.',
-            'import_summary' => [
-                'skipped' => $skippedCount,
-                'details' => $skippedDetails,
-                'imported_data' => $importedData
-            ]
+            'import_summary' => ['skipped' => $skippedCount, 'details' => $skippedDetails, 'imported_data' => $importedData]
         ]);
     }
 
-    /**
-     * Simpan perubahan data pengguna
-     */
     public function usersUpdate(Request $request, User $user)
     {
         if (Auth::user()->role !== 'admin') {
@@ -711,21 +724,16 @@ class AdminController extends Controller
         $user->email = $validated['email'];
         $user->phone = $validated['phone'];
         $user->role = $validated['role'];
-
         $user->save();
 
         return redirect()->route('admin.users.index')->with('success', 'Data pengguna ' . $user->users_name . ' berhasil diperbarui.');
     }
 
-    /**
-     * Hapus laporan (data tidak valid)
-     */
     public function destroy(Report $report)
     {
         if (Auth::user()->role !== 'admin') {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
-
         $report->delete();
 
         return redirect()->route('admin.dashboard')->with('success', 'Laporan berhasil dihapus.');
@@ -775,22 +783,15 @@ class AdminController extends Controller
         return view('admin.reports.index', compact('laporanMasuk'));
     }
 
-    /**
-     * Hapus data pengguna (user/petugas) tidak valid
-     */
     public function usersDestroy(User $user)
     {
         if (Auth::user()->role !== 'admin') {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
-
-        // Prevent admin from deleting themselves
         if ($user->users_id === Auth::id()) {
             return redirect()->back()->with('error', 'Anda tidak dapat menghapus akun Anda sendiri.');
         }
-
         $user->delete();
-
         return redirect()->back()->with('success', 'Data pengguna berhasil dihapus.');
     }
 
