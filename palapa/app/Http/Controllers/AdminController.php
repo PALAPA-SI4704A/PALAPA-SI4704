@@ -19,7 +19,10 @@ class AdminController extends Controller
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
 
-        $query = Report::with(['pelapor', 'penugasans.petugas'])->latest('report_id');
+        // 2. Query Laporan Masuk (Only unfinished reports on the dashboard)
+        $query = Report::with(['pelapor', 'penugasans.petugas'])
+            ->whereNotIn('status', ['selesai', 'ditolak'])
+            ->latest('report_id');
 
         if ($request->filled('date')) {
             $query->whereDate('created_at', $request->date);
@@ -41,6 +44,7 @@ class AdminController extends Controller
         $laporanMasuk = $query->get();
 
         $today = Carbon::today();
+        $yesterday = Carbon::yesterday();
         $totalLaporan = Report::count();
         $laporanHariIni = Report::whereDate('created_at', $today)->count();
         $menungguVerifikasi = Report::where('status', 'pending')->count();
@@ -49,7 +53,67 @@ class AdminController extends Controller
         $laporanSelesai = Report::where('status', 'selesai')->count();
         $laporanDitolak = Report::where('status', 'ditolak')->count();
 
+        // 4. Perhitungan Tren (Kenaikan/Penurunan) dibanding periode sebelumnya
         $period = $request->input('period', '7days');
+        
+        if ($period === '30days') {
+            $startCurrent = Carbon::now()->subDays(29)->startOfDay();
+            $endCurrent = Carbon::now()->endOfDay();
+            $startPrev = Carbon::now()->subDays(59)->startOfDay();
+            $endPrev = Carbon::now()->subDays(30)->endOfDay();
+        } elseif ($period === 'month') {
+            $startCurrent = Carbon::now()->startOfMonth();
+            $endCurrent = Carbon::now()->endOfDay();
+            $startPrev = Carbon::now()->subMonth()->startOfMonth();
+            $endPrev = Carbon::now()->subMonth()->endOfMonth();
+        } elseif ($period === 'year') {
+            $startCurrent = Carbon::now()->startOfYear();
+            $endCurrent = Carbon::now()->endOfDay();
+            $startPrev = Carbon::now()->subYear()->startOfYear();
+            $endPrev = Carbon::now()->subYear()->endOfYear();
+        } else {
+            // Default 7days
+            $startCurrent = Carbon::now()->subDays(6)->startOfDay();
+            $endCurrent = Carbon::now()->endOfDay();
+            $startPrev = Carbon::now()->subDays(13)->startOfDay();
+            $endPrev = Carbon::now()->subDays(7)->endOfDay();
+        }
+
+        // Laporan Hari Ini vs Kemarin
+        $laporanKemarin = Report::whereDate('created_at', $yesterday)->count();
+        $trendHariIni = $this->getTrendData($laporanHariIni, $laporanKemarin, true);
+
+        // Menunggu Verifikasi
+        $currPending = Report::where('status', 'pending')->whereBetween('created_at', [$startCurrent, $endCurrent])->count();
+        $prevPending = Report::where('status', 'pending')->whereBetween('created_at', [$startPrev, $endPrev])->count();
+        $trendMenungguVerifikasi = $this->getTrendData($currPending, $prevPending, true);
+
+        // Sedang Ditangani (Diproses)
+        $currDiproses = Report::where('status', 'diproses')->whereBetween('created_at', [$startCurrent, $endCurrent])->count();
+        $prevDiproses = Report::where('status', 'diproses')->whereBetween('created_at', [$startPrev, $endPrev])->count();
+        $trendSedangDitangani = $this->getTrendData($currDiproses, $prevDiproses, false);
+
+        // Valid
+        $currValid = Report::where('status', 'valid')->whereBetween('created_at', [$startCurrent, $endCurrent])->count();
+        $prevValid = Report::where('status', 'valid')->whereBetween('created_at', [$startPrev, $endPrev])->count();
+        $trendLaporanValid = $this->getTrendData($currValid, $prevValid, false);
+
+        // Selesai
+        $currSelesai = Report::where('status', 'selesai')->whereBetween('created_at', [$startCurrent, $endCurrent])->count();
+        $prevSelesai = Report::where('status', 'selesai')->whereBetween('created_at', [$startPrev, $endPrev])->count();
+        $trendLaporanSelesai = $this->getTrendData($currSelesai, $prevSelesai, false);
+
+        // Ditolak
+        $currDitolak = Report::where('status', 'ditolak')->whereBetween('created_at', [$startCurrent, $endCurrent])->count();
+        $prevDitolak = Report::where('status', 'ditolak')->whereBetween('created_at', [$startPrev, $endPrev])->count();
+        $trendLaporanDitolak = $this->getTrendData($currDitolak, $prevDitolak, true);
+
+        // Total Laporan
+        $currTotal = Report::whereBetween('created_at', [$startCurrent, $endCurrent])->count();
+        $prevTotal = Report::whereBetween('created_at', [$startPrev, $endPrev])->count();
+        $trendTotalLaporan = $this->getTrendData($currTotal, $prevTotal, true);
+
+        // 5. Data untuk Line Chart Laporan Karhutla per periode
         $chartLabels = [];
         $chartCounts = [];
 
@@ -110,10 +174,128 @@ class AdminController extends Controller
 
         $chartDataValues = array_values($chartCounts);
 
+        // 6. Insight Otomatis (Automated Insights)
+        $insights = [];
+        
+        // A. Tingkat Penyelesaian Laporan (Resolution Rate)
+        $totalValidDanProses = $laporanValid + $sedangDitangani + $laporanSelesai;
+        $resolutionRate = $totalValidDanProses > 0 ? round(($laporanSelesai / $totalValidDanProses) * 100) : 0;
+        if ($resolutionRate >= 75) {
+            $insights[] = [
+                'type' => 'success',
+                'icon' => 'ph-check-circle',
+                'title' => 'Tingkat Penyelesaian Tinggi (' . $resolutionRate . '%)',
+                'desc' => 'Kinerja penanganan laporan karhutla sangat memuaskan. Sebagian besar laporan aktif telah berhasil diselesaikan oleh petugas lapangan.'
+            ];
+        } elseif ($resolutionRate >= 40) {
+            $insights[] = [
+                'type' => 'warning',
+                'icon' => 'ph-warning-circle',
+                'title' => 'Tingkat Penyelesaian Sedang (' . $resolutionRate . '%)',
+                'desc' => 'Tingkat penyelesaian sedang. Harap terus dorong petugas pemadam lapangan untuk mempercepat pemadaman titik api.'
+            ];
+        } else {
+            $insights[] = [
+                'type' => 'danger',
+                'icon' => 'ph-x-circle',
+                'title' => 'Tingkat Penyelesaian Rendah (' . $resolutionRate . '%)',
+                'desc' => 'Perhatian! Banyak laporan valid yang belum diselesaikan. Segera lakukan koordinasi intensif dengan pos pemadam terdekat.'
+            ];
+        }
+
+        // B. Backlog Verifikasi (Pending backlog)
+        if ($menungguVerifikasi > 5) {
+            $insights[] = [
+                'type' => 'danger',
+                'icon' => 'ph-bell-ringing',
+                'title' => 'Backlog Verifikasi Tinggi (' . $menungguVerifikasi . ' Laporan)',
+                'desc' => 'Terdapat banyak laporan baru menunggu verifikasi. Harap segera periksa validitas laporan agar kebakaran bisa cepat dipadamkan.'
+            ];
+        } elseif ($menungguVerifikasi > 0) {
+            $insights[] = [
+                'type' => 'warning',
+                'icon' => 'ph-clock',
+                'title' => 'Menunggu Verifikasi (' . $menungguVerifikasi . ' Laporan)',
+                'desc' => 'Terdapat laporan kebakaran baru masuk yang memerlukan verifikasi keabsahan data dari Administrator.'
+            ];
+        } else {
+            $insights[] = [
+                'type' => 'success',
+                'icon' => 'ph-seal-check',
+                'title' => 'Antrean Verifikasi Bersih',
+                'desc' => 'Kerja bagus! Seluruh laporan masuk telah sukses diverifikasi oleh tim admin.'
+            ];
+        }
+
+        // C. Hotspot Wilayah (Kalimantan Specific)
+        $regions = ['Pontianak', 'Samarinda', 'Balikpapan', 'Palangka Raya', 'Banjarmasin', 'Tarakan', 'Tanjung Selor', 'Ketapang', 'Singkawang', 'Banjarbaru'];
+        $regionCounts = [];
+        foreach ($regions as $r) {
+            $regionCounts[$r] = Report::where('address', 'like', "%{$r}%")->count();
+        }
+        arsort($regionCounts);
+        $topRegion = key($regionCounts);
+        $topRegionCount = current($regionCounts);
+        if ($topRegionCount > 0) {
+            $insights[] = [
+                'type' => 'info',
+                'icon' => 'ph-map-pin-line',
+                'title' => 'Hotspot Utama: ' . $topRegion,
+                'desc' => 'Wilayah ' . $topRegion . ' mencatat jumlah titik api terbanyak di Kalimantan dengan total ' . $topRegionCount . ' laporan.'
+            ];
+        }
+
+        // D. Tingkat Keparahan Kebakaran Dominan (Fire Level)
+        $dominantFireLevel = Report::select('fire_level', DB::raw('count(*) as count'))
+            ->whereNotNull('fire_level')
+            ->groupBy('fire_level')
+            ->orderBy('count', 'desc')
+            ->first();
+        if ($dominantFireLevel) {
+            $levelLabels = [
+                'low' => 'Rendah (Low)',
+                'medium' => 'Sedang (Medium)',
+                'high' => 'Tinggi (High)',
+                'critical' => 'Kritis (Critical)'
+            ];
+            $levelLabel = $levelLabels[$dominantFireLevel->fire_level] ?? ucfirst($dominantFireLevel->fire_level);
+            
+            if (in_array($dominantFireLevel->fire_level, ['high', 'critical'])) {
+                $insights[] = [
+                    'type' => 'danger',
+                    'icon' => 'ph-fire-simple',
+                    'title' => 'Tingkat Bahaya Dominan: ' . $levelLabel,
+                    'desc' => 'Kebakaran berskala besar / kritis mendominasi wilayah laporan. Harap prioritaskan keselamatan warga dan penanganan darurat.'
+                ];
+            } else {
+                $insights[] = [
+                    'type' => 'info',
+                    'icon' => 'ph-info',
+                    'title' => 'Tingkat Bahaya Dominan: ' . $levelLabel,
+                    'desc' => 'Mayoritas laporan terdeteksi berada pada tingkat bahaya sedang atau ringan.'
+                ];
+            }
+        }
+
         return view('admin.dashboard', compact(
-            'laporanMasuk', 'totalLaporan', 'laporanHariIni', 'menungguVerifikasi',
-            'laporanValid', 'sedangDitangani', 'laporanSelesai', 'laporanDitolak',
-            'chartLabels', 'chartDataValues'
+            'laporanMasuk',
+            'totalLaporan',
+            'laporanHariIni',
+            'menungguVerifikasi',
+            'laporanValid',
+            'sedangDitangani',
+            'laporanSelesai',
+            'laporanDitolak',
+            'trendHariIni',
+            'trendMenungguVerifikasi',
+            'trendSedangDitangani',
+            'trendLaporanValid',
+            'trendLaporanSelesai',
+            'trendLaporanDitolak',
+            'trendTotalLaporan',
+            'chartLabels',
+            'chartDataValues',
+            'insights'
         ));
     }
 
@@ -429,7 +611,46 @@ class AdminController extends Controller
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
         $report->delete();
-        return redirect()->route('admin.dashboard')->with('success', 'Laporan berhasil dihapus.');
+
+        return redirect()->back()->with('success', 'Laporan berhasil dihapus.');
+    }
+
+    /**
+     * Tampilkan daftar seluruh laporan (semua status) untuk admin
+     */
+    public function reportsIndex(Request $request)
+    {
+        if (Auth::user()->role !== 'admin') {
+            abort(403, 'Anda tidak memiliki akses ke halaman ini.');
+        }
+
+        $query = Report::with(['pelapor', 'penugasans.petugas'])->latest('report_id');
+
+        // Filter Tanggal
+        if ($request->filled('date')) {
+            $query->whereDate('created_at', $request->date);
+        }
+
+        // Filter Status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Filter Pencarian Lokasi/Judul/Deskripsi
+        if ($request->filled('location')) {
+            $location = $request->location;
+            $query->where(function ($q) use ($location) {
+                $q->where('latitude', 'like', "%{$location}%")
+                  ->orWhere('longitude', 'like', "%{$location}%")
+                  ->orWhere('title', 'like', "%{$location}%")
+                  ->orWhere('description', 'like', "%{$location}%")
+                  ->orWhere('address', 'like', "%{$location}%");
+            });
+        }
+
+        $laporanMasuk = $query->get();
+
+        return view('admin.reports.index', compact('laporanMasuk'));
     }
 
     public function usersDestroy(User $user)
@@ -443,4 +664,58 @@ class AdminController extends Controller
         $user->delete();
         return redirect()->back()->with('success', 'Data pengguna berhasil dihapus.');
     }
+
+    /**
+     * Hitung data kenaikan/penurunan (tren) dibanding periode sebelumnya
+     */
+    private function getTrendData($current, $previous, $isNegativeMetric = false)
+    {
+        $diff = $current - $previous;
+        
+        if ($previous == 0) {
+            if ($current == 0) {
+                return [
+                    'percent' => 0,
+                    'text' => 'Stabil (0)',
+                    'class' => 'trend-neutral',
+                    'icon' => 'ph-minus'
+                ];
+            }
+            $class = $isNegativeMetric ? 'trend-up bad' : 'trend-up good';
+            return [
+                'percent' => 100,
+                'text' => 'Naik +' . $current,
+                'class' => $class,
+                'icon' => 'ph-trend-up'
+            ];
+        }
+
+        $percent = round(($diff / $previous) * 100);
+
+        if ($diff > 0) {
+            $class = $isNegativeMetric ? 'trend-up bad' : 'trend-up good';
+            return [
+                'percent' => $percent,
+                'text' => 'Naik +' . $percent . '%',
+                'class' => $class,
+                'icon' => 'ph-trend-up'
+            ];
+        } elseif ($diff < 0) {
+            $class = $isNegativeMetric ? 'trend-down good' : 'trend-down bad';
+            return [
+                'percent' => abs($percent),
+                'text' => 'Turun ' . abs($percent) . '%',
+                'class' => $class,
+                'icon' => 'ph-trend-down'
+            ];
+        } else {
+            return [
+                'percent' => 0,
+                'text' => 'Stabil (0%)',
+                'class' => 'trend-neutral',
+                'icon' => 'ph-minus'
+            ];
+        }
+    }
 }
+

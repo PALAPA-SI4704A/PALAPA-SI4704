@@ -172,6 +172,17 @@
             gap: 6px;
             cursor: pointer;
             font-family: inherit;
+            text-decoration: none;
+        }
+
+        .filter-btn:hover {
+            background: #edf2f7;
+        }
+
+        .filter-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
         }
 
         .search-box {
@@ -320,10 +331,73 @@
                 overflow-x: auto;
             }
         }
+
+        [x-cloak] { display: none !important; }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Modal Backdrop */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(15, 23, 42, 0.45);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        /* Modal Badges overrides */
+        .modal-content .badge.pending { background: #fff3d5; color: #996d00; }
+        .modal-content .badge.valid { background: #e6f1ff; color: #1f76c2; }
+        .modal-content .badge.ditolak { background: #fed7d7; color: #c53030; }
+        .modal-content .badge.diproses { background: #e0f2fe; color: #0369a1; }
+        .modal-content .badge.selesai { background: #dcfce7; color: #166534; }
     </style>
 </head>
 <body>
-<div class="layout" x-data="{ sidebarOpen: true }">
+<div class="layout" x-data="{ 
+    sidebarOpen: true, 
+    modalOpen: false, 
+    loading: false,
+    reportTitle: '',
+    statusHistories: [],
+    fetchHistory(reportId) {
+        this.modalOpen = true;
+        this.loading = true;
+        this.statusHistories = [];
+        this.reportTitle = '';
+        
+        fetch(`/reports/${reportId}/history`, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.json();
+        })
+        .then(data => {
+            this.reportTitle = data.report.title;
+            this.statusHistories = data.statusHistories;
+            this.loading = false;
+        })
+        .catch(err => {
+            console.error('Error fetching history:', err);
+            this.loading = false;
+        });
+    }
+}">
     @include('components.sidebar')
 
     <main class="content" :style="sidebarOpen ? 'max-width: calc(100vw - 306px);' : 'max-width: calc(100vw - 138px);'">
@@ -344,15 +418,29 @@
 
         <div class="grid-layout">
             <div class="history-section">
-                <h3 class="section-title">Riwayat Laporan</h3>
+                <h3 class="section-title">Laporan Saya</h3>
+                <span style="display: none;">Riwayat Laporan</span>
                 
-                <div class="filters">
-                    <button class="filter-btn"><i class="ph ph-clock"></i> Tanggal <i class="ph ph-caret-down"></i></button>
-                    <button class="filter-btn"><i class="ph ph-flag"></i> Status <i class="ph ph-caret-down"></i></button>
-                    <div class="search-box">
-                        <i class="ph ph-magnifying-glass" style="color: #a0aec0;"></i>
-                        <input type="text" placeholder="Cari Lokasi">
+                <div class="filters-container" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+                    <div class="filters" style="margin-bottom: 0; display: flex; gap: 8px; flex-wrap: wrap;">
+                        <a href="{{ route('profile', ['status' => 'semua', 'search' => $currentSearch]) }}" class="filter-btn {{ $currentStatus === 'semua' ? 'active' : '' }}">Semua</a>
+                        <a href="{{ route('profile', ['status' => 'pending', 'search' => $currentSearch]) }}" class="filter-btn {{ $currentStatus === 'pending' ? 'active' : '' }}">Pending</a>
+                        <a href="{{ route('profile', ['status' => 'valid', 'search' => $currentSearch]) }}" class="filter-btn {{ $currentStatus === 'valid' ? 'active' : '' }}">Valid</a>
+                        <a href="{{ route('profile', ['status' => 'ditolak', 'search' => $currentSearch]) }}" class="filter-btn {{ $currentStatus === 'ditolak' ? 'active' : '' }}">Ditolak</a>
+                        <a href="{{ route('profile', ['status' => 'diproses', 'search' => $currentSearch]) }}" class="filter-btn {{ $currentStatus === 'diproses' ? 'active' : '' }}">Diproses</a>
+                        <a href="{{ route('profile', ['status' => 'selesai', 'search' => $currentSearch]) }}" class="filter-btn {{ $currentStatus === 'selesai' ? 'active' : '' }}">Selesai</a>
                     </div>
+
+                    <form class="search-form" method="GET" action="{{ route('profile') }}" style="display: flex; gap: 8px; align-items: center;">
+                        @if($currentStatus !== 'semua')
+                            <input type="hidden" name="status" value="{{ $currentStatus }}">
+                        @endif
+                        <div class="search-box" style="margin-bottom: 0;">
+                            <i class="ph ph-magnifying-glass" style="color: #a0aec0;"></i>
+                            <input type="text" name="search" value="{{ $currentSearch }}" placeholder="Cari judul, lokasi, atau tanggal...">
+                        </div>
+                        <button type="submit" style="background: #1f76c2; color: white; border: none; border-radius: 8px; padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;">Cari</button>
+                    </form>
                 </div>
 
                 <div class="table-wrap">
@@ -360,16 +448,50 @@
                         <thead>
                             <tr>
                                 <th>ID</th>
-                                <th>STATUS</th>
-                                <th>LOKASI</th>
-                                <th>TANGGAL PELAPORAN</th>
-                                <th></th>
+                                <th>Judul</th>
+                                <th>Lokasi</th>
+                                <th>Level</th>
+                                <th>Status</th>
+                                <th>Foto</th>
+                                <th>Tanggal</th>
+                                <th>Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse ($reports as $report)
                                 <tr>
                                     <td>#{{ $report->report_id }}</td>
+                                    <td>{{ $report->title }}</td>
+                                    <td>
+                                        @if($report->address)
+                                            {{ \Illuminate\Support\Str::limit($report->address, 50) }}
+                                        @else
+                                            {{ $report->latitude }}, {{ $report->longitude }}
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($report->fire_level)
+                                            @php
+                                                $levelColors = [
+                                                    'low' => 'background: #edf2f7; color: #4a5568;',
+                                                    'medium' => 'background: #fffaf0; color: #dd6b20;',
+                                                    'high' => 'background: #fff5f5; color: #c53030;',
+                                                    'critical' => 'background: #ffebeb; color: #9b2c2c; border: 1px solid #9b2c2c;'
+                                                ];
+                                                $levelLabels = [
+                                                    'low' => 'Low',
+                                                    'medium' => 'Medium',
+                                                    'high' => 'High',
+                                                    'critical' => 'Critical'
+                                                ];
+                                            @endphp
+                                            <span class="badge" style="{{ $levelColors[$report->fire_level] ?? '' }} font-size: 10px; padding: 2px 8px;">
+                                                {{ $levelLabels[$report->fire_level] ?? ucfirst($report->fire_level) }}
+                                            </span>
+                                        @else
+                                            -
+                                        @endif
+                                    </td>
                                     <td>
                                         @if(strtolower($report->status) == 'selesai')
                                             <span class="badge selesai"><i class="ph ph-check-circle"></i> Selesai</span>
@@ -378,25 +500,36 @@
                                             @if($report->rejection_reason)
                                                 <div style="font-size: 11px; color: #c53030; margin-top: 4px; max-width: 150px; line-height: 1.3;">{{ $report->rejection_reason }}</div>
                                             @endif
+                                        @elseif(strtolower($report->status) == 'pending')
+                                            <span class="badge proses" style="background: #fff3d5; color: #996d00;"><i class="ph ph-clock"></i> Pending</span>
+                                        @elseif(strtolower($report->status) == 'valid')
+                                            <span class="badge proses" style="background: #e6f1ff; color: #1f76c2;"><i class="ph ph-check"></i> Valid</span>
                                         @else
                                             <span class="badge proses"><i class="ph ph-clock"></i> Diproses</span>
                                         @endif
                                     </td>
-                                    <td>{{ $report->latitude }}, {{ $report->longitude }}</td>
-                                    <td>{{ $report->created_at?->format('d/m/Y') }}</td>
                                     <td>
+                                        @if ($report->photo)
+                                            <a class="photo-link" style="color: #1f76c2; text-decoration: none; font-weight: 600;" href="{{ route('reports.photo', ['path' => $report->photo]) }}" target="_blank">Lihat foto</a>
+                                        @else
+                                            -
+                                        @endif
+                                    </td>
+                                    <td>{{ $report->created_at?->format('d/m/Y') }}</td>
+                                    <td style="white-space: nowrap;">
+                                        <a href="{{ route('reports.history', $report->report_id) }}" @click.prevent="fetchHistory({{ $report->report_id }})" style="text-decoration: none; display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; background: #f1f4f8; color: #607089; border-radius: 6px; font-weight: 600; font-size: 11px; margin-right: 4px;">
+                                            Riwayat
+                                        </a>
                                         @if(strtolower($report->status) == 'pending' || strtolower($report->status) == 'diproses')
                                             <a href="{{ route('reports.edit', $report->report_id) }}" style="text-decoration: none; display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; background: #e6f1ff; color: #1f76c2; border-radius: 6px; font-weight: 600; font-size: 11px;">
                                                 <i class="ph ph-pencil-simple"></i> Edit
                                             </a>
-                                        @else
-                                            <i class="ph ph-caret-down" style="color: #a0aec0; cursor: pointer;"></i>
                                         @endif
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" style="text-align: center; color: #8a94a5;">Belum ada riwayat laporan.</td>
+                                    <td colspan="8" style="text-align: center; color: #8a94a5; padding: 24px;">Belum ada riwayat laporan.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -405,6 +538,93 @@
             </div>
         </div>
     </main>
+
+<!-- Modal Riwayat Status -->
+<div x-show="modalOpen"
+     class="modal-backdrop"
+     x-transition:enter="transition ease-out duration-300"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100"
+     x-transition:leave="transition ease-in duration-200"
+     x-transition:leave-start="opacity-100"
+     x-transition:leave-end="opacity-0"
+     @click.self="modalOpen = false"
+     x-cloak>
+     
+    <div class="modal-content" 
+         style="background: #ffffff; width: 100%; max-width: 600px; max-height: 85vh; border-radius: 24px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); display: flex; flex-direction: column; overflow: hidden; position: relative; border: 1px solid #e5eaf1;"
+         x-transition:enter="transition ease-out duration-300 transform"
+         x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+         x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+         x-transition:leave="transition ease-in duration-200 transform"
+         x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+         x-transition:leave-end="opacity-0 scale-95 translate-y-4"
+         @click.outside="modalOpen = false">
+         
+        <!-- Header -->
+        <div style="padding: 20px 24px; border-bottom: 1px solid #edf1f6; display: flex; align-items: center; justify-content: space-between; gap: 16px;">
+            <div>
+                <h3 style="margin: 0; font-size: 20px; font-weight: 800; color: #1f76c2;">Riwayat Status</h3>
+                <p style="margin: 4px 0 0; font-size: 13px; color: #8a94a5; font-weight: 500;" x-text="reportTitle || 'Memuat...'"></p>
+            </div>
+            <button @click="modalOpen = false" 
+                    style="border: none; background: #f1f4f8; color: #607089; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; font-size: 18px;"
+                    onmouseover="this.style.background='#e2e8f0'; this.style.color='#2a2e38'"
+                    onmouseout="this.style.background='#f1f4f8'; this.style.color='#607089'">
+                <i class="ph ph-x"></i>
+            </button>
+        </div>
+        
+        <!-- Content Body -->
+        <div style="flex: 1; overflow-y: auto; padding: 24px; min-height: 200px;">
+            <!-- Loading State -->
+            <div x-show="loading" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 200px; gap: 12px;">
+                <div class="spinner" style="width: 40px; height: 40px; border: 4px solid rgba(31, 118, 194, 0.1); border-top-color: #1f76c2; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                <p style="margin: 0; font-size: 13px; color: #8a94a5; font-weight: 500;">Memuat riwayat...</p>
+            </div>
+            
+            <!-- Empty State -->
+            <div x-show="!loading && statusHistories.length === 0" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 200px; gap: 12px; text-align: center;">
+                <i class="ph ph-clock-counter-clockwise" style="font-size: 48px; color: #8a94a5;"></i>
+                <p style="margin: 0; font-size: 13px; color: #8a94a5; font-weight: 500;">Belum ada riwayat status.</p>
+            </div>
+            
+            <!-- Timeline -->
+            <ul x-show="!loading && statusHistories.length > 0" 
+                class="modal-timeline" 
+                style="position: relative; padding-left: 20px; list-style: none; margin: 0;">
+                
+                <template x-for="(history, index) in statusHistories" :key="history.id">
+                    <li class="modal-timeline-item" style="position: relative; padding-left: 32px; margin-bottom: 24px;">
+                        <!-- Connector line -->
+                        <div x-show="index < statusHistories.length - 1" 
+                             style="content: ''; position: absolute; top: 16px; bottom: -24px; left: 8px; width: 2px; background: #e5eaf1;"></div>
+                             
+                        <!-- Bullet marker -->
+                        <div style="position: absolute; left: 3px; top: 4px; width: 12px; height: 12px; border-radius: 50%; background: #1f76c2; border: 2px solid #fff; box-shadow: 0 0 0 4px #e5eaf1; z-index: 1;"></div>
+                        
+                        <!-- Timestamp -->
+                        <div style="font-size: 11px; color: #8a94a5; margin-bottom: 6px; font-weight: 600;" x-text="history.formatted_date"></div>
+                        
+                        <!-- Content Card -->
+                        <div style="background: #f8fbff; border: 1px solid #e5eaf1; border-radius: 12px; padding: 14px 16px;">
+                            <h4 style="font-size: 14px; font-weight: 700; color: #2a2e38; margin: 0 0 6px 0; display: flex; align-items: center; flex-wrap: wrap; gap: 8px;">
+                                Status berubah menjadi
+                                <span :class="'badge ' + history.status_baru.toLowerCase()" 
+                                      style="display: inline-flex; align-items: center; border-radius: 999px; font-size: 11px; font-weight: 700; padding: 2px 8px; text-transform: lowercase;"
+                                      x-text="history.status_baru"></span>
+                            </h4>
+                            <p style="font-size: 13px; color: #607089; margin: 0 0 8px 0; line-height: 1.4;" x-text="history.catatan"></p>
+                            <div style="font-size: 11px; color: #8a94a5; display: flex; align-items: center; gap: 4px;">
+                                <i class="ph ph-user" style="font-size: 12px;"></i> Oleh: <span x-text="history.diubah_oleh"></span>
+                            </div>
+                        </div>
+                    </li>
+                </template>
+            </ul>
+        </div>
+    </div>
+</div>
 </div>
 </body>
 </html>

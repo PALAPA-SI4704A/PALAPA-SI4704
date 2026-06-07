@@ -229,18 +229,125 @@
         .badge-selesai { background: #c6f6d5; color: #2f855a; }
         .badge-valid { background: #e2fbf0; color: #2b6cb0; }
         .badge-ditolak { background: #fed7d7; color: #c53030; }
-
-        .btn-link {
-            color: #3182ce;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 13px;
-            transition: color 0.2s;
-        }
         
+        /* Urgency Badges */
+        .badge-low { background: #e6f4ea; color: #137333; }
+        .badge-medium { background: #fff3cd; color: #856404; }
+        .badge-high { background: #fce8e6; color: #c5221f; }
+        .badge-critical { background: #feebec; color: #c53030; font-weight: 800; border: 1px dashed #c53030; }
+
         .btn-link:hover {
             color: var(--primary-dark);
             text-decoration: underline;
+        }
+
+        /* Trend & Header Styles for Cards */
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .stat-header i {
+            font-size: 22px;
+            color: #718096;
+            opacity: 0.8;
+        }
+
+        .stat-trend {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 8px;
+            width: fit-content;
+            margin-top: auto;
+        }
+
+        .trend-up.good { background: #e6f4ea; color: #137333; }
+        .trend-up.bad { background: #fce8e6; color: #c5221f; }
+        .trend-down.good { background: #e6f4ea; color: #137333; }
+        .trend-down.bad { background: #fce8e6; color: #c5221f; }
+        .trend-neutral { background: #f1f3f4; color: #5f6368; }
+
+        /* Charts Grid Layout */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+        }
+
+        /* Insights Section Styling */
+        .insights-section {
+            background: var(--surface);
+            border-radius: 24px;
+            padding: 28px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+            border: 1px solid #e2e8f0;
+        }
+        
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .insight-card {
+            display: flex;
+            gap: 16px;
+            padding: 18px;
+            border-radius: 16px;
+            border: 1px solid transparent;
+            transition: transform 0.2s;
+        }
+
+        .insight-card:hover {
+            transform: translateY(-1px);
+        }
+
+        .insight-card i {
+            font-size: 24px;
+            margin-top: 2px;
+        }
+
+        .insight-card-content {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .insight-card-title {
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .insight-card-desc {
+            font-size: 12.5px;
+            color: #4a5568;
+            line-height: 1.5;
+        }
+
+        .insight-success { background: #f6fdf9; border-color: #c6f6d5; color: #1c7430; }
+        .insight-success .insight-card-title { color: #1c7430; }
+        .insight-success i { color: #28a745; }
+
+        .insight-warning { background: #fffdf5; border-color: #fefcbf; color: #b7791f; }
+        .insight-warning .insight-card-title { color: #b7791f; }
+        .insight-warning i { color: #dd6b20; }
+
+        .insight-danger { background: #fffcfc; border-color: #fed7d7; color: #c53030; }
+        .insight-danger .insight-card-title { color: #c53030; }
+        .insight-danger i { color: #e53e3e; }
+
+        .insight-info { background: #f7fbfe; border-color: #bee3f8; color: #2b6cb0; }
+        .insight-info .insight-card-title { color: #2b6cb0; }
+        .insight-info i { color: #3182ce; }
+
+        @media (max-width: 1200px) {
+            .charts-grid { grid-template-columns: 1fr; }
+            .insights-grid { grid-template-columns: 1fr; }
         }
 
         @media (max-width: 980px) {
@@ -270,57 +377,140 @@
         <!-- Stats Cards Grid -->
         <div class="stats-grid">
             <div class="stat-card">
-                <h3>Laporan Masuk Hari Ini</h3>
+                <div class="stat-header">
+                    <h3>Laporan Masuk Hari Ini</h3>
+                    <i class="ph ph-calendar-plus"></i>
+                </div>
                 <p class="value">{{ $laporanHariIni }}</p>
+                <div class="stat-trend {{ $trendHariIni['class'] }}">
+                    <i class="ph {{ $trendHariIni['icon'] }}"></i>
+                    <span>{{ $trendHariIni['text'] }}</span>
+                </div>
             </div>
             <div class="stat-card">
-                <h3>Laporan Menunggu Verifikasi</h3>
+                <div class="stat-header">
+                    <h3>Laporan Menunggu Verifikasi</h3>
+                    <i class="ph ph-clock-counter-clockwise"></i>
+                </div>
                 <p class="value">{{ $menungguVerifikasi }}</p>
+                <div class="stat-trend {{ $trendMenungguVerifikasi['class'] }}">
+                    <i class="ph {{ $trendMenungguVerifikasi['icon'] }}"></i>
+                    <span>{{ $trendMenungguVerifikasi['text'] }}</span>
+                </div>
             </div>
             <div class="stat-card">
-                <h3>Laporan Sedang Ditangani</h3>
+                <div class="stat-header">
+                    <h3>Laporan Sedang Ditangani</h3>
+                    <i class="ph ph-shield-warning"></i>
+                </div>
                 <p class="value">{{ $sedangDitangani }}</p>
+                <div class="stat-trend {{ $trendSedangDitangani['class'] }}">
+                    <i class="ph {{ $trendSedangDitangani['icon'] }}"></i>
+                    <span>{{ $trendSedangDitangani['text'] }}</span>
+                </div>
             </div>
             <div class="stat-card">
-                <h3>Laporan Valid</h3>
+                <div class="stat-header">
+                    <h3>Laporan Valid</h3>
+                    <i class="ph ph-check-square-offset"></i>
+                </div>
                 <p class="value">{{ $laporanValid }}</p>
+                <div class="stat-trend {{ $trendLaporanValid['class'] }}">
+                    <i class="ph {{ $trendLaporanValid['icon'] }}"></i>
+                    <span>{{ $trendLaporanValid['text'] }}</span>
+                </div>
             </div>
             <div class="stat-card">
-                <h3>Laporan Selesai</h3>
+                <div class="stat-header">
+                    <h3>Laporan Selesai</h3>
+                    <i class="ph ph-sparkle"></i>
+                </div>
                 <p class="value">{{ $laporanSelesai }}</p>
+                <div class="stat-trend {{ $trendLaporanSelesai['class'] }}">
+                    <i class="ph {{ $trendLaporanSelesai['icon'] }}"></i>
+                    <span>{{ $trendLaporanSelesai['text'] }}</span>
+                </div>
             </div>
             <div class="stat-card">
-                <h3>Laporan Ditolak</h3>
+                <div class="stat-header">
+                    <h3>Laporan Ditolak</h3>
+                    <i class="ph ph-prohibit"></i>
+                </div>
                 <p class="value">{{ $laporanDitolak }}</p>
+                <div class="stat-trend {{ $trendLaporanDitolak['class'] }}">
+                    <i class="ph {{ $trendLaporanDitolak['icon'] }}"></i>
+                    <span>{{ $trendLaporanDitolak['text'] }}</span>
+                </div>
             </div>
             <div class="stat-card">
-                <h3>Total Laporan</h3>
+                <div class="stat-header">
+                    <h3>Total Laporan</h3>
+                    <i class="ph ph-files"></i>
+                </div>
                 <p class="value">{{ $totalLaporan }}</p>
+                <div class="stat-trend {{ $trendTotalLaporan['class'] }}">
+                    <i class="ph {{ $trendTotalLaporan['icon'] }}"></i>
+                    <span>{{ $trendTotalLaporan['text'] }}</span>
+                </div>
             </div>
         </div>
 
-        <!-- Chart Section -->
-        <div class="section">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
-                <h2 class="section-title" style="margin: 0;">Laporan Karhutla Per Periode</h2>
-                <form id="chartFilterForm" method="GET" action="{{ route('admin.dashboard') }}" style="margin: 0;">
-                    @if(request('date')) <input type="hidden" name="date" value="{{ request('date') }}"> @endif
-                    @if(request('status')) <input type="hidden" name="status" value="{{ request('status') }}"> @endif
-                    @if(request('location')) <input type="hidden" name="location" value="{{ request('location') }}"> @endif
-                    
-                    <div class="filter-group" style="padding: 4px 8px; margin: 0; display: inline-flex; align-items: center; gap: 8px; background: white; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 13px;">
-                        <i class="ph ph-calendar-blank" style="color: #a0aec0; font-size: 16px;"></i>
-                        <select name="period" class="filter-select" onchange="this.form.submit()" style="border: none; font-size: 13px; font-family: inherit; background: transparent; outline: none; color: #4a5568;">
-                            <option value="7days" {{ request('period') == '7days' || !request('period') ? 'selected' : '' }}>7 Hari Terakhir</option>
-                            <option value="30days" {{ request('period') == '30days' ? 'selected' : '' }}>30 Hari Terakhir</option>
-                            <option value="month" {{ request('period') == 'month' ? 'selected' : '' }}>Bulan Ini</option>
-                            <option value="year" {{ request('period') == 'year' ? 'selected' : '' }}>Tahun Ini</option>
-                        </select>
-                    </div>
-                </form>
+        <!-- Charts Grid Section -->
+        <div class="charts-grid">
+            <!-- Line Chart Section -->
+            <div class="section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+                    <h2 class="section-title" style="margin: 0;">Laporan Karhutla Per Periode</h2>
+                    <form id="chartFilterForm" method="GET" action="{{ route('admin.dashboard') }}" style="margin: 0;">
+                        @if(request('date')) <input type="hidden" name="date" value="{{ request('date') }}"> @endif
+                        @if(request('status')) <input type="hidden" name="status" value="{{ request('status') }}"> @endif
+                        @if(request('location')) <input type="hidden" name="location" value="{{ request('location') }}"> @endif
+                        
+                        <div class="filter-group" style="padding: 4px 8px; margin: 0; display: inline-flex; align-items: center; gap: 8px; background: white; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 13px;">
+                            <i class="ph ph-calendar-blank" style="color: #a0aec0; font-size: 16px;"></i>
+                            <select name="period" class="filter-select" onchange="this.form.submit()" style="border: none; font-size: 13px; font-family: inherit; background: transparent; outline: none; color: #4a5568;">
+                                <option value="7days" {{ request('period') == '7days' || !request('period') ? 'selected' : '' }}>7 Hari Terakhir</option>
+                                <option value="30days" {{ request('period') == '30days' ? 'selected' : '' }}>30 Hari Terakhir</option>
+                                <option value="month" {{ request('period') == 'month' ? 'selected' : '' }}>Bulan Ini</option>
+                                <option value="year" {{ request('period') == 'year' ? 'selected' : '' }}>Tahun Ini</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="chart-container">
+                    <canvas id="karhutlaChart"></canvas>
+                </div>
             </div>
-            <div class="chart-container">
-                <canvas id="karhutlaChart"></canvas>
+
+            <!-- Pie Chart Section -->
+            <div class="section" style="display: flex; flex-direction: column;">
+                <h2 class="section-title" style="margin-bottom: 20px;">Distribusi Status Laporan</h2>
+                <div class="chart-container" style="flex: 1; display: flex; align-items: center; justify-content: center; min-height: 250px;">
+                    <canvas id="statusPieChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Automated Insights Section -->
+        <div class="insights-section">
+            <h2 class="section-title" style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+                <i class="ph ph-lightbulb-filament" style="color: #ecc94b; font-size: 28px;"></i>
+                Insight Kondisi Utama
+            </h2>
+            <div class="insights-grid">
+                @forelse($insights as $insight)
+                    <div class="insight-card insight-{{ $insight['type'] }}">
+                        <i class="ph {{ $insight['icon'] }}"></i>
+                        <div class="insight-card-content">
+                            <span class="insight-card-title">{{ $insight['title'] }}</span>
+                            <span class="insight-card-desc">{{ $insight['desc'] }}</span>
+                        </div>
+                    </div>
+                @empty
+                    <div style="grid-column: span 2; text-align: center; color: #a0aec0; padding: 12px;">
+                        Tidak ada data yang cukup untuk memuat insight otomatis saat ini.
+                    </div>
+                @endforelse
             </div>
         </div>
 
@@ -361,8 +551,8 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>FOTO</th>
+                            <th>DESKRIPSI</th>
+                            <th>URGENSI</th>
                             <th>LOKASI</th>
                             <th>STATUS</th>
                             <th>TANGGAL PELAPORAN</th>
@@ -372,15 +562,18 @@
                     <tbody>
                         @forelse($laporanMasuk as $report)
                         <tr>
-                            <td>#{{ $report->report_id }}</td>
+                            <td>{{ Str::limit($report->description, 50) }}</td>
                             <td>
-                                @if($report->photo)
-                                    <img src="{{ route('reports.photo', ['path' => $report->photo]) }}" class="table-img" alt="Foto Laporan">
-                                @else
-                                    <div class="table-img" style="background:#e2e8f0; display:flex; align-items:center; justify-content:center; color:#a0aec0;">
-                                        <i class="ph ph-image-square" style="font-size: 20px;"></i>
-                                    </div>
-                                @endif
+                                @php
+                                    $urgencyClass = 'badge-low';
+                                    $urgencyText = 'Rendah';
+                                    if($report->fire_level == 'medium') { $urgencyClass = 'badge-medium'; $urgencyText = 'Sedang'; }
+                                    elseif($report->fire_level == 'high') { $urgencyClass = 'badge-high'; $urgencyText = 'Tinggi'; }
+                                    elseif($report->fire_level == 'critical') { $urgencyClass = 'badge-critical'; $urgencyText = 'Kritis'; }
+                                @endphp
+                                <span class="badge {{ $urgencyClass }}">
+                                    {{ $urgencyText }}
+                                </span>
                             </td>
                             <td>
                                 @if($report->address)
@@ -438,6 +631,7 @@
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {
+        // Line Chart
         const ctx = document.getElementById('karhutlaChart').getContext('2d');
         
         // Data dari Controller
@@ -502,6 +696,54 @@
                         ticks: {
                             font: { family: 'Poppins', size: 11 }
                         }
+                    }
+                }
+            }
+        });
+
+        // Status Pie Chart
+        const pieCtx = document.getElementById('statusPieChart').getContext('2d');
+        new Chart(pieCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Pending', 'Valid', 'Diproses', 'Selesai', 'Ditolak'],
+                datasets: [{
+                    data: [
+                        {{ $menungguVerifikasi }},
+                        {{ $laporanValid }},
+                        {{ $sedangDitangani }},
+                        {{ $laporanSelesai }},
+                        {{ $laporanDitolak }}
+                    ],
+                    backgroundColor: [
+                        '#3182ce', // Pending - blue
+                        '#2b6cb0', // Valid - darker blue
+                        '#dd6b20', // Diproses - orange
+                        '#2f855a', // Selesai - green
+                        '#e53e3e'  // Ditolak - red
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: { family: 'Poppins', size: 11 },
+                            padding: 15,
+                            usePointStyle: true
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: '#2d3748',
+                        titleFont: { family: 'Poppins', size: 12 },
+                        bodyFont: { family: 'Poppins', size: 12 },
+                        padding: 10,
+                        cornerRadius: 8
                     }
                 }
             }

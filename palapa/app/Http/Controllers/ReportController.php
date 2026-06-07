@@ -18,6 +18,11 @@ class ReportController extends Controller
      */
     public function index(Request $request)
     {
+        return $this->profile($request);
+    }
+
+    public function profile(Request $request)
+    {
         $query = Report::where('user_id', Auth::id())->latest('report_id');
 
         if ($request->filled('search')) {
@@ -77,16 +82,7 @@ class ReportController extends Controller
         $currentStatus = $request->status ?? 'semua';
         $currentSearch = $request->search ?? '';
 
-        return view('reports.index', compact('reports', 'currentStatus', 'currentSearch'));
-    }
-
-    public function profile()
-    {
-        $reports = Report::where('user_id', Auth::user()->users_id)
-            ->latest('report_id')
-            ->get();
-
-        return view('profile', compact('reports'));
+        return view('profile', compact('reports', 'currentStatus', 'currentSearch'));
     }
 
     /**
@@ -217,9 +213,19 @@ class ReportController extends Controller
     /**
      * Show the status history of the specified resource (PLP-12 Mock Data).
      */
-    public function history(Report $report)
+    public function history(Request $request, Report $report)
     {
         $statusHistories = $report->statusHistories()->orderBy('id', 'asc')->get();
+
+        if ($request->wantsJson() || $request->ajax()) {
+            $statusHistories->each(function ($history) {
+                $history->formatted_date = \Carbon\Carbon::parse($history->tanggal_ubah)->translatedFormat('d F Y, H:i');
+            });
+            return response()->json([
+                'report' => $report,
+                'statusHistories' => $statusHistories
+            ]);
+        }
 
         return response()
             ->view('reports.history', compact('report', 'statusHistories'))

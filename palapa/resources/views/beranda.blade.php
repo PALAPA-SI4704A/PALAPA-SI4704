@@ -229,7 +229,6 @@
     <main class="content">
         <div class="content-head">
             <h1>Informasi</h1>
-            <a href="{{ route('reports.index') }}" class="reports-button">Laporan Saya</a>
         </div>
 
         <section class="stats">
