@@ -38,6 +38,7 @@ class AdminController extends Controller
         if ($request->filled('region')) {
             $region = $request->region;
             $query->where('address', 'like', "%{$region}%");
+        }
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
