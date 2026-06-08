@@ -9,11 +9,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- Phosphor Icons & AlpineJS -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
-    <!-- LeafletJS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -234,11 +232,11 @@
                     <span class="detail-label">STATUS</span>
                     @php
                         $statusColors = [
-                            'ditolak' => 'background: #fed7d7; color: #c53030; border: 1px solid #feb2b2;', // Invalid - Merah
-                            'pending' => 'background: #e2e8f0; color: #4a5568; border: 1px solid #cbd5e0;', // Pending - Abu-abu
-                            'valid' => 'background: #c6f6d5; color: #2f855a; border: 1px solid #9ae6b4;',   // Verified - Hijau
-                            'diproses' => 'background: #fefcbf; color: #b7791f; border: 1px solid #fbd38d;', // In Progress - Kuning
-                            'selesai' => 'background: #ebf8ff; color: #2b6cb0; border: 1px solid #bee3f8;',  // Resolved - Biru
+                            'ditolak' => 'background: #fed7d7; color: #c53030; border: 1px solid #feb2b2;', 
+                            'pending' => 'background: #e2e8f0; color: #4a5568; border: 1px solid #cbd5e0;', 
+                            'valid' => 'background: #c6f6d5; color: #2f855a; border: 1px solid #9ae6b4;',   
+                            'diproses' => 'background: #fefcbf; color: #b7791f; border: 1px solid #fbd38d;', 
+                            'selesai' => 'background: #ebf8ff; color: #2b6cb0; border: 1px solid #bee3f8;',  
                         ];
                         $statusLabels = [
                             'ditolak' => 'Invalid',
@@ -335,7 +333,6 @@
             </div>
         </div>
 
-        <!-- Form Verifikasi (Hanya Tampil Jika Status 'pending') -->
         @if($report->status === 'pending')
         <div class="main-panel" style="margin-bottom: 24px;" x-data="{ showRejectForm: false }">
             <h2 class="section-title">Verifikasi Laporan</h2>
@@ -374,7 +371,6 @@
             </div>
         </div>
         @else
-        <!-- Form Update Status Penanganan Laporan (Khusus Petugas) -->
         <div class="main-panel" style="margin-bottom: 24px;">
             <h2 class="section-title">Update Status Penanganan</h2>
             <p style="margin-bottom: 16px; color: #718096; font-size: 14px;">Petugas pemadam dapat memperbarui status penanganan laporan secara langsung. Laporan yang sudah "Resolved" atau "Invalid" tidak dapat diubah lagi.</p>
@@ -421,28 +417,13 @@
                     </label>
                 </div>
 
-                <!-- Conditional field untuk petugas assignment saat status "diproses" -->
-                <div id="petugasField" style="display: none; flex-direction: column; gap: 6px;">
-                    <label style="font-size: 13px; font-weight: 700; color: #4a5568;">Pilih Petugas <span style="color: #c53030;">*</span></label>
-                    <select name="petugas_id" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; font-family: inherit; font-size: 13px; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#1f76c2'" onblur="this.style.borderColor='#e2e8f0'">
-                        <option value="">-- Pilih Petugas --</option>
-                        @forelse($petugasTersedia as $petugas)
-                            <option value="{{ $petugas->users_id }}" {{ old('petugas_id') == $petugas->users_id ? 'selected' : '' }}>
-                                {{ $petugas->users_name }}
-                            </option>
-                        @empty
-                            <option value="" disabled>Tidak ada petugas tersedia</option>
-                        @endforelse
-                    </select>
-                </div>
+                <input type="hidden" name="petugas_id" value="{{ Auth::id() }}">
 
-                <!-- Field untuk catatan -->
                 <div style="display: flex; flex-direction: column; gap: 6px;">
                     <label style="font-size: 13px; font-weight: 700; color: #4a5568;">Catatan Tindakan / Deskripsi Penanganan <span id="catatanRequired" style="color: #c53030; display: none;">*</span></label>
                     <textarea name="catatan" rows="3" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; font-family: inherit; font-size: 13px; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#1f76c2'" onblur="this.style.borderColor='#e2e8f0'" placeholder="Masukkan catatan penanganan lapangan, misalnya: armada pemadam telah dikerahkan ke lokasi..." value="{{ old('catatan') }}"></textarea>
                 </div>
 
-                <!-- Field untuk bukti foto (kondisional untuk status "selesai") -->
                 <div id="buktiPhotoField" style="display: none; flex-direction: column; gap: 6px;">
                     <label style="font-size: 13px; font-weight: 700; color: #4a5568;">Unggah Bukti Foto Penanganan <span style="color: #c53030;">*</span></label>
                     <div style="border: 2px dashed #cbd5e0; border-radius: 8px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.2s;" id="dropZone" onmouseover="this.style.borderColor='#1f76c2'; this.style.backgroundColor='#f0f4f8'" onmouseout="this.style.borderColor='#cbd5e0'; this.style.backgroundColor='transparent'">
@@ -487,29 +468,24 @@
                         }
                     });
                     
-                    // Toggle petugas field visibility
+                    // Toggle field visibility based on status
                     const diprosesRadio = document.querySelector('input[name="status"][value="diproses"]');
-                    const petugasField = document.getElementById('petugasField');
                     const catatanRequired = document.getElementById('catatanRequired');
                     const catatanTextarea = document.querySelector('textarea[name="catatan"]');
                     const selesaiRadio = document.querySelector('input[name="status"][value="selesai"]');
                     const buktiPhotoField = document.getElementById('buktiPhotoField');
                     
-                    // Show/hide petugas field for diproses
                     if (diprosesRadio && diprosesRadio.checked) {
-                        petugasField.style.display = 'flex';
                         catatanRequired.style.display = 'inline';
                         catatanTextarea.setAttribute('required', 'required');
                         buktiPhotoField.style.display = 'none';
                         buktiPhotoInput.removeAttribute('required');
                     } else if (selesaiRadio && selesaiRadio.checked) {
-                        petugasField.style.display = 'none';
                         catatanRequired.style.display = 'inline';
                         catatanTextarea.setAttribute('required', 'required');
                         buktiPhotoField.style.display = 'flex';
                         buktiPhotoInput.setAttribute('required', 'required');
                     } else {
-                        petugasField.style.display = 'none';
                         catatanRequired.style.display = 'inline';
                         catatanTextarea.setAttribute('required', 'required');
                         buktiPhotoField.style.display = 'none';
@@ -565,60 +541,6 @@
             });
         </script>
 
-        @if(in_array($report->status, ['valid', 'diproses', 'selesai']))
-        <div>
-            <h2 class="section-title">Petugas Tersedia</h2>
-
-            <div style="overflow-x: auto;">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Nama</th>
-                            <th>Status</th>
-                            <th>Jarak</th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($petugasTersedia as $petugas)
-                        <tr>
-                            <td>
-                                <div class="petugas-info">
-                                    <div class="petugas-avatar">👩‍🚒</div>
-                                    {{ $petugas->users_name }}
-                                </div>
-                            </td>
-                            <td>
-                                @php
-                                    $isAssigned = \App\Models\Penugasan::where('petugas_id', $petugas->users_id)
-                                                    ->whereNull('completed_at')
-                                                    ->exists();
-                                @endphp
-                                @if($isAssigned)
-                                    <span class="badge badge-onduty">On Duty</span>
-                                @else
-                                    <span class="badge badge-available">Available</span>
-                                @endif
-                            </td>
-                            <td>~ km</td>
-                            <td>
-                                <form action="{{ route('petugas.reports.assign', ['report' => $report, 'petugas' => $petugas]) }}" method="POST">
-                                    @csrf
-                                    <button type="submit" class="btn-action">[Tugaskan Petugas]</button>
-                                </form>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="4" style="text-align: center; color: #a0aec0;">Tidak ada petugas tersedia.</td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        @endif
-
     </main>
 </div>
 
@@ -630,7 +552,7 @@
         const map = L.map('map-preview').setView([lat, lng], 14);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors',
+            attribution: '© OpenStreetMap contributors',
             maxZoom: 19
         }).addTo(map);
 
