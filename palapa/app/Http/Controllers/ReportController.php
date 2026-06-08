@@ -21,6 +21,23 @@ class ReportController extends Controller
         return $this->profile($request);
     }
 
+    public function updateProfile(Request $request)
+    {
+        $user = Auth::user();
+
+        $request->validate([
+            'users_name' => 'required|string|max:255',
+            'phone' => 'nullable|string|max:20',
+        ]);
+
+        $user->update([
+            'users_name' => $request->users_name,
+            'phone' => $request->phone,
+        ]);
+
+        return redirect()->route('profile')->with('success', 'Profil berhasil diperbarui!');
+    }
+
     public function profile(Request $request)
     {
         $query = Report::where('user_id', Auth::id())->latest('report_id');
