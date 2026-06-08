@@ -8,7 +8,6 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
-
 class PetugasController extends Controller
 {
     public function index()
@@ -18,9 +17,11 @@ class PetugasController extends Controller
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
 
-        // 2. Mengambil SEMUA Laporan Masuk Langsung dari Tabel Reports
-        // Diurutkan dari yang paling baru dibuat oleh warga
-        $query = Report::with('pelapor')->orderBy('created_at', 'desc');
+        // 2. Mengambil Laporan HANYA yang di-assign ke Petugas yang sedang login
+        // Diurutkan dari yang paling baru
+        $query = Report::with('pelapor')
+            ->where('assigned_petugas_id', Auth::user()->users_id)
+            ->orderBy('created_at', 'desc');
 
         if (request()->filled('date')) {
             $query->whereDate('created_at', request('date'));
@@ -42,7 +43,7 @@ class PetugasController extends Controller
 
         $laporanMasuk = $query->get();
 
-        // 3. Menghitung Data Statistik berdasarkan seluruh laporan masuk
+        // 3. Menghitung Data Statistik berdasarkan laporan yang di-assign ke petugas ini
         $today = Carbon::today();
         
         $laporanHariIni = $laporanMasuk->filter(function ($report) use ($today) {
@@ -50,13 +51,18 @@ class PetugasController extends Controller
         })->count();
 
         // Asumsi status default saat warga buat laporan adalah 'menunggu' atau 'baru'
-        // Sesuaikan nama status dengan yang ada di database Anda jika berbeda
         $diproses = $laporanMasuk->where('status', 'diproses')->count();
         $selesai = $laporanMasuk->where('status', 'selesai')->count();
         $total = $laporanMasuk->count();
 
         // 4. Mengambil Daftar Petugas Tersedia
-        $petugasTersedia = User::where('role', 'petugas')->get();
+        return view('petugas.dashboard', compact(
+            'laporanMasuk', 
+            'laporanHariIni', 
+            'diproses', 
+            'selesai', 
+            'total'
+        ));
 
         // 5. Mengirimkan seluruh data ke View
         return view('petugas.dashboard', compact(
@@ -78,7 +84,7 @@ class PetugasController extends Controller
         $report->load('pelapor');
         $petugasTersedia = User::where('role', 'petugas')->get();
 
-        return view('petugas.reports.show', compact('report', 'petugasTersedia'));
+        return view('petugas.reports.show', compact('report'));
     }
 
     public function assign(Report $report, User $petugas)

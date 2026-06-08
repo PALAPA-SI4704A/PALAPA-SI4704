@@ -9,7 +9,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- Phosphor Icons & AlpineJS -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
@@ -180,39 +179,6 @@
             text-decoration: underline;
         }
 
-        .btn-action {
-            background: none;
-            border: none;
-            color: #4a5568;
-            font-weight: 600;
-            font-size: 12px;
-            cursor: pointer;
-            padding: 0;
-            font-family: inherit;
-        }
-        
-        .btn-action:hover {
-            color: #2d3748;
-            text-decoration: underline;
-        }
-
-        .petugas-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-weight: 600;
-        }
-
-        .petugas-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: #e2e8f0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
         @media (max-width: 980px) {
             .layout { flex-direction: column; }
             .content { max-width: none !important; }
@@ -312,47 +278,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="6" style="text-align: center; color: #a0aec0;">Belum ada laporan masuk.</td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="section">
-            <h2 class="section-title">Petugas Tersedia</h2>
-            <div class="table-responsive">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Nama</th>
-                            <th>Status</th>
-                            <th>Jarak</th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($petugasTersedia as $petugas)
-                        <tr>
-                            <td>
-                                <div class="petugas-info">
-                                    <div class="petugas-avatar">👩‍🚒</div>
-                                    {{ $petugas->users_name }}
-                                </div>
-                            </td>
-                            <td>
-                                <!-- Placeholder status for petugas -->
-                                <span class="badge badge-available">Available</span>
-                            </td>
-                            <td>~ km</td>
-                            <td>
-                                <button class="btn-action">[Tugaskan Petugas]</button>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="4" style="text-align: center; color: #a0aec0;">Tidak ada petugas.</td>
+                            <td colspan="6" style="text-align: center; color: #a0aec0;">tidak ada laporan saat ini yang ditugaskan ke anda</td>
                         </tr>
                         @endforelse
                     </tbody>
