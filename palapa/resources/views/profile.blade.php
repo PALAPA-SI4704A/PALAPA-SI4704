@@ -142,7 +142,7 @@
 
         .grid-layout {
             display: grid;
-            grid-template-columns: 1fr 320px;
+            grid-template-columns: 1fr;
             gap: 24px;
         }
 
