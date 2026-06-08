@@ -11,9 +11,12 @@
     
     <!-- Phosphor Icons & AlpineJS -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     <style>
+        html { scroll-behavior: smooth; }
+
         :root {
             --bg: #f3f5f8;
             --surface: #ffffff;
@@ -49,7 +52,6 @@
         .content {
             flex: 1;
             padding: 8px 0;
-            overflow: hidden;
             transition: all 0.3s ease;
         }
 
@@ -268,6 +270,65 @@
                 <img src="https://images.unsplash.com/photo-1475688621402-4257c812d6db?q=80&w=1200&auto=format&fit=crop" alt="Asap kebakaran di area hutan">
                 <p>Kemenhut upayakan penanganan cepat karhutla di Kalbar</p>
             </article>
+        </section>
+    </main>
+</div>
+</body>
+</html>
+tom: 40px;" x-data="{ activeFaq: null }">
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <!-- FAQ Item 1 -->
+                <div style="background: var(--surface); border: 1px solid #dbe1e9; border-radius: 12px; overflow: hidden; transition: all 0.3s;" :style="activeFaq === 1 ? 'box-shadow: 0 4px 12px rgba(31, 122, 198, 0.1); border-color: var(--primary);' : ''">
+                    <button @click="activeFaq = activeFaq === 1 ? null : 1" style="width: 100%; padding: 18px 20px; text-align: left; display: flex; justify-content: space-between; align-items: center; background: none; border: none; cursor: pointer; font-family: inherit;">
+                        <span style="font-weight: 700; font-size: 15px; color: var(--text);">Bagaimana cara membuat laporan baru?</span>
+                        <i class="ph-bold ph-caret-down" style="color: var(--primary); font-size: 18px; transition: transform 0.3s;" :style="activeFaq === 1 ? 'transform: rotate(180deg);' : ''"></i>
+                    </button>
+                    <div x-show="activeFaq === 1" x-collapse>
+                        <div style="padding: 0 20px 20px; color: #4a5568; font-size: 14px; line-height: 1.6; border-top: 1px solid #edf1f6; margin-top: -4px; padding-top: 16px;">
+                            Buka menu <strong>Buat Laporan</strong> di sidebar kiri. Kemudian isi formulir dengan menandai lokasi kebakaran di peta (Anda bisa mencari nama tempat atau klik langsung di peta), lalu unggah foto bukti kejadian dan tuliskan deskripsi singkat. Tekan tombol Kirim Laporan setelah selesai.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FAQ Item 2 -->
+                <div style="background: var(--surface); border: 1px solid #dbe1e9; border-radius: 12px; overflow: hidden; transition: all 0.3s;" :style="activeFaq === 2 ? 'box-shadow: 0 4px 12px rgba(31, 122, 198, 0.1); border-color: var(--primary);' : ''">
+                    <button @click="activeFaq = activeFaq === 2 ? null : 2" style="width: 100%; padding: 18px 20px; text-align: left; display: flex; justify-content: space-between; align-items: center; background: none; border: none; cursor: pointer; font-family: inherit;">
+                        <span style="font-weight: 700; font-size: 15px; color: var(--text);">Di mana saya bisa melihat status laporan saya?</span>
+                        <i class="ph-bold ph-caret-down" style="color: var(--primary); font-size: 18px; transition: transform 0.3s;" :style="activeFaq === 2 ? 'transform: rotate(180deg);' : ''"></i>
+                    </button>
+                    <div x-show="activeFaq === 2" x-collapse>
+                        <div style="padding: 0 20px 20px; color: #4a5568; font-size: 14px; line-height: 1.6; border-top: 1px solid #edf1f6; margin-top: -4px; padding-top: 16px;">
+                            Anda dapat memantau semua laporan yang pernah Anda buat melalui menu <strong>Profil Saya</strong>. Di sana terdapat daftar laporan beserta statusnya saat ini (Pending, Valid, Diproses, atau Selesai). Anda juga dapat menekan tombol <strong>Riwayat</strong> pada masing-masing laporan untuk melihat detail perubahannya.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FAQ Item 3 -->
+                <div style="background: var(--surface); border: 1px solid #dbe1e9; border-radius: 12px; overflow: hidden; transition: all 0.3s;" :style="activeFaq === 3 ? 'box-shadow: 0 4px 12px rgba(31, 122, 198, 0.1); border-color: var(--primary);' : ''">
+                    <button @click="activeFaq = activeFaq === 3 ? null : 3" style="width: 100%; padding: 18px 20px; text-align: left; display: flex; justify-content: space-between; align-items: center; background: none; border: none; cursor: pointer; font-family: inherit;">
+                        <span style="font-weight: 700; font-size: 15px; color: var(--text);">Mengapa laporan saya berstatus 'Ditolak'?</span>
+                        <i class="ph-bold ph-caret-down" style="color: var(--primary); font-size: 18px; transition: transform 0.3s;" :style="activeFaq === 3 ? 'transform: rotate(180deg);' : ''"></i>
+                    </button>
+                    <div x-show="activeFaq === 3" x-collapse>
+                        <div style="padding: 0 20px 20px; color: #4a5568; font-size: 14px; line-height: 1.6; border-top: 1px solid #edf1f6; margin-top: -4px; padding-top: 16px;">
+                            Laporan akan ditolak oleh Admin jika informasi yang diberikan tidak jelas, lokasi berada di luar jangkauan, foto bukti tidak valid, atau terindikasi sebagai laporan palsu (hoax). Anda dapat melihat alasan penolakan secara spesifik di halaman detail laporan tersebut.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FAQ Item 4 -->
+                <div style="background: var(--surface); border: 1px solid #dbe1e9; border-radius: 12px; overflow: hidden; transition: all 0.3s;" :style="activeFaq === 4 ? 'box-shadow: 0 4px 12px rgba(31, 122, 198, 0.1); border-color: var(--primary);' : ''">
+                    <button @click="activeFaq = activeFaq === 4 ? null : 4" style="width: 100%; padding: 18px 20px; text-align: left; display: flex; justify-content: space-between; align-items: center; background: none; border: none; cursor: pointer; font-family: inherit;">
+                        <span style="font-weight: 700; font-size: 15px; color: var(--text);">Bagaimana jika saya salah memberikan informasi di laporan?</span>
+                        <i class="ph-bold ph-caret-down" style="color: var(--primary); font-size: 18px; transition: transform 0.3s;" :style="activeFaq === 4 ? 'transform: rotate(180deg);' : ''"></i>
+                    </button>
+                    <div x-show="activeFaq === 4" x-collapse>
+                        <div style="padding: 0 20px 20px; color: #4a5568; font-size: 14px; line-height: 1.6; border-top: 1px solid #edf1f6; margin-top: -4px; padding-top: 16px;">
+                            Jika laporan Anda masih berstatus <strong>Pending</strong> atau sedang <strong>Diproses</strong>, Anda masih bisa mengeditnya. Buka menu Profil Saya, cari laporan yang ingin diperbaiki, lalu klik tombol Edit (ikon pensil) di samping laporan tersebut.
+                        </div>
+                    </div>
+                </div>
+            </div>
         </section>
     </main>
 </div>

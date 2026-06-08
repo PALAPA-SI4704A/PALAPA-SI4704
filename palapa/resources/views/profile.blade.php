@@ -368,6 +368,7 @@
 <div class="layout" x-data="{ 
     sidebarOpen: true, 
     modalOpen: false, 
+    editModalOpen: false,
     loading: false,
     reportTitle: '',
     statusHistories: [],
@@ -411,10 +412,17 @@
             <div class="banner-info">
                 <h2>{{ auth()->check() ? auth()->user()->users_name : 'John Smith' }}</h2>
                 <p><i class="ph ph-envelope"></i> {{ auth()->check() ? auth()->user()->email : 'johnsm1th@gmail.com' }}</p>
-                <p><i class="ph ph-phone"></i> 628102022300</p>
+                <p><i class="ph ph-phone"></i> {{ auth()->check() ? (auth()->user()->phone ?? 'Belum diisi') : '628102022300' }}</p>
             </div>
-            <button class="edit-btn"><i class="ph ph-pencil-simple"></i></button>
+            <button class="edit-btn" @click="editModalOpen = true"><i class="ph ph-pencil-simple"></i></button>
         </div>
+
+        @if(session('success'))
+            <div style="background: #c6f6d5; color: #2f855a; padding: 12px; border-radius: 8px; margin-bottom: 24px; font-weight: 600; display: flex; align-items: center; gap: 8px; margin-top: 16px;">
+                <i class="ph ph-check-circle" style="font-size: 20px;"></i>
+                {{ session('success') }}
+            </div>
+        @endif
 
         <div class="grid-layout">
             <div class="history-section">
@@ -538,6 +546,71 @@
             </div>
         </div>
     </main>
+
+<!-- Modal Edit Profil -->
+<div x-show="editModalOpen"
+     class="modal-backdrop"
+     x-transition:enter="transition ease-out duration-300"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100"
+     x-transition:leave="transition ease-in duration-200"
+     x-transition:leave-start="opacity-100"
+     x-transition:leave-end="opacity-0"
+     @click.self="editModalOpen = false"
+     x-cloak>
+     
+    <div class="modal-content" 
+         style="background: #ffffff; width: 100%; max-width: 500px; border-radius: 24px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); display: flex; flex-direction: column; overflow: hidden; position: relative; border: 1px solid #e5eaf1;"
+         x-transition:enter="transition ease-out duration-300 transform"
+         x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+         x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+         x-transition:leave="transition ease-in duration-200 transform"
+         x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+         x-transition:leave-end="opacity-0 scale-95 translate-y-4">
+         
+        <!-- Header -->
+        <div style="padding: 20px 24px; border-bottom: 1px solid #edf1f6; display: flex; align-items: center; justify-content: space-between;">
+            <h3 style="margin: 0; font-size: 20px; font-weight: 800; color: #1f76c2;">Edit Profil</h3>
+            <button @click="editModalOpen = false" 
+                    style="border: none; background: #f1f4f8; color: #607089; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; font-size: 18px;"
+                    onmouseover="this.style.background='#e2e8f0'; this.style.color='#2a2e38'"
+                    onmouseout="this.style.background='#f1f4f8'; this.style.color='#607089'">
+                <i class="ph ph-x"></i>
+            </button>
+        </div>
+        
+        <!-- Form Body -->
+        <form action="{{ route('profile.update') }}" method="POST" style="padding: 24px; display: flex; flex-direction: column; gap: 16px;">
+            @csrf
+            @method('PUT')
+            
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+                <label for="users_name" style="font-size: 13px; font-weight: 600; color: #4a5568;">Nama Lengkap</label>
+                <input type="text" id="users_name" name="users_name" value="{{ auth()->check() ? auth()->user()->users_name : '' }}" required
+                       style="padding: 12px 16px; border-radius: 8px; border: 1px solid #e5eaf1; outline: none; font-family: inherit; font-size: 14px; transition: border-color 0.2s;"
+                       onfocus="this.style.borderColor='#1f76c2'" onblur="this.style.borderColor='#e5eaf1'">
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+                <label for="phone" style="font-size: 13px; font-weight: 600; color: #4a5568;">Nomor Telepon</label>
+                <input type="text" id="phone" name="phone" value="{{ auth()->check() ? auth()->user()->phone : '' }}" placeholder="Contoh: 08123456789"
+                       style="padding: 12px 16px; border-radius: 8px; border: 1px solid #e5eaf1; outline: none; font-family: inherit; font-size: 14px; transition: border-color 0.2s;"
+                       onfocus="this.style.borderColor='#1f76c2'" onblur="this.style.borderColor='#e5eaf1'">
+            </div>
+            
+            <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 16px;">
+                <button type="button" @click="editModalOpen = false" 
+                        style="padding: 10px 20px; border-radius: 8px; background: white; border: 1px solid #e5eaf1; color: #4a5568; font-weight: 600; cursor: pointer; font-family: inherit;">
+                    Batal
+                </button>
+                <button type="submit" 
+                        style="padding: 10px 20px; border-radius: 8px; background: #1f76c2; border: none; color: white; font-weight: 600; cursor: pointer; font-family: inherit; box-shadow: 0 4px 12px rgba(31, 118, 194, 0.2);">
+                    Simpan Perubahan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 
 <!-- Modal Riwayat Status -->
 <div x-show="modalOpen"

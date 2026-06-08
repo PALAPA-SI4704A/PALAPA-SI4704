@@ -348,7 +348,7 @@
 
     <div class="sidebar-footer">
         <div class="divider"></div>
-        <a href="#">
+        <a class="{{ request()->routeIs('faq') ? 'active' : '' }}" href="{{ route('faq') }}">
             <i class="ph ph-question icon"></i> <span class="menu-text">FAQ</span>
         </a>
         <form action="{{ route('logout') }}" method="POST" style="margin: 0; width: 100%;">
