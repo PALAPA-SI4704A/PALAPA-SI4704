@@ -229,7 +229,7 @@
                 <!-- Input Nomor Telepon -->
                 <div class="form-group">
                     <label for="phone" class="form-label">Nomor Telepon</label>
-                    <input type="text" id="phone" name="phone" class="form-input" value="{{ old('phone', $user->phone) }}" required>
+                    <input type="text" id="phone" name="phone" class="form-input" value="{{ old('phone', $user->phone) }}" required inputmode="numeric" pattern="[0-9]+" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                     @error('phone')
                         <span class="input-error">{{ $message }}</span>
                     @enderror
