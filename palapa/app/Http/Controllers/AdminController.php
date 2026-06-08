@@ -167,7 +167,7 @@ class AdminController extends Controller
                 : "DATE_FORMAT(created_at, '%Y-%m') as month_only";
 
             $dbChartData = Report::select(DB::raw($monthDateFormat), DB::raw('count(*) as count'))
-                ->where('created_at', '>=', $startOfYear)
+                ->where('created_at', '>=', $startCurrent)
                 ->groupBy('month_only')
                 ->get();
 
@@ -717,8 +717,10 @@ class AdminController extends Controller
         $validated = $request->validate([
             'users_name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->users_id . ',users_id',
-            'phone' => 'required|string|max:20',
+            'phone' => 'required|string|regex:/^[0-9]+$/|max:20',
             'role' => 'required|in:admin,petugas,masyarakat',
+        ], [
+            'phone.regex' => 'Nomor telepon hanya boleh berisi angka.',
         ]);
 
         $user->users_name = $validated['users_name'];

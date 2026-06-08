@@ -196,6 +196,70 @@
         .badge-available { background: #c6f6d5; color: #2f855a; }
         .badge-onduty { background: #fefcbf; color: #b7791f; }
 
+        .verification-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        .btn-verify {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            padding: 16px 20px;
+            border-radius: 16px;
+            border: none;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn-verify .btn-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .btn-verify .btn-text strong {
+            font-size: 16px;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .btn-verify .btn-text span {
+            font-size: 12px;
+            opacity: 0.85;
+            font-weight: 400;
+            font-family: 'Poppins', sans-serif;
+            margin-top: 2px;
+        }
+
+        .btn-accept {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+        }
+
+        .btn-accept:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.35);
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        }
+
+        .btn-reject {
+            background: white;
+            color: #ef4444;
+            border: 2px solid #fee2e2;
+        }
+
+        .btn-reject:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(239, 68, 68, 0.15);
+            border-color: #ef4444;
+            background: #fef2f2;
+        }
+
         @media (max-width: 980px) {
             .layout { flex-direction: column; }
             .content { max-width: none !important; }
@@ -341,16 +405,24 @@
             <h2 class="section-title">Verifikasi Laporan</h2>
             <p style="margin-bottom: 16px; color: #718096; font-size: 14px;">Tentukan validitas laporan masuk ini sebelum ditugaskan kepada petugas di lapangan.</p>
             
-            <div style="display: flex; align-items: center; gap: 16px; margin-top: 16px;" x-show="!showRejectForm">
-                <form action="{{ route('petugas.reports.verify', $report->report_id) }}" method="POST" style="margin: 0;">
+            <div class="verification-actions" x-show="!showRejectForm">
+                <form action="{{ route('petugas.reports.verify', $report->report_id) }}" method="POST" style="margin: 0; display: flex;">
                     @csrf
                     <input type="hidden" name="status" value="valid">
-                    <button type="submit" style="background: #2f855a; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(47, 133, 90, 0.2); transition: background 0.2s;" onmouseover="this.style.background='#276749'" onmouseout="this.style.background='#2f855a'">
-                        <i class="ph ph-check-circle" style="font-size: 18px;"></i> Laporan Valid
+                    <button type="submit" class="btn-verify btn-accept">
+                        <i class="ph-fill ph-check-circle" style="font-size: 28px;"></i>
+                        <div class="btn-text">
+                            <strong>Terima & Validasi</strong>
+                            <span>Laporan ini valid dan siap ditugaskan</span>
+                        </div>
                     </button>
                 </form>
-                <button type="button" @click="showRejectForm = true" style="background: white; color: #e53e3e; border: 1px solid #e53e3e; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; margin: 0;" onmouseover="this.style.background='#fff5f5'" onmouseout="this.style.background='white'">
-                    <i class="ph ph-x-circle" style="font-size: 18px;"></i> Tolak Laporan
+                <button type="button" @click="showRejectForm = true" class="btn-verify btn-reject">
+                    <i class="ph-fill ph-x-circle" style="font-size: 28px;"></i>
+                    <div class="btn-text">
+                        <strong>Tolak Laporan</strong>
+                        <span>Tandai sebagai hoax atau tidak valid</span>
+                    </div>
                 </button>
             </div>
 

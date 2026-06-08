@@ -421,7 +421,6 @@
                             <th>NAMA</th>
                             <th>EMAIL</th>
                             <th>NO TELEPON</th>
-                            <th>ROLE</th>
                             <th>AKSI</th>
                         </tr>
                     </thead>
@@ -432,16 +431,6 @@
                             <td style="font-weight: 600;">{{ $user->users_name }}</td>
                             <td>{{ $user->email }}</td>
                             <td>{{ $user->phone }}</td>
-                            <td>
-                                @php
-                                    $roleClass = 'badge-masyarakat';
-                                    if($user->role == 'admin') $roleClass = 'badge-admin';
-                                    if($user->role == 'petugas') $roleClass = 'badge-petugas';
-                                @endphp
-                                <span class="badge {{ $roleClass }}">
-                                    {{ ucfirst($user->role) }}
-                                </span>
-                            </td>
                             <td>
                                 <div style="display: flex; gap: 8px; align-items: center;">
                                     <a href="{{ route('admin.users.edit', $user->users_id) }}" class="btn-link">[Edit]</a>
@@ -457,7 +446,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="6" style="text-align: center; color: #a0aec0; padding: 24px;">Pengguna tidak ditemukan.</td>
+                            <td colspan="5" style="text-align: center; color: #a0aec0; padding: 24px;">Pengguna tidak ditemukan.</td>
                         </tr>
                         @endforelse
                     </tbody>
