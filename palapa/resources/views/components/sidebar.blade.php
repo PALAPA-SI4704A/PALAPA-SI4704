@@ -133,6 +133,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        position: relative; /* Ditambahkan agar badge bisa absolute terhadap icon */
     }
 
     .profile-bell:hover {
@@ -141,6 +142,24 @@
 
     .sidebar.collapsed .profile-bell {
         display: none;
+    }
+
+    /* Styling untuk badge/titik notifikasi */
+    .notif-badge {
+        position: absolute;
+        top: -2px;
+        right: -4px;
+        background-color: #e53e3e; /* Warna merah */
+        color: white;
+        font-size: 10px;
+        font-weight: 800;
+        width: 14px;
+        height: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        border: 2px solid #f8fafc; /* Border disamakan dengan background profile */
     }
 
     .menu {
@@ -299,6 +318,16 @@
         </button>
     </div>
 
+    @php
+        // Cek apakah ada notifikasi yang is_read-nya 0 (belum dibaca) untuk user saat ini
+        $hasUnreadNotif = false;
+        if(auth()->check()) {
+            $hasUnreadNotif = \App\Models\Notifikasi::where('user_id', auth()->user()->users_id)
+                                ->where('is_read', 0)
+                                ->exists();
+        }
+    @endphp
+
     <div class="profile">
         <img class="avatar" src="https://i.pravatar.cc/96?img=12" alt="Foto Pengguna">
         <div class="profile-info">
@@ -307,6 +336,9 @@
         </div>
         <a href="{{ route('notifikasi.index') }}" class="profile-bell" title="Notifikasi">
             <i class="ph ph-bell"></i>
+            @if($hasUnreadNotif)
+                <span class="notif-badge">+</span>
+            @endif
         </a>
     </div>
 
