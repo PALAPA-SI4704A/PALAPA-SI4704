@@ -296,7 +296,7 @@
                     <h1 class="report-title">{{ $report->title ?? 'Laporan Titik Api' }}</h1>
                     <p class="report-subtitle">#{{ $report->report_id }} Detail Laporan</p>
                 </div>
-                <form action="{{ route('admin.reports.destroy', $report->report_id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus laporan tidak valid ini?');" style="margin: 0;">
+                <form action="{{ route('admin.reports.destroy', $report->report_id) }}" method="POST" @submit.prevent="$dispatch('open-confirm-modal', { message: 'Apakah Anda yakin ingin menghapus laporan ini?', form: $event.target })" style="margin: 0;">
                     @csrf
                     @method('DELETE')
                     <button type="submit" style="background: white; color: #e53e3e; border: 1px solid #e53e3e; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; box-shadow: 0 1px 2px rgba(229, 62, 62, 0.1);" onmouseover="this.style.background='#fff5f5'" onmouseout="this.style.background='white'">
@@ -522,7 +522,7 @@
                                     <span class="badge badge-available">Available</span>
                                 @endif
                             </td>
-                            <td>~ km</td>
+                            <td>{{ $petugas->distance !== null ? $petugas->distance . ' km' : 'Tidak diketahui' }}</td>
                             <td>
                                 @if($report->status === 'valid')
                                     <form action="{{ route('admin.reports.assign', ['report' => $report->report_id, 'petugas' => $petugas->users_id]) }}" method="POST">
@@ -544,7 +544,7 @@
                                                 @csrf
                                                 <button type="submit" class="btn-action">[Tugaskan Tambahan]</button>
                                             </form>
-                                            <form action="{{ route('admin.reports.reassign', ['report' => $report->report_id, 'petugas' => $petugas->users_id]) }}" method="POST" style="margin: 0;" onsubmit="return confirm('Apakah Anda yakin ingin mengubah penugasan ke petugas ini?');">
+                                            <form action="{{ route('admin.reports.reassign', ['report' => $report->report_id, 'petugas' => $petugas->users_id]) }}" method="POST" style="margin: 0;" @submit.prevent="$dispatch('open-confirm-modal', { message: 'Apakah Anda yakin ingin mengubah penugasan ke petugas ini?', form: $event.target })">
                                                 @csrf
                                                 <button type="submit" class="btn-action" style="color: #dd6b20;">[Ubah Penugasan]</button>
                                             </form>
@@ -581,9 +581,36 @@
             maxZoom: 19
         }).addTo(map);
 
-        L.marker([lat, lng]).addTo(map)
+        L.marker([lat, lng], {
+            icon: L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41]
+            })
+        }).addTo(map)
             .bindPopup("<b>Lokasi Kejadian</b><br>{{ $report->latitude }}, {{ $report->longitude }}")
             .openPopup();
+            
+        @if(in_array($report->status, ['valid', 'diproses', 'selesai']))
+            @foreach($petugasTersedia as $petugas)
+                @if($petugas->latitude && $petugas->longitude)
+                    L.marker([{{ $petugas->latitude }}, {{ $petugas->longitude }}], {
+                        icon: L.icon({
+                            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+                            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                            iconSize: [25, 41],
+                            iconAnchor: [12, 41],
+                            popupAnchor: [1, -34],
+                            shadowSize: [41, 41]
+                        })
+                    }).addTo(map)
+                    .bindPopup("<b>Petugas: {{ $petugas->users_name }}</b><br>Jarak: {{ $petugas->distance }} km");
+                @endif
+            @endforeach
+        @endif
     });
 </script>
 </body>
