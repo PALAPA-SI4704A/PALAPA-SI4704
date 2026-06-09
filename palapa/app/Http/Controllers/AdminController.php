@@ -417,7 +417,30 @@ class AdminController extends Controller
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
         $report->load(['pelapor', 'penugasans.petugas']);
-        $petugasTersedia = User::where('role', 'petugas')->get();
+        
+        $petugasTersedia = User::where('role', 'petugas')->get()->map(function ($petugas) use ($report) {
+            if ($petugas->latitude && $petugas->longitude && $report->latitude && $report->longitude) {
+                $earthRadius = 6371; // km
+                $lat1 = $report->latitude;
+                $lon1 = $report->longitude;
+                $lat2 = $petugas->latitude;
+                $lon2 = $petugas->longitude;
+                
+                $dLat = deg2rad($lat2 - $lat1);
+                $dLon = deg2rad($lon2 - $lon1);
+                
+                $a = sin($dLat/2) * sin($dLat/2) + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLon/2) * sin($dLon/2);
+                $c = 2 * atan2(sqrt($a), sqrt(1-$a));
+                
+                $petugas->distance = round($earthRadius * $c, 2);
+            } else {
+                $petugas->distance = null;
+            }
+            return $petugas;
+        })->sortBy(function($petugas) {
+            return $petugas->distance === null ? 999999 : $petugas->distance;
+        });
+
         return view('admin.reports.show', compact('report', 'petugasTersedia'));
     }
 

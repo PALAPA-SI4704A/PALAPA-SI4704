@@ -391,3 +391,5 @@
         </form>
     </div>
 </aside>
+
+@include('components.confirm-modal')
