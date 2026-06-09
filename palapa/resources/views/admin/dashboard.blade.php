@@ -80,7 +80,8 @@
         .stat-card:nth-child(4) { background: #fffcf0; } /* Laporan Valid */
         .stat-card:nth-child(5) { background: #fbf0ff; } /* Laporan Selesai */
         .stat-card:nth-child(6) { background: #fff0f0; } /* Laporan Ditolak */
-        .stat-card:nth-child(7) { background: #f0f7ff; } /* Total Laporan */
+        .stat-card:nth-child(7) { background: #fef5e7; } /* Laporan Belum Ditugaskan */
+        .stat-card:nth-child(8) { background: #f0f7ff; } /* Total Laporan */
 
         .stat-card h3 {
             margin: 0;
@@ -444,6 +445,17 @@
             </div>
             <div class="stat-card">
                 <div class="stat-header">
+                    <h3>Laporan Belum Ditugaskan</h3>
+                    <i class="ph ph-user-circle-gear"></i>
+                </div>
+                <p class="value">{{ $laporanBelumDitugaskan }}</p>
+                <div class="stat-trend trend-neutral">
+                    <i class="ph ph-warning-circle"></i>
+                    <span>Butuh Petugas</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header">
                     <h3>Total Laporan</h3>
                     <i class="ph ph-files"></i>
                 </div>
@@ -534,6 +546,7 @@
                         <option value="">Status</option>
                         <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending (Menunggu)</option>
                         <option value="valid" {{ request('status') == 'valid' ? 'selected' : '' }}>Valid</option>
+                        <option value="unassigned" {{ request('status') == 'unassigned' ? 'selected' : '' }}>Belum Ditugaskan</option>
                         <option value="diproses" {{ request('status') == 'diproses' ? 'selected' : '' }}>Diproses</option>
                         <option value="ditolak" {{ request('status') == 'ditolak' ? 'selected' : '' }}>Ditolak</option>
                         <option value="selesai" {{ request('status') == 'selesai' ? 'selected' : '' }}>Selesai</option>

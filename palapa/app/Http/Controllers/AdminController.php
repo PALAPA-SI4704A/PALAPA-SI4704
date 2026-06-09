@@ -23,7 +23,11 @@ class AdminController extends Controller
         $query = Report::with(['pelapor', 'penugasans.petugas']);
 
         if ($request->filled('status')) {
-            $query->where('status', $request->status);
+            if ($request->status === 'unassigned') {
+                $query->whereNull('assigned_petugas_id')->whereNotIn('status', ['selesai', 'ditolak']);
+            } else {
+                $query->where('status', $request->status);
+            }
         } else {
             $query->whereNotIn('status', ['selesai', 'ditolak']);
         }
@@ -38,9 +42,6 @@ class AdminController extends Controller
         if ($request->filled('region')) {
             $region = $request->region;
             $query->where('address', 'like', "%{$region}%");
-        }
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
         }
         if ($request->filled('location')) {
             $location = $request->location;
@@ -64,6 +65,7 @@ class AdminController extends Controller
         $sedangDitangani = Report::where('status', 'diproses')->count();
         $laporanSelesai = Report::where('status', 'selesai')->count();
         $laporanDitolak = Report::where('status', 'ditolak')->count();
+        $laporanBelumDitugaskan = Report::whereNull('assigned_petugas_id')->whereNotIn('status', ['selesai', 'ditolak'])->count();
 
         // 4. Perhitungan Tren (Kenaikan/Penurunan) dibanding periode sebelumnya
         $period = $request->input('period', '7days');
@@ -305,6 +307,7 @@ class AdminController extends Controller
             'sedangDitangani',
             'laporanSelesai',
             'laporanDitolak',
+            'laporanBelumDitugaskan',
             'trendHariIni',
             'trendMenungguVerifikasi',
             'trendSedangDitangani',
@@ -418,28 +421,32 @@ class AdminController extends Controller
         }
         $report->load(['pelapor', 'penugasans.petugas']);
         
-        $petugasTersedia = User::where('role', 'petugas')->get()->map(function ($petugas) use ($report) {
-            if ($petugas->latitude && $petugas->longitude && $report->latitude && $report->longitude) {
-                $earthRadius = 6371; // km
-                $lat1 = $report->latitude;
-                $lon1 = $report->longitude;
-                $lat2 = $petugas->latitude;
-                $lon2 = $petugas->longitude;
-                
-                $dLat = deg2rad($lat2 - $lat1);
-                $dLon = deg2rad($lon2 - $lon1);
-                
-                $a = sin($dLat/2) * sin($dLat/2) + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLon/2) * sin($dLon/2);
-                $c = 2 * atan2(sqrt($a), sqrt(1-$a));
-                
-                $petugas->distance = round($earthRadius * $c, 2);
-            } else {
-                $petugas->distance = null;
-            }
-            return $petugas;
-        })->sortBy(function($petugas) {
-            return $petugas->distance === null ? 999999 : $petugas->distance;
-        });
+        $petugasTersedia = User::where('role', 'petugas')
+            ->get()
+            ->map(function ($petugas) use ($report) {
+                if ($petugas->latitude && $petugas->longitude && $report->latitude && $report->longitude) {
+                    $earthRadius = 6371; // km
+                    $lat1 = $report->latitude;
+                    $lon1 = $report->longitude;
+                    $lat2 = $petugas->latitude;
+                    $lon2 = $petugas->longitude;
+                    
+                    $dLat = deg2rad($lat2 - $lat1);
+                    $dLon = deg2rad($lon2 - $lon1);
+                    
+                    $a = sin($dLat/2) * sin($dLat/2) + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLon/2) * sin($dLon/2);
+                    $c = 2 * atan2(sqrt($a), sqrt(1-$a));
+                    
+                    $petugas->distance = round($earthRadius * $c, 2);
+                } else {
+                    $petugas->distance = null;
+                }
+                return $petugas;
+            })
+            ->sortBy(function($petugas) {
+                return $petugas->distance === null ? 999999 : $petugas->distance;
+            })
+            ->values();
 
         return view('admin.reports.show', compact('report', 'petugasTersedia'));
     }
@@ -501,6 +508,13 @@ class AdminController extends Controller
         }
         if ($petugas->role !== 'petugas') {
             return redirect()->back()->withErrors(['error' => 'User yang ditunjuk bukan merupakan Petugas Lapangan.']);
+        }
+
+        $isOnDuty = Penugasan::where('petugas_id', $petugas->users_id)
+            ->whereNull('completed_at')
+            ->exists();
+        if ($isOnDuty) {
+            return redirect()->back()->withErrors(['error' => 'Petugas ini sedang bertugas (On Duty) dan tidak dapat ditugaskan kembali.']);
         }
 
         $report->penugasans()->create(['petugas_id' => $petugas->users_id, 'assigned_at' => now()]);
@@ -569,6 +583,13 @@ class AdminController extends Controller
         // Jika petugas yang baru sama dengan petugas lama, tidak perlu diubah
         if ($oldPetugasId === $petugas->users_id) {
             return redirect()->back()->with('success', 'Petugas ini sudah ditugaskan pada laporan ini.');
+        }
+
+        $isOnDuty = Penugasan::where('petugas_id', $petugas->users_id)
+            ->whereNull('completed_at')
+            ->exists();
+        if ($isOnDuty) {
+            return redirect()->back()->withErrors(['error' => 'Petugas ini sedang bertugas (On Duty) dan tidak dapat ditugaskan kembali.']);
         }
 
         // Mulai transaksi database untuk menjamin konsistensi
