@@ -89,38 +89,6 @@ class PetugasController extends Controller
         return view('petugas.reports.show', compact('report'));
     }
 
-    public function assign(Report $report, User $petugas)
-    {
-        if (Auth::user()->role !== 'petugas') {
-            abort(403, 'Anda tidak memiliki akses ke halaman ini.');
-        }
-
-        $report->penugasans()->create([
-            'petugas_id' => $petugas->users_id,
-            'assigned_at' => now()
-        ]);
-
-        $oldStatus = $report->status;
-        $report->update(['status' => 'diproses']);
-
-        $roleLabel = match (Auth::user()->role) {
-            'masyarakat' => 'Pelapor',
-            'petugas' => 'Admin Sistem',
-            'admin' => 'Admin Sistem',
-            default => ucfirst(Auth::user()->role)
-        };
-
-        $report->statusHistories()->create([
-            'status_awal' => $oldStatus,
-            'status_baru' => 'diproses',
-            'catatan' => 'Laporan sedang diverifikasi oleh admin dan diteruskan ke petugas lapangan.',
-            'diubah_oleh' => Auth::user()->users_name . ' (' . $roleLabel . ')',
-            'tanggal_ubah' => now(),
-        ]);
-
-        return redirect()->back()->with('success', 'Petugas ' . $petugas->users_name . ' berhasil ditugaskan.');
-    }
-
     public function verify(Request $request, Report $report)
     {
         if (Auth::user()->role !== 'petugas') {
