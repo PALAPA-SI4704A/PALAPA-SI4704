@@ -229,4 +229,53 @@ class ReportVerificationTest extends TestCase
             'diubah_oleh' => 'Admin Utama (Admin Sistem)'
         ]);
     }
+
+    public function test_petugas_can_view_handling_history_on_report_details(): void
+    {
+        // Setup: Create a Petugas
+        $petugas = User::create([
+            'users_name' => 'Petugas Lapangan 1',
+            'email' => 'petugas.lapangan1@palapa.com',
+            'password' => bcrypt('password'),
+            'role' => 'petugas',
+            'phone' => '081234567890'
+        ]);
+
+        // Setup: Create a Pelapor
+        $pelapor = User::create([
+            'users_name' => 'Warga Pelapor 1',
+            'email' => 'warga.pelapor1@palapa.com',
+            'password' => bcrypt('password123'),
+            'role' => 'masyarakat',
+            'phone' => '089876543210'
+        ]);
+
+        // Setup: Create a pending Report
+        $report = Report::create([
+            'user_id' => $pelapor->users_id,
+            'title' => 'Kebakaran Lahan',
+            'description' => 'Ada api melahap lahan kosong',
+            'latitude' => '-6.200000',
+            'longitude' => '106.816666',
+            'address' => 'Jalan Sudirman',
+            'status' => 'pending',
+        ]);
+
+        // Create a status history record
+        $report->statusHistories()->create([
+            'status_awal' => 'pending',
+            'status_baru' => 'valid',
+            'catatan' => 'Laporan diverifikasi oleh petugas pertama.',
+            'diubah_oleh' => 'Petugas Lapangan 1 (Petugas Pemadam)',
+            'tanggal_ubah' => now(),
+        ]);
+
+        $response = $this->actingAs($petugas)
+                         ->get(route('petugas.reports.show', $report->report_id));
+
+        $response->assertStatus(200);
+        $response->assertSee('Riwayat Penanganan');
+        $response->assertSee('Laporan diverifikasi oleh petugas pertama.');
+        $response->assertSee('Petugas Lapangan 1 (Petugas Pemadam)');
+    }
 }

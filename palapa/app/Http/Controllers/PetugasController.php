@@ -81,7 +81,9 @@ class PetugasController extends Controller
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
 
-        $report->load('pelapor');
+        $report->load(['pelapor', 'statusHistories' => function ($query) {
+            $query->orderBy('id', 'asc');
+        }]);
         $petugasTersedia = User::where('role', 'petugas')->get();
 
         return view('petugas.reports.show', compact('report'));
