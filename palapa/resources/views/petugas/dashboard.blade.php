@@ -278,7 +278,13 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="6" style="text-align: center; color: #a0aec0;">tidak ada laporan saat ini yang ditugaskan ke anda</td>
+                            <td colspan="6" style="text-align: center; padding: 48px 24px;">
+                                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;">
+                                    <i class="ph ph-shield-check" style="font-size: 48px; color: #cbd5e0;"></i>
+                                    <p style="margin: 0; font-size: 16px; font-weight: 600; color: #718096;">Anda tidak memiliki tugas penanganan hari ini</p>
+                                    <p style="margin: 0; font-size: 12px; color: #a0aec0;">Semua laporan aman dan terkendali.</p>
+                                </div>
+                            </td>
                         </tr>
                         @endforelse
                     </tbody>

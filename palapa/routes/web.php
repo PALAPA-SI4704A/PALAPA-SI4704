@@ -37,7 +37,6 @@ Route::middleware('auth')->group(function () {
     // Petugas Routes
     Route::get('/petugas/dashboard', [PetugasController::class, 'index'])->name('petugas.dashboard');
     Route::get('/petugas/reports/{report}', [PetugasController::class, 'show'])->name('petugas.reports.show');
-    Route::post('/petugas/reports/{report}/assign/{petugas}', [PetugasController::class, 'assign'])->name('petugas.reports.assign');
     Route::post('/petugas/reports/{report}/verify', [PetugasController::class, 'verify'])->name('petugas.reports.verify');
     Route::post('/petugas/reports/{report}/status', [PetugasController::class, 'updateStatus'])->name('petugas.reports.updateStatus');
 
