@@ -263,6 +263,95 @@
             .content { max-width: none !important; }
             .report-details-grid { grid-template-columns: 1fr; }
         }
+
+        /* Timeline Styles */
+        .timeline-container {
+            position: relative;
+            padding: 10px 0;
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 32px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #e2e8f0;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 24px;
+        }
+
+        .timeline-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .timeline-badge {
+            position: absolute;
+            left: -32px;
+            top: 4px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border: 2px solid #fff;
+        }
+
+        .timeline-content {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid #edf2f7;
+            margin-left: 12px;
+        }
+
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .timeline-status {
+            font-size: 14px;
+            color: #2d3748;
+        }
+
+        .timeline-time {
+            font-size: 12px;
+            color: #718096;
+            font-weight: 500;
+        }
+
+        .timeline-note {
+            font-size: 13px;
+            color: #4a5568;
+            margin: 0 0 8px 0;
+            line-height: 1.5;
+        }
+
+        .timeline-author {
+            font-size: 11px;
+            color: #718096;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -393,6 +482,79 @@
                     <span class="detail-label" style="color: #c53030;">ALASAN PENOLAKAN</span>
                     <span class="detail-value" style="color: #c53030;">{{ $report->rejection_reason }}</span>
                 </div>
+                @endif
+            </div>
+        </div>
+
+        <!-- Riwayat Penanganan -->
+        <div class="main-panel" style="margin-bottom: 24px;">
+            <h2 class="section-title">Riwayat Penanganan</h2>
+            <p style="margin-bottom: 20px; color: #718096; font-size: 14px;">Progres dan catatan penanganan laporan ini dari waktu ke waktu.</p>
+            
+            <div class="timeline-container">
+                @if($report->statusHistories->isEmpty())
+                    <p style="color: #a0aec0; font-style: italic; text-align: center; margin: 20px 0;">Belum ada riwayat penanganan untuk laporan ini.</p>
+                @else
+                    <div class="timeline">
+                        @foreach($report->statusHistories as $history)
+                            <div class="timeline-item">
+                                <div class="timeline-badge" style="background: {{
+                                    match(strtolower($history->status_baru)) {
+                                        'pending' => '#cbd5e0',
+                                        'valid' => '#9ae6b4',
+                                        'diproses' => '#fbd38d',
+                                        'selesai' => '#bee3f8',
+                                        'ditolak' => '#feb2b2',
+                                        default => '#e2e8f0'
+                                    }
+                                }}; color: {{
+                                    match(strtolower($history->status_baru)) {
+                                        'pending' => '#4a5568',
+                                        'valid' => '#2f855a',
+                                        'diproses' => '#b7791f',
+                                        'selesai' => '#2b6cb0',
+                                        'ditolak' => '#c53030',
+                                        default => '#4a5568'
+                                    }
+                                }};">
+                                    <i class="ph {{
+                                        match(strtolower($history->status_baru)) {
+                                            'pending' => 'ph-clock',
+                                            'valid' => 'ph-check-circle',
+                                            'diproses' => 'ph-fire',
+                                            'selesai' => 'ph-seal-check',
+                                            'ditolak' => 'ph-x-circle',
+                                            default => 'ph-info'
+                                        }
+                                    }}" style="font-size: 16px;"></i>
+                                </div>
+                                <div class="timeline-content">
+                                    <div class="timeline-header">
+                                        <span class="timeline-status">
+                                            Status: 
+                                            <strong>
+                                                {{
+                                                    match(strtolower($history->status_baru)) {
+                                                        'pending' => 'Pending',
+                                                        'valid' => 'Verified',
+                                                        'diproses' => 'In Progress',
+                                                        'selesai' => 'Resolved',
+                                                        'ditolak' => 'Invalid',
+                                                        default => ucfirst($history->status_baru)
+                                                    }
+                                                }}
+                                            </strong>
+                                        </span>
+                                        <span class="timeline-time">{{ \Carbon\Carbon::parse($history->tanggal_ubah)->translatedFormat('d F Y, H:i') }}</span>
+                                    </div>
+                                    <p class="timeline-note">{{ $history->catatan }}</p>
+                                    <span class="timeline-author">
+                                        <i class="ph ph-user"></i> Oleh: {{ $history->diubah_oleh }}
+                                    </span>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
                 @endif
             </div>
         </div>
