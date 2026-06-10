@@ -451,19 +451,76 @@
                 </div>
                 @endif
 
+        <!-- Riwayat / Status Penugasan Petugas -->
+        @if($report->penugasans->isNotEmpty())
+        <div class="main-panel" style="width: 100%;">
+            <h2 class="section-title" style="font-size: 20px;">Status Penugasan Petugas</h2>
+            <p style="margin-bottom: 16px; color: #718096; font-size: 13px;">Daftar petugas yang ditugaskan beserta status pekerjaannya.</p>
+
+            <div style="overflow-x: auto;">
+                <table style="font-size: 12px;">
+                    <thead>
+                        <tr>
+                            <th>Petugas</th>
+                            <th>Status</th>
+                            <th>Aksi / Bukti</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($report->penugasans as $penugasan)
+                        <tr>
+                            <td>
+                                <div class="petugas-info" style="font-size: 12px; gap: 6px;">
+                                    {{ $penugasan->petugas?->users_name }}
+                                </div>
+                            </td>
+                            <td>
+                                @if($penugasan->completed_at)
+                                    <span class="badge badge-selesai" style="font-size: 10px; padding: 3px 6px;">Selesai</span>
+                                @else
+                                    <span class="badge badge-diproses" style="font-size: 10px; padding: 3px 6px;">Sedang Bertugas</span>
+                                @endif
+                            </td>
+                            <td>
+                                @if($penugasan->bukti_photo)
+                                    <a href="{{ route('reports.photo', ['path' => $penugasan->bukti_photo]) }}" target="_blank" class="btn-link" style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px;">
+                                        <i class="ph ph-image"></i> Lihat Bukti Foto
+                                    </a>
+                                @else
+                                    <span style="color: #a0aec0; font-style: italic; font-size: 11px;">Belum ada foto</span>
+                                @endif
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @endif
+
         <!-- Penugasan Petugas (Tampil Jika Status 'valid', 'diproses', atau 'selesai') -->
         @if(in_array($report->status, ['valid', 'diproses', 'selesai']))
-        <div class="main-panel">
-            <h2 class="section-title">Petugas Tersedia berdasarkan Pos</h2>
-            <p style="margin-bottom: 16px; color: #718096; font-size: 14px;">Tugaskan petugas lapangan untuk menindaklanjuti laporan kebakaran ini berdasarkan pos penempatan terdekat mereka.</p>
+        <div class="main-panel" style="width: 100%;" x-data="{ showOnDuty: false }">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 16px;">
+                <div>
+                    <h2 class="section-title" style="font-size: 20px; margin: 0 0 4px 0;">Petugas Tersedia</h2>
+                    <p style="color: #718096; font-size: 13px; margin: 0;">Tugaskan petugas lapangan untuk menangani kebakaran ini berdasarkan pos penempatan terdekat mereka.</p>
+                </div>
+                
+                <!-- Toggle button -->
+                <div style="display: flex; align-items: center; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 9999px; padding: 6px 12px; cursor: pointer; user-select: none; transition: all 0.2s;" @click="showOnDuty = !showOnDuty" title="Klik untuk menampilkan/menyembunyikan petugas yang sedang sibuk">
+                    <i class="ph" :class="showOnDuty ? 'ph-eye' : 'ph-eye-slash'" style="font-size: 16px; margin-right: 6px; color: #475569;"></i>
+                    <span style="font-size: 11px; font-weight: 600; color: #475569;" x-text="showOnDuty ? 'Sembunyikan On Duty' : 'Tampilkan On Duty'"></span>
+                </div>
+            </div>
 
             @forelse($petugasTersedia as $posName => $petugasGroup)
-            <h3 style="color: #2d3748; font-size: 16px; font-weight: 700; margin-top: 20px; margin-bottom: 12px; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">
+            <h3 style="color: #2d3748; font-size: 14px; font-weight: 700; margin-top: 20px; margin-bottom: 12px; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">
                 <i class="ph ph-map-pin" style="color: #e53e3e;"></i> {{ $posName }}
-                <span style="font-size: 12px; color: #718096; font-weight: 500; margin-left: 8px;">({{ $petugasGroup->count() }} Petugas)</span>
+                <span style="font-size: 11px; color: #718096; font-weight: 500; margin-left: 8px;">({{ $petugasGroup->count() }} Petugas)</span>
             </h3>
             <div style="overflow-x: auto; margin-bottom: 24px;">
-                <table>
+                <table style="font-size: 12px;">
                     <thead>
                         <tr>
                             <th>Nama</th>
@@ -473,8 +530,33 @@
                         </tr>
                     </thead>
                     <tbody>
+                        @php
+                            $hasAvailable = false;
+                            foreach ($petugasGroup as $p) {
+                                $busy = \App\Models\Penugasan::where('petugas_id', $p->users_id)->whereNull('completed_at')->exists();
+                                if (!$busy) {
+                                    $hasAvailable = true;
+                                    break;
+                                }
+                            }
+                        @endphp
+
+                        @if(!$hasAvailable && $petugasGroup->isNotEmpty())
+                        <tr x-show="!showOnDuty">
+                            <td colspan="4" style="text-align: center; color: #718096; font-size: 11px; padding: 24px; background: #fffaf0; border-radius: 8px;">
+                                <i class="ph ph-info" style="font-size: 16px; vertical-align: middle; margin-right: 4px; color: #dd6b20;"></i>
+                                Semua petugas di pos ini sedang bertugas (On Duty). Aktifkan <strong>"Tampilkan On Duty"</strong> untuk melihat mereka.
+                            </td>
+                        </tr>
+                        @endif
+
                         @foreach($petugasGroup as $petugas)
-                        <tr>
+                            @php
+                                $isAssigned = \App\Models\Penugasan::where('petugas_id', $petugas->users_id)
+                                                ->whereNull('completed_at')
+                                                ->exists();
+                            @endphp
+                        <tr x-show="showOnDuty || !{{ $isAssigned ? 'true' : 'false' }}">
                             <td>
                                 <div class="petugas-info">
                                     <div class="petugas-avatar">👩‍🚒</div>
@@ -482,170 +564,63 @@
                                 </div>
                             </td>
                             <td>
-                <!-- Riwayat / Status Penugasan Petugas -->
-                @if($report->penugasans->isNotEmpty())
-                <div class="main-panel" style="width: 100%;">
-                    <h2 class="section-title" style="font-size: 20px;">Status Penugasan Petugas</h2>
-                    <p style="margin-bottom: 16px; color: #718096; font-size: 13px;">Daftar petugas yang ditugaskan beserta status pekerjaannya.</p>
-
-                    <div style="overflow-x: auto;">
-                        <table style="font-size: 12px;">
-                            <thead>
-                                <tr>
-                                    <th>Petugas</th>
-                                    <th>Status</th>
-                                    <th>Aksi / Bukti</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($report->penugasans as $penugasan)
-                                <tr>
-                                    <td>
-                                        <div class="petugas-info" style="font-size: 12px; gap: 6px;">
-                                            {{ $penugasan->petugas?->users_name }}
-                                        </div>
-                                    </td>
-                                    <td>
-                                        @if($penugasan->completed_at)
-                                            <span class="badge badge-selesai" style="font-size: 10px; padding: 3px 6px;">Selesai</span>
-                                        @else
-                                            <span class="badge badge-diproses" style="font-size: 10px; padding: 3px 6px;">Sedang Bertugas</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        @if($penugasan->bukti_photo)
-                                            <a href="{{ route('reports.photo', ['path' => $penugasan->bukti_photo]) }}" target="_blank" class="btn-link" style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px;">
-                                                <i class="ph ph-image"></i> Lihat Bukti Foto
-                                            </a>
-                                        @else
-                                            <span style="color: #a0aec0; font-style: italic; font-size: 11px;">Belum ada foto</span>
-                                        @endif
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                @endif
-                <!-- Penugasan Petugas (Tampil Jika Status 'valid', 'diproses', atau 'selesai') -->
-                @if(in_array($report->status, ['valid', 'diproses', 'selesai']))
-                <div class="main-panel" style="width: 100%;" x-data="{ showOnDuty: false }">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 16px;">
-                        <div>
-                            <h2 class="section-title" style="font-size: 20px; margin: 0 0 4px 0;">Petugas Tersedia</h2>
-                            <p style="color: #718096; font-size: 13px; margin: 0;">Tugaskan petugas lapangan untuk menangani kebakaran ini.</p>
-                        </div>
-                        
-                        <!-- Toggle button -->
-                        <div style="display: flex; align-items: center; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 9999px; padding: 6px 12px; cursor: pointer; user-select: none; transition: all 0.2s;" @click="showOnDuty = !showOnDuty" title="Klik untuk menampilkan/menyembunyikan petugas yang sedang sibuk">
-                            <i class="ph" :class="showOnDuty ? 'ph-eye' : 'ph-eye-slash'" style="font-size: 16px; margin-right: 6px; color: #475569;"></i>
-                            <span style="font-size: 11px; font-weight: 600; color: #475569;" x-text="showOnDuty ? 'Sembunyikan On Duty' : 'Tampilkan On Duty'"></span>
-                        </div>
-                    </div>
-
-                    <div style="overflow-x: auto;">
-                        <table style="font-size: 12px;">
-                            <thead>
-                                <tr>
-                                    <th>Nama</th>
-                                    <th>Jarak</th>
-                                    <th>Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @php
-                                    $hasAvailable = false;
-                                    foreach ($petugasTersedia as $p) {
-                                        $busy = \App\Models\Penugasan::where('petugas_id', $p->users_id)->whereNull('completed_at')->exists();
-                                        if (!$busy) {
-                                            $hasAvailable = true;
-                                            break;
-                                        }
-                                    }
-                                @endphp
-
-                                @if(!$hasAvailable && $petugasTersedia->isNotEmpty())
-                                <tr x-show="!showOnDuty">
-                                    <td colspan="3" style="text-align: center; color: #718096; font-size: 11px; padding: 24px; background: #fffaf0; border-radius: 8px;">
-                                        <i class="ph ph-info" style="font-size: 16px; vertical-align: middle; margin-right: 4px; color: #dd6b20;"></i>
-                                        Semua petugas sedang bertugas (On Duty). Aktifkan <strong>"Tampilkan On Duty"</strong> untuk melihat mereka.
-                                    </td>
-                                </tr>
+                                @if($isAssigned)
+                                    <span class="badge badge-onduty" style="font-size: 9px; padding: 2px 6px;">On Duty</span>
+                                @else
+                                    <span class="badge badge-available" style="font-size: 9px; padding: 2px 6px;">Available</span>
                                 @endif
-
-                                @forelse($petugasTersedia as $petugas)
-                                    @php
-                                        $isAssigned = \App\Models\Penugasan::where('petugas_id', $petugas->users_id)
-                                                        ->whereNull('completed_at')
-                                                        ->exists();
-                                    @endphp
-                                <tr x-show="showOnDuty || !{{ $isAssigned ? 'true' : 'false' }}">
-                                    <td>
-                                        <div class="petugas-info" style="font-size: 12px; flex-direction: column; align-items: flex-start; gap: 2px;">
-                                            <span style="font-weight: 600;">{{ $petugas->users_name }}</span>
-                                            @if($isAssigned)
-                                                <span class="badge badge-onduty" style="font-size: 9px; padding: 2px 6px;">On Duty</span>
-                                            @else
-                                                <span class="badge badge-available" style="font-size: 9px; padding: 2px 6px;">Available</span>
-                                            @endif
+                            </td>
+                            <td><span style="font-size: 11px; color: #4a5568;">{{ $petugas->distance !== null ? $petugas->distance . ' km' : '-' }}</span></td>
+                            <td>
+                                @php
+                                    $currentlyAssigned = \App\Models\Penugasan::where('report_id', $report->report_id)
+                                                            ->where('petugas_id', $petugas->users_id)
+                                                            ->whereNull('completed_at')
+                                                            ->exists();
+                                @endphp
+                                @if($report->status === 'valid')
+                                    @if($isAssigned)
+                                        <span style="font-weight:600; color:#e53e3e; font-size:11px;">On Duty</span>
+                                    @else
+                                        <form action="{{ route('admin.reports.assign', ['report' => $report->report_id, 'petugas' => $petugas->users_id]) }}" method="POST" style="margin: 0;">
+                                            @csrf
+                                            <button type="submit" class="btn-action" style="font-size: 11px;">[Tugaskan]</button>
+                                        </form>
+                                    @endif
+                                @elseif($report->status === 'diproses')
+                                    @if($currentlyAssigned)
+                                        <span style="font-weight:600; color:#b7791f; font-size:11px;">Bertugas</span>
+                                    @elseif($isAssigned)
+                                        <span style="font-weight:600; color:#e53e3e; font-size:11px;">On Duty</span>
+                                    @else
+                                        <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-start;">
+                                            <form action="{{ route('admin.reports.assign', ['report' => $report->report_id, 'petugas' => $petugas->users_id]) }}" method="POST" style="margin: 0;">
+                                                @csrf
+                                                <button type="submit" class="btn-action" style="font-size: 11px;">[Tugaskan +]</button>
+                                            </form>
+                                            <form action="{{ route('admin.reports.reassign', ['report' => $report->report_id, 'petugas' => $petugas->users_id]) }}" method="POST" style="margin: 0;" @submit.prevent="$dispatch('open-confirm-modal', { message: 'Apakah Anda yakin ingin mengubah penugasan ke petugas ini?', form: $event.target })">
+                                                @csrf
+                                                <button type="submit" class="btn-action" style="color: #dd6b20; font-size: 11px;">[Ubah]</button>
+                                            </form>
                                         </div>
-                                    </td>
-                                    <td><span style="font-size: 11px; color: #4a5568;">{{ $petugas->distance !== null ? $petugas->distance . ' km' : '-' }}</span></td>
-                                    <td>
-                                        @php
-                                            $currentlyAssigned = \App\Models\Penugasan::where('report_id', $report->report_id)
-                                                                    ->where('petugas_id', $petugas->users_id)
-                                                                    ->whereNull('completed_at')
-                                                                    ->exists();
-                                        @endphp
-                                        @if($report->status === 'valid')
-                                            @if($isAssigned)
-                                                <span style="font-weight:600; color:#e53e3e; font-size:11px;">On Duty</span>
-                                            @else
-                                                <form action="{{ route('admin.reports.assign', ['report' => $report->report_id, 'petugas' => $petugas->users_id]) }}" method="POST" style="margin: 0;">
-                                                    @csrf
-                                                    <button type="submit" class="btn-action" style="font-size: 11px;">[Tugaskan]</button>
-                                                </form>
-                                            @endif
-                                        @elseif($report->status === 'diproses')
-                                            @if($currentlyAssigned)
-                                                <span style="font-weight:600; color:#b7791f; font-size:11px;">Bertugas</span>
-                                            @elseif($isAssigned)
-                                                <span style="font-weight:600; color:#e53e3e; font-size:11px;">On Duty</span>
-                                            @else
-                                                <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-start;">
-                                                    <form action="{{ route('admin.reports.assign', ['report' => $report->report_id, 'petugas' => $petugas->users_id]) }}" method="POST" style="margin: 0;">
-                                                        @csrf
-                                                        <button type="submit" class="btn-action" style="font-size: 11px;">[Tugaskan +]</button>
-                                                    </form>
-                                                    <form action="{{ route('admin.reports.reassign', ['report' => $report->report_id, 'petugas' => $petugas->users_id]) }}" method="POST" style="margin: 0;" @submit.prevent="$dispatch('open-confirm-modal', { message: 'Apakah Anda yakin ingin mengubah penugasan ke petugas ini?', form: $event.target })">
-                                                        @csrf
-                                                        <button type="submit" class="btn-action" style="color: #dd6b20; font-size: 11px;">[Ubah]</button>
-                                                    </form>
-                                                </div>
-                                            @endif
-                                        @else
-                                            <span style="color:#a0aec0; font-size:11px;">Selesai</span>
-                                        @endif
-                                    </td>
-                                </tr>
-                                @empty
-                                <tr>
-                                    <td colspan="3" style="text-align: center; color: #a0aec0; font-size: 11px;">Tidak ada petugas lapangan.</td>
-                                </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                 @endif
+                                    @endif
+                                @else
+                                    <span style="color:#a0aec0; font-size:11px;">Selesai</span>
+                                @endif
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
             </div>
             @empty
-                <div style="text-align: center; color: #a0aec0; padding: 24px; background: #f8fafc; border-radius: 12px; border: 1px dashed #e2e8f0;">
+                <div style="text-align: center; color: #a0aec0; padding: 24px; background: #f8fafc; border-radius: 12px; border: 1px dashed #e2e8f0; font-size: 12px;">
                     Tidak ada petugas lapangan yang terdaftar.
                 </div>
             @endforelse
+        </div>
+        @endif
+            </div>
         </div>
 
     </main>
@@ -698,9 +673,11 @@
             const petugasList = {!! json_encode($petugasTersedia->flatten()) !!};
             petugasList.forEach(function(petugas) {
                 if(petugas.latitude && petugas.longitude) {
+                    const markerColor = petugas.is_busy ? 'orange' : 'blue';
+                    const statusLabel = petugas.is_busy ? 'On Duty' : 'Available';
                     L.marker([petugas.latitude, petugas.longitude], {
                         icon: L.icon({
-                            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-{{ $markerColor }}.png',
+                            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-' + markerColor + '.png',
                             shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
                             iconSize: [25, 41],
                             iconAnchor: [12, 41],
@@ -708,7 +685,7 @@
                             shadowSize: [41, 41]
                         })
                     }).addTo(map)
-                    .bindPopup("<b>Petugas: " + petugas.users_name + "</b><br>Pos: " + petugas.assigned_pos + "<br>Jarak: " + (petugas.distance !== null ? petugas.distance + " km" : "-"));
+                    .bindPopup("<b>Petugas: " + petugas.users_name + " (" + statusLabel + ")</b><br>Pos: " + petugas.assigned_pos + "<br>Jarak: " + (petugas.distance !== null ? petugas.distance + " km" : "-"));
                 }
             });
         @endif

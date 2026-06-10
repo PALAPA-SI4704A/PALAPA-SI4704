@@ -488,6 +488,8 @@ class AdminController extends Controller
                 $petugas->assigned_pos = $nearestPos;
             }
 
+            $petugas->is_busy = \App\Models\Penugasan::where('petugas_id', $petugas->users_id)->whereNull('completed_at')->exists();
+
             return $petugas;
         })->sortBy(function($petugas) {
             return $petugas->distance === null ? 999999 : $petugas->distance;
