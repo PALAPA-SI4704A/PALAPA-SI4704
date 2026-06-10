@@ -232,6 +232,10 @@ class ReportController extends Controller
      */
     public function history(Request $request, Report $report)
     {
+        if (Auth::user()->role === 'masyarakat' && $report->user_id !== Auth::id()) {
+            abort(403, 'Akses ditolak. Ini bukan laporan Anda.');
+        }
+
         $statusHistories = $report->statusHistories()->orderBy('id', 'asc')->get();
 
         if ($request->wantsJson() || $request->ajax()) {
