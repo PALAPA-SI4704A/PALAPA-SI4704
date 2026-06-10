@@ -411,7 +411,9 @@
             <img src="https://i.pravatar.cc/150?img=12" alt="Avatar" class="banner-avatar">
             <div class="banner-info">
                 <h2>{{ auth()->check() ? auth()->user()->users_name : 'John Smith' }}</h2>
-                <p><i class="ph ph-envelope"></i> {{ auth()->check() ? auth()->user()->email : 'johnsm1th@gmail.com' }}</p>
+                @if(auth()->check() && auth()->user()->email)
+                <p><i class="ph ph-envelope"></i> {{ auth()->user()->email }}</p>
+                @endif
                 <p><i class="ph ph-phone"></i> {{ auth()->check() ? (auth()->user()->phone ?? 'Belum diisi') : '628102022300' }}</p>
             </div>
             <button class="edit-btn" @click="editModalOpen = true"><i class="ph ph-pencil-simple"></i></button>

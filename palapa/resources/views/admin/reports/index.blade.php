@@ -234,6 +234,17 @@
                 </div>
 
                 <div class="filter-group">
+                    <i class="ph ph-warning-circle"></i>
+                    <select name="fire_level" class="filter-select" onchange="this.form.submit()">
+                        <option value="">Urgensi</option>
+                        <option value="low" {{ request('fire_level') == 'low' ? 'selected' : '' }}>Rendah</option>
+                        <option value="medium" {{ request('fire_level') == 'medium' ? 'selected' : '' }}>Sedang</option>
+                        <option value="high" {{ request('fire_level') == 'high' ? 'selected' : '' }}>Tinggi</option>
+                        <option value="critical" {{ request('fire_level') == 'critical' ? 'selected' : '' }}>Kritis</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
                     <i class="ph ph-map-pin"></i>
                     <select name="region" class="filter-select" onchange="this.form.submit()">
                         <option value="">Wilayah</option>

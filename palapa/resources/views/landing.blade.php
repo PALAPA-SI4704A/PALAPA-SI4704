@@ -215,7 +215,7 @@
                     </button>
                     <div x-show="activeFaq === 2" x-collapse>
                         <div class="px-6 pb-6 text-gray-600 leading-relaxed border-t border-gray-100 pt-4 mt-2">
-                            Ya, demi keamanan dan akurasi laporan serta untuk menghindari laporan palsu (hoax), pengguna diwajibkan untuk mendaftar akun terlebih dahulu menggunakan alamat email aktif dan nomor telepon yang bisa dihubungi.
+                            Ya, demi keamanan dan akurasi laporan serta untuk menghindari laporan palsu (hoax), pengguna diwajibkan untuk mendaftar akun terlebih dahulu menggunakan nomor telepon yang aktif (email bersifat opsional).
                         </div>
                     </div>
                 </div>
