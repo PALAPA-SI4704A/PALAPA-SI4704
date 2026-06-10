@@ -488,10 +488,15 @@
         <!-- Penugasan Petugas (Tampil Jika Status 'valid', 'diproses', atau 'selesai') -->
         @if(in_array($report->status, ['valid', 'diproses', 'selesai']))
         <div class="main-panel">
-            <h2 class="section-title">Petugas Tersedia</h2>
-            <p style="margin-bottom: 16px; color: #718096; font-size: 14px;">Tugaskan petugas lapangan untuk menindaklanjuti laporan kebakaran ini.</p>
+            <h2 class="section-title">Petugas Tersedia berdasarkan Pos</h2>
+            <p style="margin-bottom: 16px; color: #718096; font-size: 14px;">Tugaskan petugas lapangan untuk menindaklanjuti laporan kebakaran ini berdasarkan pos penempatan terdekat mereka.</p>
 
-            <div style="overflow-x: auto;">
+            @forelse($petugasTersedia as $posName => $petugasGroup)
+            <h3 style="color: #2d3748; font-size: 16px; font-weight: 700; margin-top: 20px; margin-bottom: 12px; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">
+                <i class="ph ph-map-pin" style="color: #e53e3e;"></i> {{ $posName }}
+                <span style="font-size: 12px; color: #718096; font-weight: 500; margin-left: 8px;">({{ $petugasGroup->count() }} Petugas)</span>
+            </h3>
+            <div style="overflow-x: auto; margin-bottom: 24px;">
                 <table>
                     <thead>
                         <tr>
@@ -502,7 +507,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse($petugasTersedia as $petugas)
+                        @foreach($petugasGroup as $petugas)
                         <tr>
                             <td>
                                 <div class="petugas-info">
@@ -555,14 +560,15 @@
                                 @endif
                             </td>
                         </tr>
-                        @empty
-                        <tr>
-                            <td colspan="4" style="text-align: center; color: #a0aec0;">Tidak ada petugas lapangan yang terdaftar.</td>
-                        </tr>
-                        @endforelse
+                        @endforeach
                     </tbody>
                 </table>
             </div>
+            @empty
+                <div style="text-align: center; color: #a0aec0; padding: 24px; background: #f8fafc; border-radius: 12px; border: 1px dashed #e2e8f0;">
+                    Tidak ada petugas lapangan yang terdaftar.
+                </div>
+            @endforelse
         </div>
         @endif
 
@@ -595,9 +601,28 @@
             .openPopup();
             
         @if(in_array($report->status, ['valid', 'diproses', 'selesai']))
-            @foreach($petugasTersedia as $petugas)
-                @if($petugas->latitude && $petugas->longitude)
-                    L.marker([{{ $petugas->latitude }}, {{ $petugas->longitude }}], {
+            // Tampilkan titik Pos Pemadam
+            const posPemadam = {!! json_encode($posPemadam) !!};
+            for (const [posName, coords] of Object.entries(posPemadam)) {
+                L.marker([coords.lat, coords.lng], {
+                    icon: L.icon({
+                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+                        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                        iconSize: [25, 41],
+                        iconAnchor: [12, 41],
+                        popupAnchor: [1, -34],
+                        shadowSize: [41, 41]
+                    }),
+                    zIndexOffset: 1000
+                }).addTo(map)
+                .bindPopup("<b>" + posName + "</b><br>Basis Pos Pemadam");
+            }
+
+            // Tampilkan titik Petugas (flatten array dari grouped collection)
+            const petugasList = {!! json_encode($petugasTersedia->flatten()) !!};
+            petugasList.forEach(function(petugas) {
+                if(petugas.latitude && petugas.longitude) {
+                    L.marker([petugas.latitude, petugas.longitude], {
                         icon: L.icon({
                             iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
                             shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
@@ -607,9 +632,9 @@
                             shadowSize: [41, 41]
                         })
                     }).addTo(map)
-                    .bindPopup("<b>Petugas: {{ $petugas->users_name }}</b><br>Jarak: {{ $petugas->distance }} km");
-                @endif
-            @endforeach
+                    .bindPopup("<b>Petugas: " + petugas.users_name + "</b><br>Pos: " + petugas.assigned_pos + "<br>Jarak: " + (petugas.distance !== null ? petugas.distance + " km" : "-"));
+                }
+            });
         @endif
     });
 </script>

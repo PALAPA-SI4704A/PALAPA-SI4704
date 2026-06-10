@@ -13,6 +13,7 @@
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
 
     <style>
         :root {
@@ -541,6 +542,17 @@
                 </div>
 
                 <div class="filter-group">
+                    <i class="ph ph-warning-circle"></i>
+                    <select name="fire_level" class="filter-select" onchange="this.form.submit()">
+                        <option value="">Urgensi</option>
+                        <option value="low" {{ request('fire_level') == 'low' ? 'selected' : '' }}>Rendah</option>
+                        <option value="medium" {{ request('fire_level') == 'medium' ? 'selected' : '' }}>Sedang</option>
+                        <option value="high" {{ request('fire_level') == 'high' ? 'selected' : '' }}>Tinggi</option>
+                        <option value="critical" {{ request('fire_level') == 'critical' ? 'selected' : '' }}>Kritis</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
                     <i class="ph ph-map-pin"></i>
                     <select name="region" class="filter-select" onchange="this.form.submit()">
                         <option value="">Wilayah</option>
@@ -649,6 +661,8 @@
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {
+        Chart.register(ChartDataLabels);
+        
         // Line Chart
         const ctx = document.getElementById('karhutlaChart').getContext('2d');
         
@@ -683,9 +697,22 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                layout: {
+                    padding: {
+                        top: 20
+                    }
+                },
                 plugins: {
                     legend: {
                         display: false
+                    },
+                    datalabels: {
+                        color: '#4a5568',
+                        font: { family: 'Poppins', size: 11, weight: 'bold' },
+                        align: 'top',
+                        anchor: 'end',
+                        offset: 4,
+                        formatter: (value) => value > 0 ? value : '',
                     },
                     tooltip: {
                         backgroundColor: '#2d3748',
@@ -705,7 +732,8 @@
                         ticks: {
                             font: { family: 'Poppins', size: 11 },
                             stepSize: 1
-                        }
+                        },
+                        grace: '5%'
                     },
                     x: {
                         grid: {
@@ -755,6 +783,11 @@
                             padding: 15,
                             usePointStyle: true
                         }
+                    },
+                    datalabels: {
+                        color: '#ffffff',
+                        font: { family: 'Poppins', size: 12, weight: 'bold' },
+                        formatter: (value) => value > 0 ? value : '',
                     },
                     tooltip: {
                         backgroundColor: '#2d3748',

@@ -34,6 +34,11 @@ class AdminController extends Controller
             $query->whereDate('created_at', $request->date);
         }
 
+        // Filter Urgensi
+        if ($request->filled('fire_level')) {
+            $query->where('fire_level', $request->fire_level);
+        }
+
         // Filter Wilayah
         if ($request->filled('region')) {
             $region = $request->region;
@@ -418,7 +423,27 @@ class AdminController extends Controller
         }
         $report->load(['pelapor', 'penugasans.petugas']);
         
-        $petugasTersedia = User::where('role', 'petugas')->get()->map(function ($petugas) use ($report) {
+        $posPemadam = [
+            'Pos Daops Pontianak' => ['lat' => -0.0227, 'lng' => 109.3323],
+            'Pos Daops Ketapang' => ['lat' => -1.8596, 'lng' => 109.9719],
+            'Pos Induk Sintang' => ['lat' => 0.0717, 'lng' => 111.4983],
+            'Pos Melawi' => ['lat' => -0.3333, 'lng' => 111.7000],
+            'Pos Daops Palangka Raya' => ['lat' => -2.2161, 'lng' => 113.8990],
+            'Pos Daops Pangkalan Bun' => ['lat' => -2.6953, 'lng' => 111.6163],
+            'Pos Induk Sampit' => ['lat' => -2.5350, 'lng' => 112.9547],
+            'Pos Daops Banjarbaru' => ['lat' => -3.4402, 'lng' => 114.8300],
+            'Pos Induk Banjarmasin' => ['lat' => -3.3167, 'lng' => 114.5910],
+            'Pos Amuntai' => ['lat' => -2.4167, 'lng' => 115.2500],
+            'Pos Daops Samarinda' => ['lat' => -0.5022, 'lng' => 117.1536],
+            'Pos Induk Balikpapan' => ['lat' => -1.2654, 'lng' => 116.8312],
+            'Pos Balikpapan Utara' => ['lat' => -1.1833, 'lng' => 116.8667],
+            'Pos Daops Nunukan' => ['lat' => 4.1357, 'lng' => 117.6500],
+            'Pos Daops Tarakan' => ['lat' => 3.3267, 'lng' => 117.5960],
+            'Pos Daops Malinau' => ['lat' => 3.5833, 'lng' => 116.6333],
+        ];
+
+        $petugasTersedia = User::where('role', 'petugas')->get()->map(function ($petugas) use ($report, $posPemadam) {
+            // Hitung Jarak ke Laporan
             if ($petugas->latitude && $petugas->longitude && $report->latitude && $report->longitude) {
                 $earthRadius = 6371; // km
                 $lat1 = $report->latitude;
@@ -436,12 +461,36 @@ class AdminController extends Controller
             } else {
                 $petugas->distance = null;
             }
+
+            // Tentukan Pos (Prioritaskan dari Database)
+            if ($petugas->pos_name) {
+                $petugas->assigned_pos = $petugas->pos_name;
+            } else {
+                $nearestPos = 'Pos Lainnya / Belum Ditentukan';
+                if ($petugas->latitude && $petugas->longitude) {
+                    $minDistancePos = 999999;
+                    foreach ($posPemadam as $posName => $coords) {
+                        $dLatPos = deg2rad($petugas->latitude - $coords['lat']);
+                        $dLonPos = deg2rad($petugas->longitude - $coords['lng']);
+                        $aPos = sin($dLatPos/2) * sin($dLatPos/2) + cos(deg2rad($coords['lat'])) * cos(deg2rad($petugas->latitude)) * sin($dLonPos/2) * sin($dLonPos/2);
+                        $cPos = 2 * atan2(sqrt($aPos), sqrt(1-$aPos));
+                        $distPos = 6371 * $cPos;
+
+                        if ($distPos < $minDistancePos) {
+                            $minDistancePos = $distPos;
+                            $nearestPos = $posName;
+                        }
+                    }
+                }
+                $petugas->assigned_pos = $nearestPos;
+            }
+
             return $petugas;
         })->sortBy(function($petugas) {
             return $petugas->distance === null ? 999999 : $petugas->distance;
-        });
+        })->groupBy('assigned_pos');
 
-        return view('admin.reports.show', compact('report', 'petugasTersedia'));
+        return view('admin.reports.show', compact('report', 'petugasTersedia', 'posPemadam'));
     }
 
     public function verify(Request $request, Report $report)
@@ -704,6 +753,7 @@ class AdminController extends Controller
                             'phone'      => trim($row[2]),
                             'password'   => bcrypt(trim($row[3])),
                             'role'       => 'petugas',
+                            'pos_name'   => isset($row[4]) ? trim($row[4]) : null,
                         ]);
                         $successCount++;
                         $importedData[] = ['name' => trim($row[0]), 'email' => $email, 'phone' => trim($row[2])];
@@ -731,6 +781,37 @@ class AdminController extends Controller
         ]);
     }
 
+    public function storePetugas(Request $request)
+    {
+        if (Auth::user()->role !== 'admin') {
+            abort(403, 'Anda tidak memiliki akses ke halaman ini.');
+        }
+
+        $validated = $request->validate([
+            'users_name' => 'required|string|max:255',
+            'email' => 'nullable|string|email|max:255|unique:users,email',
+            'phone' => 'required|string|regex:/^[0-9]+$/|max:20|unique:users,phone',
+            'password' => 'required|string|min:8',
+            'pos_name' => 'nullable|string|max:255',
+        ], [
+            'phone.regex' => 'Nomor telepon hanya boleh berisi angka.',
+            'phone.unique' => 'Nomor telepon sudah terdaftar.',
+            'password.min' => 'Password minimal harus 8 karakter.',
+            'email.unique' => 'Email sudah terdaftar.',
+        ]);
+
+        User::create([
+            'users_name' => $validated['users_name'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'],
+            'password' => bcrypt($validated['password']),
+            'role' => 'petugas',
+            'pos_name' => $validated['pos_name'],
+        ]);
+
+        return redirect()->route('admin.users.index', ['role' => 'petugas'])->with('success', 'Data petugas ' . $validated['users_name'] . ' berhasil ditambahkan.');
+    }
+
     public function usersUpdate(Request $request, User $user)
     {
         if (Auth::user()->role !== 'admin') {
@@ -739,17 +820,20 @@ class AdminController extends Controller
 
         $validated = $request->validate([
             'users_name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . $user->users_id . ',users_id',
-            'phone' => 'required|string|regex:/^[0-9]+$/|max:20',
+            'email' => 'nullable|string|email|max:255|unique:users,email,' . $user->users_id . ',users_id',
+            'phone' => 'required|string|regex:/^[0-9]+$/|max:20|unique:users,phone,' . $user->users_id . ',users_id',
             'role' => 'required|in:admin,petugas,masyarakat',
+            'pos_name' => 'nullable|string|max:255',
         ], [
             'phone.regex' => 'Nomor telepon hanya boleh berisi angka.',
+            'phone.unique' => 'Nomor telepon sudah terdaftar.',
         ]);
 
         $user->users_name = $validated['users_name'];
         $user->email = $validated['email'];
         $user->phone = $validated['phone'];
         $user->role = $validated['role'];
+        $user->pos_name = $validated['pos_name'];
         $user->save();
 
         return redirect()->route('admin.users.index')->with('success', 'Data pengguna ' . $user->users_name . ' berhasil diperbarui.');
@@ -784,6 +868,11 @@ class AdminController extends Controller
         // Filter Status
         if ($request->filled('status')) {
             $query->where('status', $request->status);
+        }
+
+        // Filter Urgensi
+        if ($request->filled('fire_level')) {
+            $query->where('fire_level', $request->fire_level);
         }
 
         // Filter Wilayah
