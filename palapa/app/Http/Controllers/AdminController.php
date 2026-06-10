@@ -23,7 +23,11 @@ class AdminController extends Controller
         $query = Report::with(['pelapor', 'penugasans.petugas']);
 
         if ($request->filled('status')) {
-            $query->where('status', $request->status);
+            if ($request->status === 'unassigned') {
+                $query->whereNull('assigned_petugas_id')->whereNotIn('status', ['selesai', 'ditolak']);
+            } else {
+                $query->where('status', $request->status);
+            }
         } else {
             $query->whereNotIn('status', ['selesai', 'ditolak']);
         }
@@ -43,9 +47,6 @@ class AdminController extends Controller
         if ($request->filled('region')) {
             $region = $request->region;
             $query->where('address', 'like', "%{$region}%");
-        }
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
         }
         if ($request->filled('location')) {
             $location = $request->location;
@@ -69,6 +70,7 @@ class AdminController extends Controller
         $sedangDitangani = Report::where('status', 'diproses')->count();
         $laporanSelesai = Report::where('status', 'selesai')->count();
         $laporanDitolak = Report::where('status', 'ditolak')->count();
+        $laporanBelumDitugaskan = Report::whereNull('assigned_petugas_id')->whereNotIn('status', ['selesai', 'ditolak'])->count();
 
         // 4. Perhitungan Tren (Kenaikan/Penurunan) dibanding periode sebelumnya
         $period = $request->input('period', '7days');
@@ -310,6 +312,7 @@ class AdminController extends Controller
             'sedangDitangani',
             'laporanSelesai',
             'laporanDitolak',
+            'laporanBelumDitugaskan',
             'trendHariIni',
             'trendMenungguVerifikasi',
             'trendSedangDitangani',
@@ -552,6 +555,13 @@ class AdminController extends Controller
             return redirect()->back()->withErrors(['error' => 'User yang ditunjuk bukan merupakan Petugas Lapangan.']);
         }
 
+        $isOnDuty = Penugasan::where('petugas_id', $petugas->users_id)
+            ->whereNull('completed_at')
+            ->exists();
+        if ($isOnDuty) {
+            return redirect()->back()->withErrors(['error' => 'Petugas ini sedang bertugas (On Duty) dan tidak dapat ditugaskan kembali.']);
+        }
+
         $report->penugasans()->create(['petugas_id' => $petugas->users_id, 'assigned_at' => now()]);
         $oldStatus = $report->status;
         $report->update([
@@ -618,6 +628,13 @@ class AdminController extends Controller
         // Jika petugas yang baru sama dengan petugas lama, tidak perlu diubah
         if ($oldPetugasId === $petugas->users_id) {
             return redirect()->back()->with('success', 'Petugas ini sudah ditugaskan pada laporan ini.');
+        }
+
+        $isOnDuty = Penugasan::where('petugas_id', $petugas->users_id)
+            ->whereNull('completed_at')
+            ->exists();
+        if ($isOnDuty) {
+            return redirect()->back()->withErrors(['error' => 'Petugas ini sedang bertugas (On Duty) dan tidak dapat ditugaskan kembali.']);
         }
 
         // Mulai transaksi database untuk menjamin konsistensi
