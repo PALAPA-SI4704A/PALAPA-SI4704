@@ -22,22 +22,25 @@ class AuthController extends Controller
         // 1. Validasi inputan form
         $validated = $request->validate([
             'users_name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'phone' => 'required|string|max:20',
+            'email' => 'nullable|string|email|max:255|unique:users',
+            'phone' => 'required|string|max:20|unique:users',
             'password' => 'required|string|min:8|confirmed',
+        ], [
+            'phone.unique' => 'Nomor telepon sudah terdaftar.',
+            'email.unique' => 'Email sudah terdaftar.',
         ]);
 
         // 2. Simpan user baru ke database
         $user = new User();
         $user->users_name = $validated['users_name'];
-        $user->email = $validated['email'];
+        $user->email = $validated['email'] ?? null;
         $user->phone = $validated['phone'];
         $user->role = 'masyarakat'; // Secara default yang register mandiri adalah masyarakat
         $user->password = Hash::make($validated['password']);
 
         if (! $user->save()) {
             throw ValidationException::withMessages([
-                'email' => 'Registrasi gagal disimpan. Silakan coba lagi.',
+                'phone' => 'Registrasi gagal disimpan. Silakan coba lagi.',
             ]);
         }
 
@@ -57,10 +60,18 @@ class AuthController extends Controller
     // Memproses data login
     public function login(Request $request)
     {
-        $credentials = $request->validate([
-            'email' => 'required|string|email',
+        $request->validate([
+            'login' => 'required|string',
             'password' => 'required|string',
         ]);
+
+        $login = $request->input('login');
+        $fieldType = filter_var($login, FILTER_VALIDATE_EMAIL) ? 'email' : 'phone';
+
+        $credentials = [
+            $fieldType => $login,
+            'password' => $request->password,
+        ];
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
@@ -79,8 +90,8 @@ class AuthController extends Controller
         }
 
         return back()->withErrors([
-            'email' => 'Email atau password yang dimasukkan salah.',
-        ])->onlyInput('email');
+            'login' => 'Email/Nomor Telepon atau password yang dimasukkan salah.',
+        ])->onlyInput('login');
     }
 
     // Memproses logout

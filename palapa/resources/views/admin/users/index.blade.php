@@ -396,9 +396,12 @@
                 </div>
 
                 @if($activeRole === 'petugas')
-                <div style="padding-bottom: 12px; margin-bottom: -2px;">
-                    <button type="button" onclick="document.getElementById('importModal').style.display='flex'" style="background: var(--primary); color: white; border: none; border-radius: 8px; padding: 10px 16px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.2s;">
-                        <i class="ph ph-upload-simple" style="font-size: 16px;"></i> Import Petugas (CSV)
+                <div style="padding-bottom: 12px; margin-bottom: -2px; display: flex; gap: 12px;">
+                    <button type="button" onclick="document.getElementById('addPetugasModal').style.display='flex'" style="background: var(--primary); color: white; border: none; border-radius: 8px; padding: 10px 16px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.2s;">
+                        <i class="ph ph-plus" style="font-size: 16px;"></i> Tambah Petugas
+                    </button>
+                    <button type="button" onclick="document.getElementById('importModal').style.display='flex'" style="background: white; color: var(--text); border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 16px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.2s;">
+                        <i class="ph ph-upload-simple" style="font-size: 16px;"></i> Import (CSV)
                     </button>
                 </div>
                 @endif
@@ -421,6 +424,9 @@
                             <th>NAMA</th>
                             <th>EMAIL</th>
                             <th>NO TELEPON</th>
+                            @if($activeRole === 'petugas')
+                            <th>POS PENEMPATAN</th>
+                            @endif
                             <th>AKSI</th>
                         </tr>
                     </thead>
@@ -429,8 +435,11 @@
                         <tr>
                             <td>#{{ $user->users_id }}</td>
                             <td style="font-weight: 600;">{{ $user->users_name }}</td>
-                            <td>{{ $user->email }}</td>
+                            <td>{{ $user->email ?? '-' }}</td>
                             <td>{{ $user->phone }}</td>
+                            @if($activeRole === 'petugas')
+                            <td><span style="background: #f1f3f4; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; color: #5f6368;">{{ $user->pos_name ?? 'Belum Ditentukan' }}</span></td>
+                            @endif
                             <td>
                                 <div style="display: flex; gap: 8px; align-items: center;">
                                     <a href="{{ route('admin.users.edit', $user->users_id) }}" class="btn-link">[Edit]</a>
@@ -462,11 +471,63 @@
 
     </main>
 
+    <!-- Modal Tambah Petugas Manual -->
+    <div id="addPetugasModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4); align-items: center; justify-content: center;">
+        <div style="background-color: #fefefe; margin: auto; padding: 24px; border: 1px solid #888; width: 450px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); position: relative; top: -5%;">
+            <h3 style="margin-top: 0; color: #0f66aa; font-size: 18px; margin-bottom: 16px;">Tambah Petugas Baru</h3>
+            <form action="{{ route('admin.users.storePetugas') }}" method="POST">
+                @csrf
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-size: 13px; font-weight: 600; color: #4a5568; margin-bottom: 6px;">Nama Lengkap <span style="color: red;">*</span></label>
+                    <input type="text" name="users_name" required style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 13px; outline: none; font-family: inherit;">
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-size: 13px; font-weight: 600; color: #4a5568; margin-bottom: 6px;">Email <span style="color: red;">*</span></label>
+                    <input type="email" name="email" required style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 13px; outline: none; font-family: inherit;">
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-size: 13px; font-weight: 600; color: #4a5568; margin-bottom: 6px;">No Telepon <span style="color: red;">*</span></label>
+                    <input type="text" name="phone" required style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 13px; outline: none; font-family: inherit;">
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-size: 13px; font-weight: 600; color: #4a5568; margin-bottom: 6px;">Pos Penempatan</label>
+                    <select name="pos_name" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 13px; outline: none; font-family: inherit; background: white;">
+                        <option value="">Pilih Pos (Opsional)</option>
+                        <option value="Pos Daops Pontianak">Pos Daops Pontianak</option>
+                        <option value="Pos Daops Ketapang">Pos Daops Ketapang</option>
+                        <option value="Pos Induk Sintang">Pos Induk Sintang</option>
+                        <option value="Pos Melawi">Pos Melawi</option>
+                        <option value="Pos Daops Palangka Raya">Pos Daops Palangka Raya</option>
+                        <option value="Pos Daops Pangkalan Bun">Pos Daops Pangkalan Bun</option>
+                        <option value="Pos Induk Sampit">Pos Induk Sampit</option>
+                        <option value="Pos Daops Banjarbaru">Pos Daops Banjarbaru</option>
+                        <option value="Pos Induk Banjarmasin">Pos Induk Banjarmasin</option>
+                        <option value="Pos Amuntai">Pos Amuntai</option>
+                        <option value="Pos Daops Samarinda">Pos Daops Samarinda</option>
+                        <option value="Pos Induk Balikpapan">Pos Induk Balikpapan</option>
+                        <option value="Pos Balikpapan Utara">Pos Balikpapan Utara</option>
+                        <option value="Pos Daops Nunukan">Pos Daops Nunukan</option>
+                        <option value="Pos Daops Tarakan">Pos Daops Tarakan</option>
+                        <option value="Pos Daops Malinau">Pos Daops Malinau</option>
+                    </select>
+                </div>
+                <div style="margin-bottom: 24px;">
+                    <label style="display: block; font-size: 13px; font-weight: 600; color: #4a5568; margin-bottom: 6px;">Password <span style="color: red;">*</span></label>
+                    <input type="password" name="password" required minlength="8" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 13px; outline: none; font-family: inherit;">
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 12px;">
+                    <button type="button" onclick="document.getElementById('addPetugasModal').style.display='none'" style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 16px; cursor: pointer; font-size: 13px; font-weight: 600; color: #4a5568;">Batal</button>
+                    <button type="submit" style="background: var(--primary); color: white; border: none; border-radius: 8px; padding: 8px 16px; cursor: pointer; font-size: 13px; font-weight: 600;">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Modal Import -->
     <div id="importModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4); align-items: center; justify-content: center;">
         <div style="background-color: #fefefe; margin: auto; padding: 24px; border: 1px solid #888; width: 400px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); position: relative; top: -10%;">
             <h3 style="margin-top: 0; color: #0f66aa; font-size: 18px;">Import Data Petugas</h3>
-            <p style="font-size: 13px; color: #718096; margin-bottom: 16px;">Unggah file CSV dengan format kolom:<br><strong style="color: #4a5568;">Nama, Email, No Telepon, Password</strong><br><small>* Baris pertama akan diabaikan (header).</small></p>
+            <p style="font-size: 13px; color: #718096; margin-bottom: 16px;">Unggah file CSV dengan format kolom:<br><strong style="color: #4a5568;">Nama, Email, No Telepon, Password, Pos Penempatan (Opsional)</strong><br><small>* Baris pertama akan diabaikan (header).</small></p>
             <form action="{{ route('admin.users.import') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <input type="file" name="file" accept=".csv,.txt" required style="margin-bottom: 24px; font-size: 13px; width: 100%; border: 1px dashed #cbd5e0; padding: 16px; border-radius: 8px;">

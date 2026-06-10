@@ -332,7 +332,9 @@
         <img class="avatar" src="https://i.pravatar.cc/96?img=12" alt="Foto Pengguna">
         <div class="profile-info">
             <p class="name">{{ auth()->check() ? auth()->user()->users_name : 'John Smith' }}</p>
-            <p class="email">{{ auth()->check() ? auth()->user()->email : 'johnsm1th@gmail.com' }}</p>
+            @if(auth()->check() && auth()->user()->email)
+            <p class="email">{{ auth()->user()->email }}</p>
+            @endif
         </div>
         <a href="{{ route('notifikasi.index') }}" class="profile-bell" title="Notifikasi">
             <i class="ph ph-bell"></i>

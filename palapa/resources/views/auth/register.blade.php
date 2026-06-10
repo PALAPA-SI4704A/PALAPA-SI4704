@@ -62,14 +62,14 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="relative">
-                    <label class="block text-xs font-bold text-gray-400 uppercase mb-2 ml-1">Email</label>
+                    <label class="block text-xs font-bold text-gray-400 uppercase mb-2 ml-1">Email <span class="text-[10px] lowercase font-normal">(Opsional)</span></label>
                     <div class="relative">
                         <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-400">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                             </svg>
                         </span>
-                        <input type="email" name="email" value="{{ old('email') }}" placeholder="namakamu@mail.com" required
+                        <input type="email" name="email" value="{{ old('email') }}" placeholder="namakamu@mail.com"
                             class="w-full pl-12 pr-4 input-h-50 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-50/50 outline-none transition text-gray-700 placeholder-gray-300">
                     </div>
                 </div>

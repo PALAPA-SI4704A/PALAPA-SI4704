@@ -219,8 +219,8 @@
 
                 <!-- Input Email -->
                 <div class="form-group">
-                    <label for="email" class="form-label">Email</label>
-                    <input type="email" id="email" name="email" class="form-input" value="{{ old('email', $user->email) }}" required>
+                    <label for="email" class="form-label">Email <span style="font-size: 11px; font-weight: 400; color: #718096; text-transform: lowercase;">(Opsional)</span></label>
+                    <input type="email" id="email" name="email" class="form-input" value="{{ old('email', $user->email) }}">
                     @error('email')
                         <span class="input-error">{{ $message }}</span>
                     @enderror
@@ -244,6 +244,33 @@
                         <option value="admin" {{ old('role', $user->role) === 'admin' ? 'selected' : '' }}>Administrator</option>
                     </select>
                     @error('role')
+                        <span class="input-error">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <!-- Input Pos (Hanya relevan untuk petugas, tapi ditampilkan jika role terpilih petugas) -->
+                <div class="form-group" x-show="$el.closest('form').querySelector('#role').value === 'petugas'" x-data="{ role: '{{ old('role', $user->role) }}' }" x-init="$watch('role', value => role = value)">
+                    <label for="pos_name" class="form-label">Pos Penempatan (Khusus Petugas)</label>
+                    <select id="pos_name" name="pos_name" class="form-input">
+                        <option value="">Pilih Pos (Opsional)</option>
+                        <option value="Pos Daops Pontianak" {{ old('pos_name', $user->pos_name) === 'Pos Daops Pontianak' ? 'selected' : '' }}>Pos Daops Pontianak</option>
+                        <option value="Pos Daops Ketapang" {{ old('pos_name', $user->pos_name) === 'Pos Daops Ketapang' ? 'selected' : '' }}>Pos Daops Ketapang</option>
+                        <option value="Pos Induk Sintang" {{ old('pos_name', $user->pos_name) === 'Pos Induk Sintang' ? 'selected' : '' }}>Pos Induk Sintang</option>
+                        <option value="Pos Melawi" {{ old('pos_name', $user->pos_name) === 'Pos Melawi' ? 'selected' : '' }}>Pos Melawi</option>
+                        <option value="Pos Daops Palangka Raya" {{ old('pos_name', $user->pos_name) === 'Pos Daops Palangka Raya' ? 'selected' : '' }}>Pos Daops Palangka Raya</option>
+                        <option value="Pos Daops Pangkalan Bun" {{ old('pos_name', $user->pos_name) === 'Pos Daops Pangkalan Bun' ? 'selected' : '' }}>Pos Daops Pangkalan Bun</option>
+                        <option value="Pos Induk Sampit" {{ old('pos_name', $user->pos_name) === 'Pos Induk Sampit' ? 'selected' : '' }}>Pos Induk Sampit</option>
+                        <option value="Pos Daops Banjarbaru" {{ old('pos_name', $user->pos_name) === 'Pos Daops Banjarbaru' ? 'selected' : '' }}>Pos Daops Banjarbaru</option>
+                        <option value="Pos Induk Banjarmasin" {{ old('pos_name', $user->pos_name) === 'Pos Induk Banjarmasin' ? 'selected' : '' }}>Pos Induk Banjarmasin</option>
+                        <option value="Pos Amuntai" {{ old('pos_name', $user->pos_name) === 'Pos Amuntai' ? 'selected' : '' }}>Pos Amuntai</option>
+                        <option value="Pos Daops Samarinda" {{ old('pos_name', $user->pos_name) === 'Pos Daops Samarinda' ? 'selected' : '' }}>Pos Daops Samarinda</option>
+                        <option value="Pos Induk Balikpapan" {{ old('pos_name', $user->pos_name) === 'Pos Induk Balikpapan' ? 'selected' : '' }}>Pos Induk Balikpapan</option>
+                        <option value="Pos Balikpapan Utara" {{ old('pos_name', $user->pos_name) === 'Pos Balikpapan Utara' ? 'selected' : '' }}>Pos Balikpapan Utara</option>
+                        <option value="Pos Daops Nunukan" {{ old('pos_name', $user->pos_name) === 'Pos Daops Nunukan' ? 'selected' : '' }}>Pos Daops Nunukan</option>
+                        <option value="Pos Daops Tarakan" {{ old('pos_name', $user->pos_name) === 'Pos Daops Tarakan' ? 'selected' : '' }}>Pos Daops Tarakan</option>
+                        <option value="Pos Daops Malinau" {{ old('pos_name', $user->pos_name) === 'Pos Daops Malinau' ? 'selected' : '' }}>Pos Daops Malinau</option>
+                    </select>
+                    @error('pos_name')
                         <span class="input-error">{{ $message }}</span>
                     @enderror
                 </div>

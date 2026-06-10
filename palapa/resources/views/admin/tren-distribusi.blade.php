@@ -11,6 +11,7 @@
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
 
     <style>
         :root {
@@ -149,6 +150,7 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
+    Chart.register(ChartDataLabels);
 
     const labels = {!! json_encode($chartLabels) !!};
     const trenByStatus = {!! json_encode($trenByStatus) !!};
@@ -184,6 +186,13 @@ document.addEventListener("DOMContentLoaded", function () {
                 legend: {
                     position: 'top',
                     labels: { font: { family: 'Poppins', size: 11 }, padding: 16, boxWidth: 14 }
+                },
+                datalabels: {
+                    color: '#4a5568',
+                    font: { family: 'Poppins', size: 9, weight: 'bold' },
+                    anchor: 'end',
+                    align: 'top',
+                    formatter: (value) => value > 0 ? value : '',
                 },
                 tooltip: {
                     backgroundColor: '#2d3748',
@@ -228,6 +237,11 @@ document.addEventListener("DOMContentLoaded", function () {
             maintainAspectRatio: false,
             plugins: {
                 legend: { position: 'bottom', labels: { font: { family: 'Poppins', size: 11 }, padding: 12 } },
+                datalabels: {
+                    color: '#ffffff',
+                    font: { family: 'Poppins', size: 12, weight: 'bold' },
+                    formatter: (value) => value > 0 ? value : '',
+                },
                 tooltip: { backgroundColor: '#2d3748', titleFont: { family: 'Poppins', size: 13 }, bodyFont: { family: 'Poppins', size: 12 }, padding: 10, cornerRadius: 8 }
             }
         }
@@ -256,10 +270,17 @@ document.addEventListener("DOMContentLoaded", function () {
             maintainAspectRatio: false,
             plugins: {
                 legend: { display: false },
+                datalabels: {
+                    color: '#2d3748',
+                    font: { family: 'Poppins', size: 11, weight: 'bold' },
+                    anchor: 'end',
+                    align: 'right',
+                    formatter: (value) => value > 0 ? value : '',
+                },
                 tooltip: { backgroundColor: '#2d3748', titleFont: { family: 'Poppins', size: 13 }, bodyFont: { family: 'Poppins', size: 12 }, padding: 10, cornerRadius: 8, displayColors: false }
             },
             scales: {
-                x: { beginAtZero: true, grid: { color: '#edf2f7' }, ticks: { font: { family: 'Poppins', size: 11 }, stepSize: 1 } },
+                x: { beginAtZero: true, grid: { color: '#edf2f7' }, ticks: { font: { family: 'Poppins', size: 11 }, stepSize: 1 }, grace: '5%' },
                 y: { grid: { display: false }, ticks: { font: { family: 'Poppins', size: 10 } } }
             }
         }
