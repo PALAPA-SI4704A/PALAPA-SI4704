@@ -60,14 +60,28 @@ class AdminController extends Controller
 
         $today = Carbon::today();
         $yesterday = Carbon::yesterday();
-        $totalLaporan = Report::count();
-        $laporanHariIni = Report::whereDate('created_at', $today)->count();
-        $menungguVerifikasi = Report::where('status', 'pending')->count();
-        $laporanValid = Report::where('status', 'valid')->count();
-        $sedangDitangani = Report::where('status', 'diproses')->count();
-        $laporanSelesai = Report::where('status', 'selesai')->count();
-        $laporanDitolak = Report::where('status', 'ditolak')->count();
-        $laporanBelumDitugaskan = Report::whereNull('assigned_petugas_id')->whereNotIn('status', ['selesai', 'ditolak'])->count();
+
+        $counts = Report::selectRaw("
+            COUNT(*) as total,
+            SUM(CASE WHEN DATE(created_at) = ? THEN 1 ELSE 0 END) as hari_ini,
+            SUM(CASE WHEN DATE(created_at) = ? THEN 1 ELSE 0 END) as kemarin,
+            SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
+            SUM(CASE WHEN status = 'valid' THEN 1 ELSE 0 END) as valid,
+            SUM(CASE WHEN status = 'diproses' THEN 1 ELSE 0 END) as diproses,
+            SUM(CASE WHEN status = 'selesai' THEN 1 ELSE 0 END) as selesai,
+            SUM(CASE WHEN status = 'ditolak' THEN 1 ELSE 0 END) as ditolak,
+            SUM(CASE WHEN assigned_petugas_id IS NULL AND status NOT IN ('selesai', 'ditolak') THEN 1 ELSE 0 END) as belum_ditugaskan
+        ", [$today->toDateString(), $yesterday->toDateString()])->first();
+
+        $totalLaporan = $counts->total;
+        $laporanHariIni = $counts->hari_ini;
+        $laporanKemarin = $counts->kemarin;
+        $menungguVerifikasi = $counts->pending;
+        $laporanValid = $counts->valid;
+        $sedangDitangani = $counts->diproses;
+        $laporanSelesai = $counts->selesai;
+        $laporanDitolak = $counts->ditolak;
+        $laporanBelumDitugaskan = $counts->belum_ditugaskan;
 
         $period = $request->input('period', '7days');
         
@@ -93,31 +107,58 @@ class AdminController extends Controller
             $endPrev = Carbon::now()->subDays(7)->endOfDay();
         }
 
-        $laporanKemarin = Report::whereDate('created_at', $yesterday)->count();
         $trendHariIni = $this->getTrendData($laporanHariIni, $laporanKemarin, true);
 
-        $currPending = Report::where('status', 'pending')->whereBetween('created_at', [$startCurrent, $endCurrent])->count();
-        $prevPending = Report::where('status', 'pending')->whereBetween('created_at', [$startPrev, $endPrev])->count();
+        $periodCounts = Report::selectRaw("
+            SUM(CASE WHEN status = 'pending' AND created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as curr_pending,
+            SUM(CASE WHEN status = 'pending' AND created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as prev_pending,
+            SUM(CASE WHEN status = 'diproses' AND created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as curr_diproses,
+            SUM(CASE WHEN status = 'diproses' AND created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as prev_diproses,
+            SUM(CASE WHEN status = 'valid' AND created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as curr_valid,
+            SUM(CASE WHEN status = 'valid' AND created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as prev_valid,
+            SUM(CASE WHEN status = 'selesai' AND created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as curr_selesai,
+            SUM(CASE WHEN status = 'selesai' AND created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as prev_selesai,
+            SUM(CASE WHEN status = 'ditolak' AND created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as curr_ditolak,
+            SUM(CASE WHEN status = 'ditolak' AND created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as prev_ditolak,
+            SUM(CASE WHEN created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as curr_total,
+            SUM(CASE WHEN created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as prev_total
+        ", [
+            $startCurrent, $endCurrent,
+            $startPrev, $endPrev,
+            $startCurrent, $endCurrent,
+            $startPrev, $endPrev,
+            $startCurrent, $endCurrent,
+            $startPrev, $endPrev,
+            $startCurrent, $endCurrent,
+            $startPrev, $endPrev,
+            $startCurrent, $endCurrent,
+            $startPrev, $endPrev,
+            $startCurrent, $endCurrent,
+            $startPrev, $endPrev
+        ])->first();
+
+        $currPending = $periodCounts->curr_pending;
+        $prevPending = $periodCounts->prev_pending;
         $trendMenungguVerifikasi = $this->getTrendData($currPending, $prevPending, true);
 
-        $currDiproses = Report::where('status', 'diproses')->whereBetween('created_at', [$startCurrent, $endCurrent])->count();
-        $prevDiproses = Report::where('status', 'diproses')->whereBetween('created_at', [$startPrev, $endPrev])->count();
+        $currDiproses = $periodCounts->curr_diproses;
+        $prevDiproses = $periodCounts->prev_diproses;
         $trendSedangDitangani = $this->getTrendData($currDiproses, $prevDiproses, false);
 
-        $currValid = Report::where('status', 'valid')->whereBetween('created_at', [$startCurrent, $endCurrent])->count();
-        $prevValid = Report::where('status', 'valid')->whereBetween('created_at', [$startPrev, $endPrev])->count();
+        $currValid = $periodCounts->curr_valid;
+        $prevValid = $periodCounts->prev_valid;
         $trendLaporanValid = $this->getTrendData($currValid, $prevValid, false);
 
-        $currSelesai = Report::where('status', 'selesai')->whereBetween('created_at', [$startCurrent, $endCurrent])->count();
-        $prevSelesai = Report::where('status', 'selesai')->whereBetween('created_at', [$startPrev, $endPrev])->count();
+        $currSelesai = $periodCounts->curr_selesai;
+        $prevSelesai = $periodCounts->prev_selesai;
         $trendLaporanSelesai = $this->getTrendData($currSelesai, $prevSelesai, false);
 
-        $currDitolak = Report::where('status', 'ditolak')->whereBetween('created_at', [$startCurrent, $endCurrent])->count();
-        $prevDitolak = Report::where('status', 'ditolak')->whereBetween('created_at', [$startPrev, $endPrev])->count();
+        $currDitolak = $periodCounts->curr_ditolak;
+        $prevDitolak = $periodCounts->prev_ditolak;
         $trendLaporanDitolak = $this->getTrendData($currDitolak, $prevDitolak, true);
 
-        $currTotal = Report::whereBetween('created_at', [$startCurrent, $endCurrent])->count();
-        $prevTotal = Report::whereBetween('created_at', [$startPrev, $endPrev])->count();
+        $currTotal = $periodCounts->curr_total;
+        $prevTotal = $periodCounts->prev_total;
         $trendTotalLaporan = $this->getTrendData($currTotal, $prevTotal, true);
 
         $chartLabels = [];
@@ -678,7 +719,7 @@ class AdminController extends Controller
         User::create([
             'users_name' => $validated['users_name'], 'email' => $validated['email'],
             'phone' => $validated['phone'], 'password' => bcrypt($validated['password']),
-            'role' => 'petugas', 'pos_name' => $validated['pos_name'],
+            'role' => 'petugas', 'pos_name' => $validated['pos_name'] ?? null,
         ]);
 
         return redirect()->route('admin.users.index', ['role' => 'petugas'])->with('success', 'Data petugas ' . $validated['users_name'] . ' berhasil ditambahkan.');
@@ -705,7 +746,7 @@ class AdminController extends Controller
         $user->email = $validated['email'];
         $user->phone = $validated['phone'];
         $user->role = $validated['role'];
-        $user->pos_name = $validated['pos_name'];
+        $user->pos_name = $validated['pos_name'] ?? null;
         $user->save();
 
         return redirect()->route('admin.users.index')->with('success', 'Data pengguna ' . $user->users_name . ' berhasil diperbarui.');

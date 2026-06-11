@@ -181,6 +181,15 @@ class PetugasController extends Controller
             ]);
 
             $petugas_id = $request->input('petugas_id');
+
+            // Cek apakah petugas ini sedang bertugas (On Duty)
+            $isOnDuty = \App\Models\Penugasan::where('petugas_id', $petugas_id)
+                ->whereNull('completed_at')
+                ->exists();
+            if ($isOnDuty) {
+                return redirect()->back()->withErrors(['error' => 'Petugas ini sedang bertugas (On Duty) dan tidak dapat ditugaskan kembali.']);
+            }
+
             $report->update([
                 'status' => $newStatus,
                 'assigned_petugas_id' => $petugas_id,
@@ -221,6 +230,14 @@ class PetugasController extends Controller
                 'handling_note' => $catatan,
                 'bukti_foto' => $bukti_foto_path,
             ]);
+
+            // Update active penugasan record to mark officer as available
+            \App\Models\Penugasan::where('report_id', $report->report_id)
+                ->whereNull('completed_at')
+                ->update([
+                    'completed_at' => now(),
+                    'bukti_photo' => $bukti_foto_path,
+                ]);
         }
         // Validasi khusus untuk status "ditolak" (invalid)
         elseif ($newStatus === 'ditolak') {
@@ -236,6 +253,13 @@ class PetugasController extends Controller
                 'status' => $newStatus,
                 'handling_note' => $catatan,
             ]);
+
+            // Update active penugasan record to mark officer as available
+            \App\Models\Penugasan::where('report_id', $report->report_id)
+                ->whereNull('completed_at')
+                ->update([
+                    'completed_at' => now(),
+                ]);
         }
         else {
             // Untuk status lain
