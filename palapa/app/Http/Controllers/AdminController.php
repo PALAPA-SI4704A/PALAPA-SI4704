@@ -458,36 +458,38 @@ class AdminController extends Controller
             'rejection_reason' => 'required_if:status,ditolak|string|max:500'
         ]);
 
-        $oldStatus = $report->status;
-        $data = ['status' => $request->status];
-        if ($request->status === 'ditolak') {
-            $data['rejection_reason'] = $request->rejection_reason;
-        }
-        $report->update($data);
+        return DB::transaction(function () use ($request, $report) {
+            $oldStatus = $report->status;
+            $data = ['status' => $request->status];
+            if ($request->status === 'ditolak') {
+                $data['rejection_reason'] = $request->rejection_reason;
+            }
+            $report->update($data);
 
-        // Kirim notifikasi ke pelapor (PBI 15)
-        \App\Http\Controllers\NotifikasiController::createNotification(
-            $report->user_id,
-            'Status laporan Anda (#' . $report->report_id . ') telah diperbarui menjadi: ' . ucfirst($request->status) . '.'
-        );
+            // Kirim notifikasi ke pelapor (PBI 15)
+            \App\Http\Controllers\NotifikasiController::createNotification(
+                $report->user_id,
+                'Status laporan Anda (#' . $report->report_id . ') telah diperbarui menjadi: ' . ucfirst($request->status) . '.'
+            );
 
-        Log::info('Admin report verified successfully', ['new_status' => $report->status]);
+            Log::info('Admin report verified successfully', ['new_status' => $report->status]);
 
-        $roleLabel = match (Auth::user()->role) {
-            'masyarakat' => 'Pelapor', 'petugas' => 'Admin Sistem', 'admin' => 'Admin Sistem',
-            default => ucfirst(Auth::user()->role)
-        };
+            $roleLabel = match (Auth::user()->role) {
+                'masyarakat' => 'Pelapor', 'petugas' => 'Admin Sistem', 'admin' => 'Admin Sistem',
+                default => ucfirst(Auth::user()->role)
+            };
 
-        $catatan = $request->status === 'ditolak'
-            ? 'Laporan ditolak. Alasan: ' . $request->rejection_reason
-            : 'Laporan telah diverifikasi dan dinyatakan valid.';
+            $catatan = $request->status === 'ditolak'
+                ? 'Laporan ditolak. Alasan: ' . $request->rejection_reason
+                : 'Laporan telah diverifikasi dan dinyatakan valid.';
 
-        $report->statusHistories()->create([
-            'status_awal' => $oldStatus, 'status_baru' => $request->status, 'catatan' => $catatan,
-            'diubah_oleh' => Auth::user()->users_name . ' (' . $roleLabel . ')', 'tanggal_ubah' => now(),
-        ]);
+            $report->statusHistories()->create([
+                'status_awal' => $oldStatus, 'status_baru' => $request->status, 'catatan' => $catatan,
+                'diubah_oleh' => Auth::user()->users_name . ' (' . $roleLabel . ')', 'tanggal_ubah' => now(),
+            ]);
 
-        return redirect()->back()->with('success', 'Laporan berhasil diverifikasi menjadi: ' . ucfirst($request->status));
+            return redirect()->back()->with('success', 'Laporan berhasil diverifikasi menjadi: ' . ucfirst($request->status));
+        });
     }
 
     public function assign(Report $report, User $petugas)
@@ -504,40 +506,42 @@ class AdminController extends Controller
             return redirect()->back()->withErrors(['error' => 'Petugas ini sedang bertugas (On Duty) dan tidak dapat ditugaskan kembali.']);
         }
 
-        $report->penugasans()->create(['petugas_id' => $petugas->users_id, 'assigned_at' => now()]);
-        $oldStatus = $report->status;
-        $report->update(['status' => 'diproses', 'assigned_petugas_id' => $petugas->users_id]);
+        return DB::transaction(function () use ($report, $petugas) {
+            $report->penugasans()->create(['petugas_id' => $petugas->users_id, 'assigned_at' => now()]);
+            $oldStatus = $report->status;
+            $report->update(['status' => 'diproses', 'assigned_petugas_id' => $petugas->users_id]);
 
-        // Kirim notifikasi ke pelapor (PBI 15)
-        \App\Http\Controllers\NotifikasiController::createNotification(
-            $report->user_id,
-            'Laporan Anda (#' . $report->report_id . ') sedang diproses oleh petugas lapangan.'
-        );
-
-        $roleLabel = match (Auth::user()->role) {
-            'masyarakat' => 'Pelapor', 'petugas' => 'Admin Sistem', 'admin' => 'Admin Sistem',
-            default => ucfirst(Auth::user()->role)
-        };
-
-        $report->statusHistories()->create([
-            'status_awal' => $oldStatus, 'status_baru' => 'diproses',
-            'catatan' => 'Laporan sedang diverifikasi oleh admin dan diteruskan ke petugas lapangan.',
-            'diubah_oleh' => Auth::user()->users_name . ' (' . $roleLabel . ')', 'tanggal_ubah' => now(),
-        ]);
-
-        if ($report->user_id) {
+            // Kirim notifikasi ke pelapor (PBI 15)
             \App\Http\Controllers\NotifikasiController::createNotification(
                 $report->user_id,
-                'Laporan "' . $report->title . '" Anda sedang ditangani oleh petugas.'
+                'Laporan Anda (#' . $report->report_id . ') sedang diproses oleh petugas lapangan.'
             );
-        }
 
-        \App\Http\Controllers\NotifikasiController::createNotification(
-            $petugas->users_id,
-            'Anda ditugaskan untuk menangani laporan: "' . $report->title . '".'
-        );
+            $roleLabel = match (Auth::user()->role) {
+                'masyarakat' => 'Pelapor', 'petugas' => 'Admin Sistem', 'admin' => 'Admin Sistem',
+                default => ucfirst(Auth::user()->role)
+            };
 
-        return redirect()->back()->with('success', 'Petugas ' . $petugas->users_name . ' berhasil ditugaskan.');
+            $report->statusHistories()->create([
+                'status_awal' => $oldStatus, 'status_baru' => 'diproses',
+                'catatan' => 'Laporan sedang diverifikasi oleh admin dan diteruskan ke petugas lapangan.',
+                'diubah_oleh' => Auth::user()->users_name . ' (' . $roleLabel . ')', 'tanggal_ubah' => now(),
+            ]);
+
+            if ($report->user_id) {
+                \App\Http\Controllers\NotifikasiController::createNotification(
+                    $report->user_id,
+                    'Laporan "' . $report->title . '" Anda sedang ditangani oleh petugas.'
+                );
+            }
+
+            \App\Http\Controllers\NotifikasiController::createNotification(
+                $petugas->users_id,
+                'Anda ditugaskan untuk menangani laporan: "' . $report->title . '".'
+            );
+
+            return redirect()->back()->with('success', 'Petugas ' . $petugas->users_name . ' berhasil ditugaskan.');
+        });
     }
 
     /**
