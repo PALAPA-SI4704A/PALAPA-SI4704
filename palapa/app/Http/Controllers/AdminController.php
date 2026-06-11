@@ -19,7 +19,6 @@ class AdminController extends Controller
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
 
-        // 2. Query Laporan Masuk (Default to unfinished reports on the dashboard if status is not filtered)
         $query = Report::with(['pelapor', 'penugasans.petugas']);
 
         if ($request->filled('status')) {
@@ -38,12 +37,10 @@ class AdminController extends Controller
             $query->whereDate('created_at', $request->date);
         }
 
-        // Filter Urgensi
         if ($request->filled('fire_level')) {
             $query->where('fire_level', $request->fire_level);
         }
 
-        // Filter Wilayah
         if ($request->filled('region')) {
             $region = $request->region;
             $query->where('address', 'like', "%{$region}%");
@@ -72,7 +69,6 @@ class AdminController extends Controller
         $laporanDitolak = Report::where('status', 'ditolak')->count();
         $laporanBelumDitugaskan = Report::whereNull('assigned_petugas_id')->whereNotIn('status', ['selesai', 'ditolak'])->count();
 
-        // 4. Perhitungan Tren (Kenaikan/Penurunan) dibanding periode sebelumnya
         $period = $request->input('period', '7days');
         
         if ($period === '30days') {
@@ -91,48 +87,39 @@ class AdminController extends Controller
             $startPrev = Carbon::now()->subYear()->startOfYear();
             $endPrev = Carbon::now()->subYear()->endOfYear();
         } else {
-            // Default 7days
             $startCurrent = Carbon::now()->subDays(6)->startOfDay();
             $endCurrent = Carbon::now()->endOfDay();
             $startPrev = Carbon::now()->subDays(13)->startOfDay();
             $endPrev = Carbon::now()->subDays(7)->endOfDay();
         }
 
-        // Laporan Hari Ini vs Kemarin
         $laporanKemarin = Report::whereDate('created_at', $yesterday)->count();
         $trendHariIni = $this->getTrendData($laporanHariIni, $laporanKemarin, true);
 
-        // Menunggu Verifikasi
         $currPending = Report::where('status', 'pending')->whereBetween('created_at', [$startCurrent, $endCurrent])->count();
         $prevPending = Report::where('status', 'pending')->whereBetween('created_at', [$startPrev, $endPrev])->count();
         $trendMenungguVerifikasi = $this->getTrendData($currPending, $prevPending, true);
 
-        // Sedang Ditangani (Diproses)
         $currDiproses = Report::where('status', 'diproses')->whereBetween('created_at', [$startCurrent, $endCurrent])->count();
         $prevDiproses = Report::where('status', 'diproses')->whereBetween('created_at', [$startPrev, $endPrev])->count();
         $trendSedangDitangani = $this->getTrendData($currDiproses, $prevDiproses, false);
 
-        // Valid
         $currValid = Report::where('status', 'valid')->whereBetween('created_at', [$startCurrent, $endCurrent])->count();
         $prevValid = Report::where('status', 'valid')->whereBetween('created_at', [$startPrev, $endPrev])->count();
         $trendLaporanValid = $this->getTrendData($currValid, $prevValid, false);
 
-        // Selesai
         $currSelesai = Report::where('status', 'selesai')->whereBetween('created_at', [$startCurrent, $endCurrent])->count();
         $prevSelesai = Report::where('status', 'selesai')->whereBetween('created_at', [$startPrev, $endPrev])->count();
         $trendLaporanSelesai = $this->getTrendData($currSelesai, $prevSelesai, false);
 
-        // Ditolak
         $currDitolak = Report::where('status', 'ditolak')->whereBetween('created_at', [$startCurrent, $endCurrent])->count();
         $prevDitolak = Report::where('status', 'ditolak')->whereBetween('created_at', [$startPrev, $endPrev])->count();
         $trendLaporanDitolak = $this->getTrendData($currDitolak, $prevDitolak, true);
 
-        // Total Laporan
         $currTotal = Report::whereBetween('created_at', [$startCurrent, $endCurrent])->count();
         $prevTotal = Report::whereBetween('created_at', [$startPrev, $endPrev])->count();
         $trendTotalLaporan = $this->getTrendData($currTotal, $prevTotal, true);
 
-        // 5. Data untuk Line Chart Laporan Karhutla per periode
         $chartLabels = [];
         $chartCounts = [];
 
@@ -200,60 +187,26 @@ class AdminController extends Controller
 
         $chartDataValues = array_values($chartCounts);
 
-        // 6. Insight Otomatis (Automated Insights)
         $insights = [];
         
-        // A. Tingkat Penyelesaian Laporan (Resolution Rate)
         $totalValidDanProses = $laporanValid + $sedangDitangani + $laporanSelesai;
         $resolutionRate = $totalValidDanProses > 0 ? round(($laporanSelesai / $totalValidDanProses) * 100) : 0;
         if ($resolutionRate >= 75) {
-            $insights[] = [
-                'type' => 'success',
-                'icon' => 'ph-check-circle',
-                'title' => 'Tingkat Penyelesaian Tinggi (' . $resolutionRate . '%)',
-                'desc' => 'Kinerja penanganan laporan karhutla sangat memuaskan. Sebagian besar laporan aktif telah berhasil diselesaikan oleh petugas lapangan.'
-            ];
+            $insights[] = ['type' => 'success', 'icon' => 'ph-check-circle', 'title' => 'Tingkat Penyelesaian Tinggi (' . $resolutionRate . '%)', 'desc' => 'Kinerja penanganan laporan karhutla sangat memuaskan. Sebagian besar laporan aktif telah berhasil diselesaikan oleh petugas lapangan.'];
         } elseif ($resolutionRate >= 40) {
-            $insights[] = [
-                'type' => 'warning',
-                'icon' => 'ph-warning-circle',
-                'title' => 'Tingkat Penyelesaian Sedang (' . $resolutionRate . '%)',
-                'desc' => 'Tingkat penyelesaian sedang. Harap terus dorong petugas pemadam lapangan untuk mempercepat pemadaman titik api.'
-            ];
+            $insights[] = ['type' => 'warning', 'icon' => 'ph-warning-circle', 'title' => 'Tingkat Penyelesaian Sedang (' . $resolutionRate . '%)', 'desc' => 'Tingkat penyelesaian sedang. Harap terus dorong petugas pemadam lapangan untuk mempercepat pemadaman titik api.'];
         } else {
-            $insights[] = [
-                'type' => 'danger',
-                'icon' => 'ph-x-circle',
-                'title' => 'Tingkat Penyelesaian Rendah (' . $resolutionRate . '%)',
-                'desc' => 'Perhatian! Banyak laporan valid yang belum diselesaikan. Segera lakukan koordinasi intensif dengan pos pemadam terdekat.'
-            ];
+            $insights[] = ['type' => 'danger', 'icon' => 'ph-x-circle', 'title' => 'Tingkat Penyelesaian Rendah (' . $resolutionRate . '%)', 'desc' => 'Perhatian! Banyak laporan valid yang belum diselesaikan. Segera lakukan koordinasi intensif dengan pos pemadam terdekat.'];
         }
 
-        // B. Backlog Verifikasi (Pending backlog)
         if ($menungguVerifikasi > 5) {
-            $insights[] = [
-                'type' => 'danger',
-                'icon' => 'ph-bell-ringing',
-                'title' => 'Backlog Verifikasi Tinggi (' . $menungguVerifikasi . ' Laporan)',
-                'desc' => 'Terdapat banyak laporan baru menunggu verifikasi. Harap segera periksa validitas laporan agar kebakaran bisa cepat dipadamkan.'
-            ];
+            $insights[] = ['type' => 'danger', 'icon' => 'ph-bell-ringing', 'title' => 'Backlog Verifikasi Tinggi (' . $menungguVerifikasi . ' Laporan)', 'desc' => 'Terdapat banyak laporan baru menunggu verifikasi. Harap segera periksa validitas laporan agar kebakaran bisa cepat dipadamkan.'];
         } elseif ($menungguVerifikasi > 0) {
-            $insights[] = [
-                'type' => 'warning',
-                'icon' => 'ph-clock',
-                'title' => 'Menunggu Verifikasi (' . $menungguVerifikasi . ' Laporan)',
-                'desc' => 'Terdapat laporan kebakaran baru masuk yang memerlukan verifikasi keabsahan data dari Administrator.'
-            ];
+            $insights[] = ['type' => 'warning', 'icon' => 'ph-clock', 'title' => 'Menunggu Verifikasi (' . $menungguVerifikasi . ' Laporan)', 'desc' => 'Terdapat laporan kebakaran baru masuk yang memerlukan verifikasi keabsahan data dari Administrator.'];
         } else {
-            $insights[] = [
-                'type' => 'success',
-                'icon' => 'ph-seal-check',
-                'title' => 'Antrean Verifikasi Bersih',
-                'desc' => 'Kerja bagus! Seluruh laporan masuk telah sukses diverifikasi oleh tim admin.'
-            ];
+            $insights[] = ['type' => 'success', 'icon' => 'ph-seal-check', 'title' => 'Antrean Verifikasi Bersih', 'desc' => 'Kerja bagus! Seluruh laporan masuk telah sukses diverifikasi oleh tim admin.'];
         }
 
-        // C. Hotspot Wilayah (Kalimantan Specific)
         $regions = ['Pontianak', 'Samarinda', 'Balikpapan', 'Palangka Raya', 'Banjarmasin', 'Tarakan', 'Tanjung Selor', 'Ketapang', 'Singkawang', 'Banjarbaru'];
         $regionCounts = [];
         foreach ($regions as $r) {
@@ -263,66 +216,30 @@ class AdminController extends Controller
         $topRegion = key($regionCounts);
         $topRegionCount = current($regionCounts);
         if ($topRegionCount > 0) {
-            $insights[] = [
-                'type' => 'info',
-                'icon' => 'ph-map-pin-line',
-                'title' => 'Hotspot Utama: ' . $topRegion,
-                'desc' => 'Wilayah ' . $topRegion . ' mencatat jumlah titik api terbanyak di Kalimantan dengan total ' . $topRegionCount . ' laporan.'
-            ];
+            $insights[] = ['type' => 'info', 'icon' => 'ph-map-pin-line', 'title' => 'Hotspot Utama: ' . $topRegion, 'desc' => 'Wilayah ' . $topRegion . ' mencatat jumlah titik api terbanyak di Kalimantan dengan total ' . $topRegionCount . ' laporan.'];
         }
 
-        // D. Tingkat Keparahan Kebakaran Dominan (Fire Level)
         $dominantFireLevel = Report::select('fire_level', DB::raw('count(*) as count'))
             ->whereNotNull('fire_level')
             ->groupBy('fire_level')
             ->orderBy('count', 'desc')
             ->first();
         if ($dominantFireLevel) {
-            $levelLabels = [
-                'low' => 'Rendah (Low)',
-                'medium' => 'Sedang (Medium)',
-                'high' => 'Tinggi (High)',
-                'critical' => 'Kritis (Critical)'
-            ];
+            $levelLabels = ['low' => 'Rendah (Low)', 'medium' => 'Sedang (Medium)', 'high' => 'Tinggi (High)', 'critical' => 'Kritis (Critical)'];
             $levelLabel = $levelLabels[$dominantFireLevel->fire_level] ?? ucfirst($dominantFireLevel->fire_level);
-            
             if (in_array($dominantFireLevel->fire_level, ['high', 'critical'])) {
-                $insights[] = [
-                    'type' => 'danger',
-                    'icon' => 'ph-fire-simple',
-                    'title' => 'Tingkat Bahaya Dominan: ' . $levelLabel,
-                    'desc' => 'Kebakaran berskala besar / kritis mendominasi wilayah laporan. Harap prioritaskan keselamatan warga dan penanganan darurat.'
-                ];
+                $insights[] = ['type' => 'danger', 'icon' => 'ph-fire-simple', 'title' => 'Tingkat Bahaya Dominan: ' . $levelLabel, 'desc' => 'Kebakaran berskala besar / kritis mendominasi wilayah laporan. Harap prioritaskan keselamatan warga dan penanganan darurat.'];
             } else {
-                $insights[] = [
-                    'type' => 'info',
-                    'icon' => 'ph-info',
-                    'title' => 'Tingkat Bahaya Dominan: ' . $levelLabel,
-                    'desc' => 'Mayoritas laporan terdeteksi berada pada tingkat bahaya sedang atau ringan.'
-                ];
+                $insights[] = ['type' => 'info', 'icon' => 'ph-info', 'title' => 'Tingkat Bahaya Dominan: ' . $levelLabel, 'desc' => 'Mayoritas laporan terdeteksi berada pada tingkat bahaya sedang atau ringan.'];
             }
         }
 
         return view('admin.dashboard', compact(
-            'laporanMasuk',
-            'totalLaporan',
-            'laporanHariIni',
-            'menungguVerifikasi',
-            'laporanValid',
-            'sedangDitangani',
-            'laporanSelesai',
-            'laporanDitolak',
-            'laporanBelumDitugaskan',
-            'trendHariIni',
-            'trendMenungguVerifikasi',
-            'trendSedangDitangani',
-            'trendLaporanValid',
-            'trendLaporanSelesai',
-            'trendLaporanDitolak',
-            'trendTotalLaporan',
-            'chartLabels',
-            'chartDataValues',
-            'insights'
+            'laporanMasuk', 'totalLaporan', 'laporanHariIni', 'menungguVerifikasi',
+            'laporanValid', 'sedangDitangani', 'laporanSelesai', 'laporanDitolak',
+            'laporanBelumDitugaskan', 'trendHariIni', 'trendMenungguVerifikasi',
+            'trendSedangDitangani', 'trendLaporanValid', 'trendLaporanSelesai',
+            'trendLaporanDitolak', 'trendTotalLaporan', 'chartLabels', 'chartDataValues', 'insights'
         ));
     }
 
@@ -365,6 +282,7 @@ class AdminController extends Controller
             $rangeStart = Carbon::now()->subDays(6)->startOfDay();
         }
 
+        // --- Tren per status (grouped bar chart) ---
         $statuses = ['pending', 'valid', 'diproses', 'selesai', 'ditolak'];
         $trenByStatus = [];
 
@@ -383,18 +301,21 @@ class AdminController extends Controller
             $trenByStatus[$status] = array_values($counts);
         }
 
+        // --- Distribusi per status (donut) — difilter sesuai periode ---
         $statusLabels = ['Pending', 'Valid', 'Diproses', 'Selesai', 'Ditolak'];
         $statusData = [
-            Report::where('status', 'pending')->count(),
-            Report::where('status', 'valid')->count(),
-            Report::where('status', 'diproses')->count(),
-            Report::where('status', 'selesai')->count(),
-            Report::where('status', 'ditolak')->count(),
+            Report::where('status', 'pending')->where('created_at', '>=', $rangeStart)->count(),
+            Report::where('status', 'valid')->where('created_at', '>=', $rangeStart)->count(),
+            Report::where('status', 'diproses')->where('created_at', '>=', $rangeStart)->count(),
+            Report::where('status', 'selesai')->where('created_at', '>=', $rangeStart)->count(),
+            Report::where('status', 'ditolak')->where('created_at', '>=', $rangeStart)->count(),
         ];
 
+        // --- Distribusi per wilayah — difilter sesuai periode ---
         $wilayahRaw = Report::select('address', DB::raw('count(*) as count'))
             ->whereNotNull('address')
             ->where('address', '!=', '')
+            ->where('created_at', '>=', $rangeStart)
             ->groupBy('address')
             ->orderByDesc('count')
             ->limit(20)
@@ -446,26 +367,17 @@ class AdminController extends Controller
         ];
 
         $petugasTersedia = User::where('role', 'petugas')->get()->map(function ($petugas) use ($report, $posPemadam) {
-            // Hitung Jarak ke Laporan
             if ($petugas->latitude && $petugas->longitude && $report->latitude && $report->longitude) {
-                $earthRadius = 6371; // km
-                $lat1 = $report->latitude;
-                $lon1 = $report->longitude;
-                $lat2 = $petugas->latitude;
-                $lon2 = $petugas->longitude;
-                
-                $dLat = deg2rad($lat2 - $lat1);
-                $dLon = deg2rad($lon2 - $lon1);
-                
+                $earthRadius = 6371;
+                $lat1 = $report->latitude; $lon1 = $report->longitude;
+                $lat2 = $petugas->latitude; $lon2 = $petugas->longitude;
+                $dLat = deg2rad($lat2 - $lat1); $dLon = deg2rad($lon2 - $lon1);
                 $a = sin($dLat/2) * sin($dLat/2) + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLon/2) * sin($dLon/2);
-                $c = 2 * atan2(sqrt($a), sqrt(1-$a));
-                
-                $petugas->distance = round($earthRadius * $c, 2);
+                $petugas->distance = round($earthRadius * 2 * atan2(sqrt($a), sqrt(1-$a)), 2);
             } else {
                 $petugas->distance = null;
             }
 
-            // Tentukan Pos (Prioritaskan dari Database)
             if ($petugas->pos_name) {
                 $petugas->assigned_pos = $petugas->pos_name;
             } else {
@@ -476,20 +388,14 @@ class AdminController extends Controller
                         $dLatPos = deg2rad($petugas->latitude - $coords['lat']);
                         $dLonPos = deg2rad($petugas->longitude - $coords['lng']);
                         $aPos = sin($dLatPos/2) * sin($dLatPos/2) + cos(deg2rad($coords['lat'])) * cos(deg2rad($petugas->latitude)) * sin($dLonPos/2) * sin($dLonPos/2);
-                        $cPos = 2 * atan2(sqrt($aPos), sqrt(1-$aPos));
-                        $distPos = 6371 * $cPos;
-
-                        if ($distPos < $minDistancePos) {
-                            $minDistancePos = $distPos;
-                            $nearestPos = $posName;
-                        }
+                        $distPos = 6371 * 2 * atan2(sqrt($aPos), sqrt(1-$aPos));
+                        if ($distPos < $minDistancePos) { $minDistancePos = $distPos; $nearestPos = $posName; }
                     }
                 }
                 $petugas->assigned_pos = $nearestPos;
             }
 
             $petugas->is_busy = \App\Models\Penugasan::where('petugas_id', $petugas->users_id)->whereNull('completed_at')->exists();
-
             return $petugas;
         })->sortBy(function($petugas) {
             return $petugas->distance === null ? 999999 : $petugas->distance;
@@ -527,9 +433,7 @@ class AdminController extends Controller
         Log::info('Admin report verified successfully', ['new_status' => $report->status]);
 
         $roleLabel = match (Auth::user()->role) {
-            'masyarakat' => 'Pelapor',
-            'petugas' => 'Admin Sistem',
-            'admin' => 'Admin Sistem',
+            'masyarakat' => 'Pelapor', 'petugas' => 'Admin Sistem', 'admin' => 'Admin Sistem',
             default => ucfirst(Auth::user()->role)
         };
 
@@ -538,11 +442,8 @@ class AdminController extends Controller
             : 'Laporan telah diverifikasi dan dinyatakan valid.';
 
         $report->statusHistories()->create([
-            'status_awal' => $oldStatus,
-            'status_baru' => $request->status,
-            'catatan' => $catatan,
-            'diubah_oleh' => Auth::user()->users_name . ' (' . $roleLabel . ')',
-            'tanggal_ubah' => now(),
+            'status_awal' => $oldStatus, 'status_baru' => $request->status, 'catatan' => $catatan,
+            'diubah_oleh' => Auth::user()->users_name . ' (' . $roleLabel . ')', 'tanggal_ubah' => now(),
         ]);
 
         return redirect()->back()->with('success', 'Laporan berhasil diverifikasi menjadi: ' . ucfirst($request->status));
@@ -557,19 +458,14 @@ class AdminController extends Controller
             return redirect()->back()->withErrors(['error' => 'User yang ditunjuk bukan merupakan Petugas Lapangan.']);
         }
 
-        $isOnDuty = Penugasan::where('petugas_id', $petugas->users_id)
-            ->whereNull('completed_at')
-            ->exists();
+        $isOnDuty = Penugasan::where('petugas_id', $petugas->users_id)->whereNull('completed_at')->exists();
         if ($isOnDuty) {
             return redirect()->back()->withErrors(['error' => 'Petugas ini sedang bertugas (On Duty) dan tidak dapat ditugaskan kembali.']);
         }
 
         $report->penugasans()->create(['petugas_id' => $petugas->users_id, 'assigned_at' => now()]);
         $oldStatus = $report->status;
-        $report->update([
-            'status' => 'diproses',
-            'assigned_petugas_id' => $petugas->users_id,
-        ]);
+        $report->update(['status' => 'diproses', 'assigned_petugas_id' => $petugas->users_id]);
 
         // Kirim notifikasi ke pelapor (PBI 15)
         \App\Http\Controllers\NotifikasiController::createNotification(
@@ -578,21 +474,16 @@ class AdminController extends Controller
         );
 
         $roleLabel = match (Auth::user()->role) {
-            'masyarakat' => 'Pelapor',
-            'petugas' => 'Admin Sistem',
-            'admin' => 'Admin Sistem',
+            'masyarakat' => 'Pelapor', 'petugas' => 'Admin Sistem', 'admin' => 'Admin Sistem',
             default => ucfirst(Auth::user()->role)
         };
 
         $report->statusHistories()->create([
-            'status_awal' => $oldStatus,
-            'status_baru' => 'diproses',
+            'status_awal' => $oldStatus, 'status_baru' => 'diproses',
             'catatan' => 'Laporan sedang diverifikasi oleh admin dan diteruskan ke petugas lapangan.',
-            'diubah_oleh' => Auth::user()->users_name . ' (' . $roleLabel . ')',
-            'tanggal_ubah' => now(),
+            'diubah_oleh' => Auth::user()->users_name . ' (' . $roleLabel . ')', 'tanggal_ubah' => now(),
         ]);
 
-        // Kirim notifikasi ke pelapor (warga)
         if ($report->user_id) {
             \App\Http\Controllers\NotifikasiController::createNotification(
                 $report->user_id,
@@ -600,7 +491,6 @@ class AdminController extends Controller
             );
         }
 
-        // Kirim notifikasi ke petugas
         \App\Http\Controllers\NotifikasiController::createNotification(
             $petugas->users_id,
             'Anda ditugaskan untuk menangani laporan: "' . $report->title . '".'
@@ -617,80 +507,50 @@ class AdminController extends Controller
         if (Auth::user()->role !== 'admin') {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
-
-        // Pastikan role user yang ditugaskan adalah petugas
         if ($petugas->role !== 'petugas') {
             return redirect()->back()->withErrors(['error' => 'User yang ditunjuk bukan merupakan Petugas Lapangan.']);
         }
 
-        // Ambil petugas lama (dari assigned_petugas_id)
         $oldPetugasId = $report->assigned_petugas_id;
         $oldPetugas = User::find($oldPetugasId);
 
-        // Jika petugas yang baru sama dengan petugas lama, tidak perlu diubah
         if ($oldPetugasId === $petugas->users_id) {
             return redirect()->back()->with('success', 'Petugas ini sudah ditugaskan pada laporan ini.');
         }
 
-        $isOnDuty = Penugasan::where('petugas_id', $petugas->users_id)
-            ->whereNull('completed_at')
-            ->exists();
+        $isOnDuty = Penugasan::where('petugas_id', $petugas->users_id)->whereNull('completed_at')->exists();
         if ($isOnDuty) {
             return redirect()->back()->withErrors(['error' => 'Petugas ini sedang bertugas (On Duty) dan tidak dapat ditugaskan kembali.']);
         }
 
-        // Mulai transaksi database untuk menjamin konsistensi
         DB::transaction(function () use ($report, $petugas, $oldPetugasId, $oldPetugas) {
-            // Hapus penugasan aktif (yang belum selesai) untuk laporan ini
-            Penugasan::where('report_id', $report->report_id)
-                ->whereNull('completed_at')
-                ->delete();
-
-            // Buat penugasan baru untuk petugas baru
-            $report->penugasans()->create([
-                'petugas_id' => $petugas->users_id,
-                'assigned_at' => now()
-            ]);
-
-            // Update assigned_petugas_id di tabel reports
-            $report->update([
-                'assigned_petugas_id' => $petugas->users_id,
-            ]);
+            Penugasan::where('report_id', $report->report_id)->whereNull('completed_at')->delete();
+            $report->penugasans()->create(['petugas_id' => $petugas->users_id, 'assigned_at' => now()]);
+            $report->update(['assigned_petugas_id' => $petugas->users_id]);
 
             $roleLabel = match (Auth::user()->role) {
-                'masyarakat' => 'Pelapor',
-                'petugas' => 'Admin Sistem',
-                'admin' => 'Admin Sistem',
+                'masyarakat' => 'Pelapor', 'petugas' => 'Admin Sistem', 'admin' => 'Admin Sistem',
                 default => ucfirst(Auth::user()->role)
             };
 
             $oldName = $oldPetugas ? $oldPetugas->users_name : 'Petugas Sebelumnya';
-
-            // Tambahkan catatan ke riwayat status
             $report->statusHistories()->create([
-                'status_awal' => 'diproses',
-                'status_baru' => 'diproses',
+                'status_awal' => 'diproses', 'status_baru' => 'diproses',
                 'catatan' => 'Penugasan petugas diubah dari ' . $oldName . ' menjadi ' . $petugas->users_name . '.',
-                'diubah_oleh' => Auth::user()->users_name . ' (' . $roleLabel . ')',
-                'tanggal_ubah' => now(),
+                'diubah_oleh' => Auth::user()->users_name . ' (' . $roleLabel . ')', 'tanggal_ubah' => now(),
             ]);
         });
 
-        // Kirim notifikasi ke petugas lama bahwa penugasannya dibatalkan
         if ($oldPetugas) {
             \App\Http\Controllers\NotifikasiController::createNotification(
                 $oldPetugas->users_id,
                 'Penugasan Anda untuk laporan: "' . $report->title . '" telah dialihkan ke petugas lain.'
             );
         }
-
-        // Kirim notifikasi ke petugas baru
         \App\Http\Controllers\NotifikasiController::createNotification(
             $petugas->users_id,
             'Anda ditugaskan untuk menangani laporan: "' . $report->title . '".'
         );
-
-        // Kirim notifikasi ke pelapor (warga)
         if ($report->user_id) {
             \App\Http\Controllers\NotifikasiController::createNotification(
                 $report->user_id,
@@ -700,7 +560,6 @@ class AdminController extends Controller
 
         return redirect()->back()->with('success', 'Penugasan berhasil diubah ke ' . $petugas->users_name . '.');
     }
-
 
     /**
      * Tampilkan daftar semua pengguna
@@ -767,12 +626,9 @@ class AdminController extends Controller
                 } elseif (!User::where('email', $email)->exists()) {
                     try {
                         User::create([
-                            'users_name' => trim($row[0]),
-                            'email'      => $email,
-                            'phone'      => trim($row[2]),
-                            'password'   => bcrypt(trim($row[3])),
-                            'role'       => 'petugas',
-                            'pos_name'   => isset($row[4]) ? trim($row[4]) : null,
+                            'users_name' => trim($row[0]), 'email' => $email,
+                            'phone' => trim($row[2]), 'password' => bcrypt(trim($row[3])),
+                            'role' => 'petugas', 'pos_name' => isset($row[4]) ? trim($row[4]) : null,
                         ]);
                         $successCount++;
                         $importedData[] = ['name' => trim($row[0]), 'email' => $email, 'phone' => trim($row[2])];
@@ -820,12 +676,9 @@ class AdminController extends Controller
         ]);
 
         User::create([
-            'users_name' => $validated['users_name'],
-            'email' => $validated['email'],
-            'phone' => $validated['phone'],
-            'password' => bcrypt($validated['password']),
-            'role' => 'petugas',
-            'pos_name' => $validated['pos_name'],
+            'users_name' => $validated['users_name'], 'email' => $validated['email'],
+            'phone' => $validated['phone'], 'password' => bcrypt($validated['password']),
+            'role' => 'petugas', 'pos_name' => $validated['pos_name'],
         ]);
 
         return redirect()->route('admin.users.index', ['role' => 'petugas'])->with('success', 'Data petugas ' . $validated['users_name'] . ' berhasil ditambahkan.');
@@ -864,13 +717,9 @@ class AdminController extends Controller
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
         $report->delete();
-
         return redirect()->route('admin.dashboard')->with('success', 'Laporan berhasil dihapus.');
     }
 
-    /**
-     * Tampilkan daftar seluruh laporan (semua status) untuk admin
-     */
     public function reportsIndex(Request $request)
     {
         if (Auth::user()->role !== 'admin') {
@@ -879,28 +728,10 @@ class AdminController extends Controller
 
         $query = Report::with(['pelapor', 'penugasans.petugas'])->latest('report_id');
 
-        // Filter Tanggal
-        if ($request->filled('date')) {
-            $query->whereDate('created_at', $request->date);
-        }
-
-        // Filter Status
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        // Filter Urgensi
-        if ($request->filled('fire_level')) {
-            $query->where('fire_level', $request->fire_level);
-        }
-
-        // Filter Wilayah
-        if ($request->filled('region')) {
-            $region = $request->region;
-            $query->where('address', 'like', "%{$region}%");
-        }
-
-        // Filter Pencarian Lokasi/Judul/Deskripsi
+        if ($request->filled('date')) $query->whereDate('created_at', $request->date);
+        if ($request->filled('status')) $query->where('status', $request->status);
+        if ($request->filled('fire_level')) $query->where('fire_level', $request->fire_level);
+        if ($request->filled('region')) $query->where('address', 'like', "%{$request->region}%");
         if ($request->filled('location')) {
             $location = $request->location;
             $query->where(function ($q) use ($location) {
@@ -913,7 +744,6 @@ class AdminController extends Controller
         }
 
         $laporanMasuk = $query->get();
-
         return view('admin.reports.index', compact('laporanMasuk'));
     }
 
@@ -929,57 +759,23 @@ class AdminController extends Controller
         return redirect()->back()->with('success', 'Data pengguna berhasil dihapus.');
     }
 
-    /**
-     * Hitung data kenaikan/penurunan (tren) dibanding periode sebelumnya
-     */
     private function getTrendData($current, $previous, $isNegativeMetric = false)
     {
         $diff = $current - $previous;
-        
         if ($previous == 0) {
-            if ($current == 0) {
-                return [
-                    'percent' => 0,
-                    'text' => 'Stabil (0)',
-                    'class' => 'trend-neutral',
-                    'icon' => 'ph-minus'
-                ];
-            }
+            if ($current == 0) return ['percent' => 0, 'text' => 'Stabil (0)', 'class' => 'trend-neutral', 'icon' => 'ph-minus'];
             $class = $isNegativeMetric ? 'trend-up bad' : 'trend-up good';
-            return [
-                'percent' => 100,
-                'text' => 'Naik +' . $current,
-                'class' => $class,
-                'icon' => 'ph-trend-up'
-            ];
+            return ['percent' => 100, 'text' => 'Naik +' . $current, 'class' => $class, 'icon' => 'ph-trend-up'];
         }
-
         $percent = round(($diff / $previous) * 100);
-
         if ($diff > 0) {
             $class = $isNegativeMetric ? 'trend-up bad' : 'trend-up good';
-            return [
-                'percent' => $percent,
-                'text' => 'Naik +' . $percent . '%',
-                'class' => $class,
-                'icon' => 'ph-trend-up'
-            ];
+            return ['percent' => $percent, 'text' => 'Naik +' . $percent . '%', 'class' => $class, 'icon' => 'ph-trend-up'];
         } elseif ($diff < 0) {
             $class = $isNegativeMetric ? 'trend-down good' : 'trend-down bad';
-            return [
-                'percent' => abs($percent),
-                'text' => 'Turun ' . abs($percent) . '%',
-                'class' => $class,
-                'icon' => 'ph-trend-down'
-            ];
+            return ['percent' => abs($percent), 'text' => 'Turun ' . abs($percent) . '%', 'class' => $class, 'icon' => 'ph-trend-down'];
         } else {
-            return [
-                'percent' => 0,
-                'text' => 'Stabil (0%)',
-                'class' => 'trend-neutral',
-                'icon' => 'ph-minus'
-            ];
+            return ['percent' => 0, 'text' => 'Stabil (0%)', 'class' => 'trend-neutral', 'icon' => 'ph-minus'];
         }
     }
 }
-
