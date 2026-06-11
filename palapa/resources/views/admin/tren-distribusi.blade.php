@@ -82,6 +82,15 @@
         .filter-group i { color: #a0aec0; font-size: 16px; }
         .filter-select { border: none; font-size: 13px; font-family: inherit; background: transparent; outline: none; color: #4a5568; }
 
+        .chart-hint {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
         @media (max-width: 980px) {
             .layout { flex-direction: column; }
             .content { max-width: none !important; }
@@ -122,6 +131,7 @@
             <div class="chart-container">
                 <canvas id="trenChart"></canvas>
             </div>
+            <p class="chart-hint"><i class="ph ph-cursor-click"></i> Klik batang untuk melihat daftar laporan berdasarkan status</p>
         </div>
 
         <!-- Distribusi Status & Wilayah -->
@@ -133,6 +143,7 @@
                 <div class="chart-container" style="height: 260px;">
                     <canvas id="statusChart"></canvas>
                 </div>
+                <p class="chart-hint"><i class="ph ph-cursor-click"></i> Klik segmen untuk melihat laporan</p>
             </div>
 
             <div class="section">
@@ -154,6 +165,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const labels = {!! json_encode($chartLabels) !!};
     const trenByStatus = {!! json_encode($trenByStatus) !!};
+    const statusKeys = ['pending', 'valid', 'diproses', 'selesai', 'ditolak'];
 
     // --- PBI 36: Grouped Bar Chart per Status ---
     const trenCtx = document.getElementById('trenChart').getContext('2d');
@@ -182,6 +194,16 @@ document.addEventListener("DOMContentLoaded", function () {
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            onClick: (event, elements) => {
+                if (elements.length > 0) {
+                    const datasetIndex = elements[0].datasetIndex;
+                    const status = statusKeys[datasetIndex];
+                    window.location.href = '/admin/reports?status=' + status;
+                }
+            },
+            onHover: (event, elements) => {
+                event.native.target.style.cursor = elements.length > 0 ? 'pointer' : 'default';
+            },
             plugins: {
                 legend: {
                     position: 'top',
@@ -235,6 +257,16 @@ document.addEventListener("DOMContentLoaded", function () {
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            onClick: (event, elements) => {
+                if (elements.length > 0) {
+                    const index = elements[0].index;
+                    const status = statusKeys[index];
+                    window.location.href = '/admin/reports?status=' + status;
+                }
+            },
+            onHover: (event, elements) => {
+                event.native.target.style.cursor = elements.length > 0 ? 'pointer' : 'default';
+            },
             plugins: {
                 legend: { position: 'bottom', labels: { font: { family: 'Poppins', size: 11 }, padding: 12 } },
                 datalabels: {
