@@ -313,11 +313,17 @@
                 {{ session('success') }}
             </div>
         @endif
+        @if(session('error'))
+            <div style="background: #fed7d7; color: #c53030; padding: 14px 20px; border-radius: 12px; font-weight: 600; display: flex; align-items: center; gap: 10px; border: 1px solid #feb2b2; margin-bottom: 8px;">
+                <i class="ph ph-warning-circle" style="font-size: 22px;"></i>
+                {{ session('error') }}
+            </div>
+        @endif
         
         @if(session('import_summary'))
             @php $summary = session('import_summary'); @endphp
             
-            {{-- Bagian Preview Data Berhasil --}}
+            
             @if(isset($summary['imported_data']) && count($summary['imported_data']) > 0)
                 <div style="background: #f0fdf4; color: #166534; padding: 14px 20px; border-radius: 12px; font-weight: 500; display: flex; flex-direction: column; gap: 10px; border: 1px solid #bbf7d0; margin-bottom: 8px; font-size: 13px;">
                     <div style="display: flex; align-items: center; gap: 8px; font-weight: 600;">

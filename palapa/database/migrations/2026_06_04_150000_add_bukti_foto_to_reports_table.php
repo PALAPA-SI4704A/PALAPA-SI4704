@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('reports', function (Blueprint $table) {
-            // Tambah kolom untuk menyimpan bukti foto penanganan
+            
             $table->string('bukti_foto')->nullable()->after('handling_note');
         });
     }

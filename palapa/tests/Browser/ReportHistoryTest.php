@@ -17,7 +17,7 @@ class ReportHistoryTest extends TestCase
      */
     public function test_user_can_view_report_history_list(): void
     {
-        // Pre Condition: User berhasil login dan pernah membuat laporan
+        
         $pelapor = User::factory()->create([
             'role' => 'masyarakat',
         ])->fresh();
@@ -35,6 +35,6 @@ class ReportHistoryTest extends TestCase
              ->assertSee('Profil saya')
              ->assertSee('Riwayat Laporan')
              ->assertSee('#' . $report->id)
-             ->assertSee('Diproses'); // pending status badge in profile view
+             ->assertSee('Diproses'); 
     }
 }

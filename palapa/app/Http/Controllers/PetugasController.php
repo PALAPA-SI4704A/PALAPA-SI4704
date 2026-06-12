@@ -12,13 +12,13 @@ class PetugasController extends Controller
 {
     public function index()
     {
-        // 1. Pengecekan Akses (Hanya Petugas)
+        
         if (Auth::user()->role !== 'petugas') {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
 
-        // 2. Mengambil Laporan HANYA yang di-assign ke Petugas yang sedang login
-        // Diurutkan dari yang paling baru
+        
+        
         $query = Report::with('pelapor')
             ->where('assigned_petugas_id', Auth::user()->users_id)
             ->orderBy('created_at', 'desc');
@@ -43,19 +43,19 @@ class PetugasController extends Controller
 
         $laporanMasuk = $query->get();
 
-        // 3. Menghitung Data Statistik berdasarkan laporan yang di-assign ke petugas ini
+        
         $today = Carbon::today();
         
         $laporanHariIni = $laporanMasuk->filter(function ($report) use ($today) {
             return Carbon::parse($report->created_at)->isSameDay($today);
         })->count();
 
-        // Asumsi status default saat warga buat laporan adalah 'menunggu' atau 'baru'
+        
         $diproses = $laporanMasuk->where('status', 'diproses')->count();
         $selesai = $laporanMasuk->where('status', 'selesai')->count();
         $total = $laporanMasuk->count();
 
-        // 4. Mengambil Daftar Petugas Tersedia
+        
         return view('petugas.dashboard', compact(
             'laporanMasuk', 
             'laporanHariIni', 
@@ -64,7 +64,7 @@ class PetugasController extends Controller
             'total'
         ));
 
-        // 5. Mengirimkan seluruh data ke View
+        
         return view('petugas.dashboard', compact(
             'laporanMasuk', 
             'petugasTersedia', 
@@ -141,12 +141,12 @@ class PetugasController extends Controller
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
 
-        // Cek apakah status saat ini tidak bisa diubah lagi
+        
         if ($report->status === 'selesai' || $report->status === 'ditolak') {
             return redirect()->back()->with('error', 'Laporan dengan status ' . $this->getStatusLabel($report->status) . ' tidak dapat diubah lagi.');
         }
 
-        // Initial validation
+        
         $request->validate([
             'status' => 'required|string',
             'catatan' => 'nullable|string|max:1000',
@@ -162,12 +162,12 @@ class PetugasController extends Controller
         $currentStatus = $report->status;
         $validTransitions = $this->getValidTransitions($currentStatus);
 
-        // Validasi transisi status
+        
         if (!in_array($newStatus, $validTransitions)) {
             return redirect()->back()->with('error', 'Transisi status dari ' . $this->getStatusLabel($currentStatus) . ' ke ' . $this->getStatusLabel($newStatus) . ' tidak diizinkan.');
         }
 
-        // Validasi khusus untuk status "diproses" (in progress)
+        
         if ($newStatus === 'diproses') {
             $request->validate([
                 'petugas_id' => 'required|exists:users,users_id|integer',
@@ -182,7 +182,7 @@ class PetugasController extends Controller
 
             $petugas_id = $request->input('petugas_id');
 
-            // Cek apakah petugas ini sedang bertugas (On Duty)
+            
             $isOnDuty = \App\Models\Penugasan::where('petugas_id', $petugas_id)
                 ->whereNull('completed_at')
                 ->exists();
@@ -196,13 +196,13 @@ class PetugasController extends Controller
                 'handling_note' => $catatan,
             ]);
 
-            // Buat penugasan baru
+            
             $report->penugasans()->create([
                 'petugas_id' => $petugas_id,
                 'assigned_at' => now()
             ]);
         } 
-        // Validasi khusus untuk status "selesai" (resolved)
+        
         elseif ($newStatus === 'selesai') {
             $request->validate([
                 'catatan' => 'required|string|min:10|max:1000',
@@ -217,7 +217,7 @@ class PetugasController extends Controller
                 'bukti_foto.max' => 'Ukuran gambar tidak boleh lebih dari 2 MB.'
             ]);
 
-            // Handle foto upload
+            
             $bukti_foto_path = $report->bukti_foto;
             if ($request->hasFile('bukti_foto')) {
                 $file = $request->file('bukti_foto');
@@ -231,7 +231,7 @@ class PetugasController extends Controller
                 'bukti_foto' => $bukti_foto_path,
             ]);
 
-            // Update active penugasan record to mark officer as available
+            
             \App\Models\Penugasan::where('report_id', $report->report_id)
                 ->whereNull('completed_at')
                 ->update([
@@ -239,7 +239,7 @@ class PetugasController extends Controller
                     'bukti_photo' => $bukti_foto_path,
                 ]);
         }
-        // Validasi khusus untuk status "ditolak" (invalid)
+        
         elseif ($newStatus === 'ditolak') {
             $request->validate([
                 'catatan' => 'required|string|min:10|max:1000',
@@ -254,7 +254,7 @@ class PetugasController extends Controller
                 'handling_note' => $catatan,
             ]);
 
-            // Update active penugasan record to mark officer as available
+            
             \App\Models\Penugasan::where('report_id', $report->report_id)
                 ->whereNull('completed_at')
                 ->update([
@@ -262,7 +262,7 @@ class PetugasController extends Controller
                 ]);
         }
         else {
-            // Untuk status lain
+            
             $report->update(['status' => $newStatus]);
         }
 

@@ -10,16 +10,16 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-    // Menampilkan halaman form register
+    
     public function showRegisterForm()
     {
         return view('auth.register');
     }
 
-    // Memproses data pendaftaran
+    
     public function register(Request $request)
     {
-        // 1. Validasi inputan form
+        
         $validated = $request->validate([
             'users_name' => 'required|string|max:255',
             'email' => 'nullable|string|email|max:255|unique:users',
@@ -30,12 +30,12 @@ class AuthController extends Controller
             'email.unique' => 'Email sudah terdaftar.',
         ]);
 
-        // 2. Simpan user baru ke database
+        
         $user = new User();
         $user->users_name = $validated['users_name'];
         $user->email = $validated['email'] ?? null;
         $user->phone = $validated['phone'];
-        $user->role = 'masyarakat'; // Secara default yang register mandiri adalah masyarakat
+        $user->role = 'masyarakat'; 
         $user->password = Hash::make($validated['password']);
 
         if (! $user->save()) {
@@ -44,20 +44,20 @@ class AuthController extends Controller
             ]);
         }
 
-        // 3. Otomatis login setelah berhasil daftar
+        
         Auth::login($user);
 
-        // 4. Arahkan ke halaman beranda warga
+        
         return redirect()->route('beranda')->with('success', 'Registrasi berhasil! Selamat datang.');
     }
 
-    // Menampilkan halaman form login
+    
     public function showLoginForm()
     {
         return view('auth.login');
     }
 
-    // Memproses data login
+    
     public function login(Request $request)
     {
         $request->validate([
@@ -76,7 +76,7 @@ class AuthController extends Controller
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
             
-            // Pengecekan role pengguna untuk menentukan halaman tujuan
+            
             $role = Auth::user()->role;
 
             if ($role === 'petugas') {
@@ -85,7 +85,7 @@ class AuthController extends Controller
                 return redirect()->route('admin.dashboard')->with('success', 'Login berhasil sebagai admin!');
             }
 
-            // Default redirect untuk Warga (Masyarakat)
+            
             return redirect()->route('beranda')->with('success', 'Login berhasil!');
         }
 
@@ -94,7 +94,7 @@ class AuthController extends Controller
         ])->onlyInput('login');
     }
 
-    // Memproses logout
+    
     public function logout(Request $request)
     {
         Auth::logout();

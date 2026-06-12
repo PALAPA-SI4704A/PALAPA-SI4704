@@ -255,11 +255,11 @@
                             <td>
                                 @php
                                     $statusColors = [
-                                        'ditolak' => 'background: #fed7d7; color: #c53030; border: 1px solid #feb2b2;', // Invalid - Merah
-                                        'pending' => 'background: #e2e8f0; color: #4a5568; border: 1px solid #cbd5e0;', // Pending - Abu-abu
-                                        'valid' => 'background: #c6f6d5; color: #2f855a; border: 1px solid #9ae6b4;',   // Verified - Hijau
-                                        'diproses' => 'background: #fefcbf; color: #b7791f; border: 1px solid #fbd38d;', // In Progress - Kuning
-                                        'selesai' => 'background: #ebf8ff; color: #2b6cb0; border: 1px solid #bee3f8;',  // Resolved - Biru
+                                        'ditolak' => 'background: #fed7d7; color: #c53030; border: 1px solid #feb2b2;', 
+                                        'pending' => 'background: #e2e8f0; color: #4a5568; border: 1px solid #cbd5e0;', 
+                                        'valid' => 'background: #c6f6d5; color: #2f855a; border: 1px solid #9ae6b4;',   
+                                        'diproses' => 'background: #fefcbf; color: #b7791f; border: 1px solid #fbd38d;', 
+                                        'selesai' => 'background: #ebf8ff; color: #2b6cb0; border: 1px solid #bee3f8;',  
                                     ];
                                     $statusLabels = [
                                         'ditolak' => 'Invalid',

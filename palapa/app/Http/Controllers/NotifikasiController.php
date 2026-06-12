@@ -14,10 +14,10 @@ class NotifikasiController extends Controller
      */
     public function index()
     {
-        // Ambil ID user yang sedang login
+        
         $userId = Auth::user()->users_id;
 
-        // Ambil semua notifikasinya, urutkan dari yang paling baru
+        
         $notifikasis = Notifikasi::where('user_id', $userId)
             ->orderBy('created_at', 'desc')
             ->get();
@@ -32,12 +32,12 @@ class NotifikasiController extends Controller
     {
         $userId = Auth::user()->users_id;
 
-        // Cari notifikasi, pastikan itu milik user yang sedang login
+        
         $notifikasi = Notifikasi::where('notifikasi_id', $id)
             ->where('user_id', $userId)
             ->firstOrFail();
 
-        // Update status is_read menjadi 1 (true)
+        
         $notifikasi->update(['is_read' => 1]);
 
         return redirect()->back()->with('success', 'Notifikasi ditandai sudah dibaca.');
@@ -55,7 +55,7 @@ class NotifikasiController extends Controller
         return Notifikasi::create([
             'user_id' => $userId,
             'pesan' => $pesan,
-            'is_read' => 0 // 0 berarti belum dibaca
+            'is_read' => 0 
         ]);
     }
 }

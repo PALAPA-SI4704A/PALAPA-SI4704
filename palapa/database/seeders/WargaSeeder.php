@@ -10,7 +10,7 @@ class WargaSeeder extends Seeder
 {
     public function run(): void
     {
-        // Warga Utama
+        
         User::updateOrCreate(
             ['email' => 'warga@example.com'],
             [
@@ -21,7 +21,7 @@ class WargaSeeder extends Seeder
             ]
         );
 
-        // Warga Aktif (punya 10 laporan dengan status bermacam-macam)
+        
         User::updateOrCreate(
             ['email' => 'warga.aktif@example.com'],
             [
@@ -32,7 +32,7 @@ class WargaSeeder extends Seeder
             ]
         );
 
-        // Warga Baru (laporan berstatus pending)
+        
         User::updateOrCreate(
             ['email' => 'warga.baru@example.com'],
             [
@@ -43,7 +43,7 @@ class WargaSeeder extends Seeder
             ]
         );
 
-        // Warga Valid (laporannya sudah divalidasi/verified)
+        
         User::updateOrCreate(
             ['email' => 'warga.valid@example.com'],
             [
@@ -54,7 +54,7 @@ class WargaSeeder extends Seeder
             ]
         );
 
-        // Warga Proses (laporannya sedang dikerjakan/in progress)
+        
         User::updateOrCreate(
             ['email' => 'warga.proses@example.com'],
             [
@@ -65,7 +65,7 @@ class WargaSeeder extends Seeder
             ]
         );
 
-        // Warga Selesai (laporannya sudah selesai/resolved)
+        
         User::updateOrCreate(
             ['email' => 'warga.selesai@example.com'],
             [
@@ -76,7 +76,7 @@ class WargaSeeder extends Seeder
             ]
         );
 
-        // Warga tambahan
+        
         for ($i = 1; $i <= 5; $i++) {
             User::updateOrCreate(
                 ['email' => 'warga' . $i . '@example.com'],

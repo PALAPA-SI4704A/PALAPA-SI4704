@@ -47,7 +47,7 @@ class AdminUserUpdateTest extends TestCase
             'phone' => '081234567890',
         ]);
 
-        // Phone with letters
+        
         $response = $this->actingAs($admin)->put(route('admin.users.update', $user->users_id), [
             'users_name' => 'Petugas Terupdate',
             'email' => 'updated@example.com',
@@ -57,7 +57,7 @@ class AdminUserUpdateTest extends TestCase
 
         $response->assertSessionHasErrors(['phone']);
 
-        // Phone with symbols
+        
         $response = $this->actingAs($admin)->put(route('admin.users.update', $user->users_id), [
             'users_name' => 'Petugas Terupdate',
             'email' => 'updated@example.com',

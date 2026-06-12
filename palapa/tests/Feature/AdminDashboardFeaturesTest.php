@@ -17,7 +17,7 @@ class AdminDashboardFeaturesTest extends TestCase
      */
     public function test_admin_can_view_dashboard_stats_and_filter_periods(): void
     {
-        // 1. Setup Admin
+        
         $admin = User::create([
             'users_name' => 'Admin Test',
             'email' => 'admin.test@palapa.com',
@@ -26,7 +26,7 @@ class AdminDashboardFeaturesTest extends TestCase
             'phone' => '081234567899'
         ]);
 
-        // 2. Setup Pelapor and Reports
+        
         $pelapor = User::create([
             'users_name' => 'Warga Test',
             'email' => 'warga.test@palapa.com',
@@ -55,17 +55,17 @@ class AdminDashboardFeaturesTest extends TestCase
             'status' => 'diproses',
         ]);
 
-        // 3. Request Admin Dashboard
+        
         $response = $this->actingAs($admin)->get(route('admin.dashboard'));
         $response->assertStatus(200);
 
-        // Assert stats exist on page
+        
         $response->assertSee('Total Laporan');
         $response->assertSee('Laporan Valid');
         $response->assertSee('Laporan Selesai');
         $response->assertSee('Laporan Ditolak');
 
-        // 4. Request with period filters
+        
         $response7Days = $this->get(route('admin.dashboard', ['period' => '7days']));
         $response7Days->assertStatus(200);
 
@@ -84,7 +84,7 @@ class AdminDashboardFeaturesTest extends TestCase
      */
     public function test_admin_can_view_assignment_status_on_report_detail(): void
     {
-        // 1. Setup Admin and Petugas
+        
         $admin = User::create([
             'users_name' => 'Admin Test 2',
             'email' => 'admin2@palapa.com',
@@ -109,7 +109,7 @@ class AdminDashboardFeaturesTest extends TestCase
             'phone' => '081234567895'
         ]);
 
-        // 2. Setup Report
+        
         $report = Report::create([
             'user_id' => $pelapor->users_id,
             'title' => 'Kebakaran Hutan Jati',
@@ -120,23 +120,23 @@ class AdminDashboardFeaturesTest extends TestCase
             'status' => 'diproses',
         ]);
 
-        // 3. Create Penugasan
+        
         $penugasan = Penugasan::create([
             'report_id' => $report->report_id,
             'petugas_id' => $petugas->users_id,
             'assigned_at' => now(),
         ]);
 
-        // 4. Request Admin Report Show Page
+        
         $response = $this->actingAs($admin)->get(route('admin.reports.show', $report->report_id));
         $response->assertStatus(200);
 
-        // Assert penugasan details exist on page
+        
         $response->assertSee('Status Penugasan Petugas');
         $response->assertSee($petugas->users_name);
         $response->assertSee('Sedang Bertugas');
 
-        // 5. Complete assignment and verify
+        
         $penugasan->update([
             'completed_at' => now(),
             'bukti_photo' => 'photos/test_bukti.jpg'
@@ -169,7 +169,7 @@ class AdminDashboardFeaturesTest extends TestCase
             'phone' => '081234567898'
         ]);
 
-        // Report 1: Pontianak, valid, created today
+        
         $report1 = Report::create([
             'user_id' => $pelapor->users_id,
             'title' => 'Kebakaran Pontianak',
@@ -181,7 +181,7 @@ class AdminDashboardFeaturesTest extends TestCase
             'created_at' => now(),
         ]);
 
-        // Report 2: Samarinda, selesai, created yesterday
+        
         $report2 = Report::create([
             'user_id' => $pelapor->users_id,
             'title' => 'Kebakaran Samarinda',
@@ -196,25 +196,25 @@ class AdminDashboardFeaturesTest extends TestCase
 
         $this->actingAs($admin);
 
-        // 1. Filter by Region (Pontianak)
+        
         $responseRegion = $this->get(route('admin.dashboard', ['region' => 'Pontianak']));
         $responseRegion->assertStatus(200);
         $responseRegion->assertSee('Kebakaran di Pontianak Barat');
         $responseRegion->assertDontSee('Kebakaran di Samarinda Ulu');
 
-        // 2. Filter by Status (selesai)
+        
         $responseStatus = $this->get(route('admin.dashboard', ['status' => 'selesai']));
         $responseStatus->assertStatus(200);
         $responseStatus->assertSee('Kebakaran di Samarinda Ulu');
         $responseStatus->assertDontSee('Kebakaran di Pontianak Barat');
 
-        // 3. Filter by Date (yesterday)
+        
         $responseDate = $this->get(route('admin.dashboard', ['date' => now()->subDay()->format('Y-m-d'), 'status' => 'selesai']));
         $responseDate->assertStatus(200);
         $responseDate->assertSee('Kebakaran di Samarinda Ulu');
         $responseDate->assertDontSee('Kebakaran di Pontianak Barat');
 
-        // 4. Test on index page too
+        
         $responseIndex = $this->get(route('admin.reports.index', ['region' => 'Samarinda']));
         $responseIndex->assertStatus(200);
         $responseIndex->assertSee('Kebakaran di Samarinda Ulu');
@@ -226,7 +226,7 @@ class AdminDashboardFeaturesTest extends TestCase
      */
     public function test_admin_can_reassign_petugas_and_creates_status_history(): void
     {
-        // 1. Setup Admin
+        
         $admin = User::create([
             'users_name' => 'Admin Utama',
             'email' => 'admin@palapa.com',
@@ -235,7 +235,7 @@ class AdminDashboardFeaturesTest extends TestCase
             'phone' => '081234567899'
         ]);
 
-        // 2. Setup 2 Petugas
+        
         $petugas1 = User::create([
             'users_name' => 'Petugas Satu',
             'email' => 'petugas1@palapa.com',
@@ -252,7 +252,7 @@ class AdminDashboardFeaturesTest extends TestCase
             'phone' => '081234567892'
         ]);
 
-        // 3. Setup Pelapor and Report
+        
         $pelapor = User::create([
             'users_name' => 'Warga Pelapor',
             'email' => 'warga@palapa.com',
@@ -272,42 +272,42 @@ class AdminDashboardFeaturesTest extends TestCase
             'assigned_petugas_id' => $petugas1->users_id,
         ]);
 
-        // Create initial penugasan for petugas1
+        
         $penugasan1 = Penugasan::create([
             'report_id' => $report->report_id,
             'petugas_id' => $petugas1->users_id,
             'assigned_at' => now(),
         ]);
 
-        // Act: Reassign to petugas2
+        
         $response = $this->actingAs($admin)
                          ->post(route('admin.reports.reassign', [$report->report_id, $petugas2->users_id]));
 
         $response->assertRedirect();
         $response->assertSessionHas('success');
 
-        // Assert that the assigned petugas in reports is now petugas2
+        
         $this->assertDatabaseHas('reports', [
             'report_id' => $report->report_id,
             'assigned_petugas_id' => $petugas2->users_id,
             'status' => 'diproses'
         ]);
 
-        // Assert that the old penugasan for petugas1 has been deleted or completed
+        
         $this->assertDatabaseMissing('penugasan', [
             'report_id' => $report->report_id,
             'petugas_id' => $petugas1->users_id,
             'completed_at' => null
         ]);
 
-        // Assert that a new penugasan for petugas2 is created
+        
         $this->assertDatabaseHas('penugasan', [
             'report_id' => $report->report_id,
             'petugas_id' => $petugas2->users_id,
             'completed_at' => null
         ]);
 
-        // Assert status history records the change
+        
         $this->assertDatabaseHas('status_histories', [
             'report_id' => $report->report_id,
             'status_awal' => 'diproses',

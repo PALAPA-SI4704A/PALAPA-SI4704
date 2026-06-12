@@ -323,7 +323,7 @@ class AdminController extends Controller
             $rangeStart = Carbon::now()->subDays(6)->startOfDay();
         }
 
-        // --- Tren per status (grouped bar chart) ---
+        
         $statuses = ['pending', 'valid', 'diproses', 'selesai', 'ditolak'];
         $trenByStatus = [];
 
@@ -342,7 +342,7 @@ class AdminController extends Controller
             $trenByStatus[$status] = array_values($counts);
         }
 
-        // --- Distribusi per status (donut) — difilter sesuai periode ---
+        
         $statusLabels = ['Pending', 'Valid', 'Diproses', 'Selesai', 'Ditolak'];
         $statusData = [
             Report::where('status', 'pending')->where('created_at', '>=', $rangeStart)->count(),
@@ -352,7 +352,7 @@ class AdminController extends Controller
             Report::where('status', 'ditolak')->where('created_at', '>=', $rangeStart)->count(),
         ];
 
-        // --- Distribusi per wilayah — difilter sesuai periode ---
+        
         $wilayahRaw = Report::select('address', DB::raw('count(*) as count'))
             ->whereNotNull('address')
             ->where('address', '!=', '')
@@ -465,7 +465,7 @@ class AdminController extends Controller
         }
         $report->update($data);
 
-        // Kirim notifikasi ke pelapor (PBI 15)
+        
         \App\Http\Controllers\NotifikasiController::createNotification(
             $report->user_id,
             'Status laporan Anda (#' . $report->report_id . ') telah diperbarui menjadi: ' . ucfirst($request->status) . '.'
@@ -508,7 +508,7 @@ class AdminController extends Controller
         $oldStatus = $report->status;
         $report->update(['status' => 'diproses', 'assigned_petugas_id' => $petugas->users_id]);
 
-        // Kirim notifikasi ke pelapor (PBI 15)
+        
         \App\Http\Controllers\NotifikasiController::createNotification(
             $report->user_id,
             'Laporan Anda (#' . $report->report_id . ') sedang diproses oleh petugas lapangan.'
