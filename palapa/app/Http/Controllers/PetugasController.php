@@ -102,37 +102,39 @@ class PetugasController extends Controller
             'rejection_reason' => 'required_if:status,ditolak|string|max:500'
         ]);
 
-        $oldStatus = $report->status;
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($request, $report) {
+            $oldStatus = $report->status;
 
-        $data = ['status' => $request->status];
-        if ($request->status === 'ditolak') {
-            $data['rejection_reason'] = $request->rejection_reason;
-        }
+            $data = ['status' => $request->status];
+            if ($request->status === 'ditolak') {
+                $data['rejection_reason'] = $request->rejection_reason;
+            }
 
-        $report->update($data);
-        
-        \Log::info('Report verified successfully', ['new_status' => $report->status]);
+            $report->update($data);
+            
+            \Log::info('Report verified successfully', ['new_status' => $report->status]);
 
-        $roleLabel = match (Auth::user()->role) {
-            'masyarakat' => 'Pelapor',
-            'petugas' => 'Admin Sistem',
-            'admin' => 'Admin Sistem',
-            default => ucfirst(Auth::user()->role)
-        };
+            $roleLabel = match (Auth::user()->role) {
+                'masyarakat' => 'Pelapor',
+                'petugas' => 'Admin Sistem',
+                'admin' => 'Admin Sistem',
+                default => ucfirst(Auth::user()->role)
+            };
 
-        $catatan = $request->status === 'ditolak'
-            ? 'Laporan ditolak. Alasan: ' . $request->rejection_reason
-            : 'Laporan telah diverifikasi dan dinyatakan valid.';
+            $catatan = $request->status === 'ditolak'
+                ? 'Laporan ditolak. Alasan: ' . $request->rejection_reason
+                : 'Laporan telah diverifikasi dan dinyatakan valid.';
 
-        $report->statusHistories()->create([
-            'status_awal' => $oldStatus,
-            'status_baru' => $request->status,
-            'catatan' => $catatan,
-            'diubah_oleh' => Auth::user()->users_name . ' (' . $roleLabel . ')',
-            'tanggal_ubah' => now(),
-        ]);
+            $report->statusHistories()->create([
+                'status_awal' => $oldStatus,
+                'status_baru' => $request->status,
+                'catatan' => $catatan,
+                'diubah_oleh' => Auth::user()->users_name . ' (' . $roleLabel . ')',
+                'tanggal_ubah' => now(),
+            ]);
 
-        return redirect()->back()->with('success', 'Laporan berhasil diverifikasi menjadi: ' . ucfirst($request->status));
+            return redirect()->back()->with('success', 'Laporan berhasil diverifikasi menjadi: ' . ucfirst($request->status));
+        });
     }
 
     public function updateStatus(Request $request, Report $report)
@@ -190,11 +192,7 @@ class PetugasController extends Controller
                 return redirect()->back()->withErrors(['error' => 'Petugas ini sedang bertugas (On Duty) dan tidak dapat ditugaskan kembali.']);
             }
 
-            $report->update([
-                'status' => $newStatus,
-                'assigned_petugas_id' => $petugas_id,
-                'handling_note' => $catatan,
-            ]);
+                $petugas_id = $request->input('petugas_id');
 
             
             $report->penugasans()->create([
@@ -225,11 +223,26 @@ class PetugasController extends Controller
                 $bukti_foto_path = $file->storeAs('bukti_penanganan', $finalName, 'public');
             }
 
-            $report->update([
-                'status' => $newStatus,
-                'handling_note' => $catatan,
-                'bukti_foto' => $bukti_foto_path,
-            ]);
+                // Buat penugasan baru
+                $report->penugasans()->create([
+                    'petugas_id' => $petugas_id,
+                    'assigned_at' => now()
+                ]);
+            } 
+            // Validasi khusus untuk status "selesai" (resolved)
+            elseif ($newStatus === 'selesai') {
+                $request->validate([
+                    'catatan' => 'required|string|min:10|max:1000',
+                    'bukti_foto' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048'
+                ], [
+                    'catatan.required' => 'Komentar penanganan harus diisi.',
+                    'catatan.min' => 'Komentar penanganan minimal harus 10 karakter.',
+                    'catatan.max' => 'Komentar penanganan maksimal 1000 karakter.',
+                    'bukti_foto.required' => 'Bukti foto penanganan harus diunggah.',
+                    'bukti_foto.image' => 'File harus berupa gambar.',
+                    'bukti_foto.mimes' => 'Format gambar harus: jpeg, png, jpg, atau gif.',
+                    'bukti_foto.max' => 'Ukuran gambar tidak boleh lebih dari 2 MB.'
+                ]);
 
             
             \App\Models\Penugasan::where('report_id', $report->report_id)
@@ -249,10 +262,23 @@ class PetugasController extends Controller
                 'catatan.max' => 'Komentar penolakan maksimal 1000 karakter.',
             ]);
 
-            $report->update([
-                'status' => $newStatus,
-                'handling_note' => $catatan,
-            ]);
+                // Update active penugasan record to mark officer as available
+                \App\Models\Penugasan::where('report_id', $report->report_id)
+                    ->whereNull('completed_at')
+                    ->update([
+                        'completed_at' => now(),
+                        'bukti_photo' => $bukti_foto_path,
+                    ]);
+            }
+            // Validasi khusus untuk status "ditolak" (invalid)
+            elseif ($newStatus === 'ditolak') {
+                $request->validate([
+                    'catatan' => 'required|string|min:10|max:1000',
+                ], [
+                    'catatan.required' => 'Komentar penolakan harus diisi.',
+                    'catatan.min' => 'Komentar penolakan minimal harus 10 karakter.',
+                    'catatan.max' => 'Komentar penolakan maksimal 1000 karakter.',
+                ]);
 
             
             \App\Models\Penugasan::where('report_id', $report->report_id)
@@ -266,18 +292,31 @@ class PetugasController extends Controller
             $report->update(['status' => $newStatus]);
         }
 
-        $roleLabel = 'Petugas Pemadam';
-        $statusMappingLabel = $this->getStatusLabel($newStatus);
+                // Update active penugasan record to mark officer as available
+                \App\Models\Penugasan::where('report_id', $report->report_id)
+                    ->whereNull('completed_at')
+                    ->update([
+                        'completed_at' => now(),
+                    ]);
+            }
+            else {
+                // Untuk status lain
+                $report->update(['status' => $newStatus]);
+            }
 
-        $report->statusHistories()->create([
-            'status_awal' => $currentStatus,
-            'status_baru' => $newStatus,
-            'catatan' => $catatan ?: 'Status penanganan laporan diperbarui menjadi ' . $statusMappingLabel . ' oleh petugas.',
-            'diubah_oleh' => Auth::user()->users_name . ' (' . $roleLabel . ')',
-            'tanggal_ubah' => now(),
-        ]);
+            $roleLabel = 'Petugas Pemadam';
+            $statusMappingLabel = $this->getStatusLabel($newStatus);
 
-        return redirect()->back()->with('success', 'Status laporan berhasil diperbarui menjadi: ' . $statusMappingLabel);
+            $report->statusHistories()->create([
+                'status_awal' => $currentStatus,
+                'status_baru' => $newStatus,
+                'catatan' => $catatan ?: 'Status penanganan laporan diperbarui menjadi ' . $statusMappingLabel . ' oleh petugas.',
+                'diubah_oleh' => Auth::user()->users_name . ' (' . $roleLabel . ')',
+                'tanggal_ubah' => now(),
+            ]);
+
+            return redirect()->back()->with('success', 'Status laporan berhasil diperbarui menjadi: ' . $statusMappingLabel);
+        });
     }
 
     /**

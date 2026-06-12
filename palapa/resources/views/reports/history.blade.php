@@ -204,6 +204,12 @@
                         <p class="timeline-note">
                             {{ $history['catatan'] }}
                         </p>
+                        @if($report->bukti_foto && strtolower($history['status_baru']) === 'selesai')
+                            <div style="margin-top: 12px; margin-bottom: 12px;" class="bukti-foto-container">
+                                <p style="margin: 0 0 4px 0; font-size: 12px; font-weight: 700; color: #243142;">Bukti Foto Penanganan:</p>
+                                <img src="{{ asset('storage/' . $report->bukti_foto) }}" alt="Bukti Foto Penanganan" style="max-width: 200px; border-radius: 8px;" class="bukti-foto-img">
+                            </div>
+                        @endif
                         <div class="timeline-author">
                             Oleh: {{ $history['diubah_oleh'] }}
                         </div>
