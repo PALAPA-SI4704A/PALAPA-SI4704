@@ -52,7 +52,7 @@ class ReportController extends Controller
                   ->orWhere('address', 'like', "%{$search}%")
                   ->orWhere('created_at', 'like', "%{$search}%");
 
-                // Pencarian tanggal pintar (Bulan)
+                
                 $months = [
                     'januari' => 1, 'jan' => 1, 'january' => 1,
                     'februari' => 2, 'feb' => 2, 'february' => 2,
@@ -79,7 +79,7 @@ class ReportController extends Controller
                     $q->orWhereIn(DB::raw('MONTH(created_at)'), $matchedMonths);
                 }
 
-                // Pencarian Tahun atau Hari
+                
                 if (is_numeric($search)) {
                     if (strlen($search) == 4) {
                         $q->orWhereYear('created_at', $search);
@@ -178,7 +178,7 @@ class ReportController extends Controller
                     $address = $response->json('display_name');
                 }
             } catch (\Exception $e) {
-                // Ignore failure
+                
             }
         }
 
@@ -224,7 +224,7 @@ class ReportController extends Controller
      */
     public function show(Report $report)
     {
-        //
+        
     }
 
     /**
@@ -293,8 +293,8 @@ class ReportController extends Controller
             $photoTempPath = $request->file('photo')->store('photos/tmp', 'public');
         }
 
-        // If no photo_temp is provided and no new file, we can fall back to the existing report photo
-        // in the view.
+        
+        
 
         return view('reports.preview', [
             'report' => $report,
@@ -360,7 +360,7 @@ class ReportController extends Controller
                         $address = $response->json('display_name');
                     }
                 } catch (\Exception $e) {
-                    // Ignore failure
+                    
                 }
             }
             $dataToUpdate['address'] = $address;
@@ -376,6 +376,6 @@ class ReportController extends Controller
      */
     public function destroy(Report $report)
     {
-        ///
+        
     }
 }

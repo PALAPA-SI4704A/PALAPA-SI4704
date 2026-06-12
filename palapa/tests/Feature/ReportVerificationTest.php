@@ -13,7 +13,7 @@ class ReportVerificationTest extends TestCase
 
     public function test_petugas_can_verify_a_valid_report(): void
     {
-        // Setup: Create a Petugas
+        
         $petugas = User::create([
             'users_name' => 'Petugas',
             'email' => 'petugas@palapa.com',
@@ -22,7 +22,7 @@ class ReportVerificationTest extends TestCase
             'phone' => '081234567890'
         ]);
 
-        // Setup: Create a Pelapor
+        
         $pelapor = User::create([
             'users_name' => 'Warga Pelapor',
             'email' => 'warga@palapa.com',
@@ -31,7 +31,7 @@ class ReportVerificationTest extends TestCase
             'phone' => '089876543210'
         ]);
 
-        // Setup: Create a pending Report
+        
         $report = Report::create([
             'user_id' => $pelapor->users_id,
             'title' => 'Pohon Tumbang',
@@ -42,31 +42,31 @@ class ReportVerificationTest extends TestCase
             'status' => 'pending',
         ]);
 
-        // Step 1: User berada di dashboard
+        
         $response = $this->actingAs($petugas)
                          ->get(route('petugas.dashboard'));
         $response->assertStatus(200);
-        // Di halaman dashboard, judul laporan tidak ditampilkan, hanya ID laporan
+        
         $response->assertSee('#' . $report->report_id);
 
-        // Step 2: User menekan tombol 'Lihat' pada kolom aksi di tabel laporan
-        // -> User diarahkan pada halaman laporan baru
+        
+        
         $response = $this->get(route('petugas.reports.show', $report->report_id));
         $response->assertStatus(200);
         $response->assertSee($report->title);
-        $response->assertSee('Verifikasi Laporan'); // Memastikan form verifikasi ada
+        $response->assertSee('Verifikasi Laporan'); 
 
-        // Step 3: User menekan tombol 'Laporan valid' jika dirasa laporan yang masuk valid
-        // -> User akan menerima pesan laporan berhasil diverifikasi
+        
+        
         $response = $this->post(route('petugas.reports.verify', $report->report_id), [
             'status' => 'valid'
         ]);
 
-        // Memastikan ada session success (pesan laporan berhasil diverifikasi)
+        
         $response->assertRedirect();
         $response->assertSessionHas('success');
 
-        // Memastikan data di database berubah menjadi valid
+        
         $this->assertDatabaseHas('reports', [
             'report_id' => $report->report_id,
             'status' => 'valid'
@@ -75,7 +75,7 @@ class ReportVerificationTest extends TestCase
 
     public function test_petugas_can_reject_an_invalid_report(): void
     {
-        // Setup: Create a Petugas
+        
         $petugas = User::create([
             'users_name' => 'Petugas Verifikator',
             'email' => 'petugas2@palapa.com',
@@ -102,13 +102,13 @@ class ReportVerificationTest extends TestCase
             'status' => 'pending',
         ]);
 
-        // Login sebagai petugas
+        
         $this->actingAs($petugas);
 
-        // Kunjungi halaman show laporan dulu agar session/CSRF token diinisialisasi
+        
         $this->get(route('petugas.reports.show', $report->report_id));
 
-        // Step 3 (Alternative): User menekan 'Laporan tidak valid' (Tolak Laporan) jika dirasa laporan fiktif
+        
         $response = $this->post(route('petugas.reports.verify', $report->report_id), [
                              'status' => 'ditolak',
                              'rejection_reason' => 'Laporan terindikasi fiktif'
@@ -232,7 +232,7 @@ class ReportVerificationTest extends TestCase
 
     public function test_petugas_can_view_handling_history_on_report_details(): void
     {
-        // Setup: Create a Petugas
+        
         $petugas = User::create([
             'users_name' => 'Petugas Lapangan 1',
             'email' => 'petugas.lapangan1@palapa.com',
@@ -241,7 +241,7 @@ class ReportVerificationTest extends TestCase
             'phone' => '081234567890'
         ]);
 
-        // Setup: Create a Pelapor
+        
         $pelapor = User::create([
             'users_name' => 'Warga Pelapor 1',
             'email' => 'warga.pelapor1@palapa.com',
@@ -250,7 +250,7 @@ class ReportVerificationTest extends TestCase
             'phone' => '089876543210'
         ]);
 
-        // Setup: Create a pending Report
+        
         $report = Report::create([
             'user_id' => $pelapor->users_id,
             'title' => 'Kebakaran Lahan',
@@ -261,7 +261,7 @@ class ReportVerificationTest extends TestCase
             'status' => 'pending',
         ]);
 
-        // Create a status history record
+        
         $report->statusHistories()->create([
             'status_awal' => 'pending',
             'status_baru' => 'valid',

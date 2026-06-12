@@ -12,7 +12,7 @@ class ReportSeeder extends Seeder
 {
     public function run(): void
     {
-        // Ambil data users yang diperlukan
+        
         $wargaAktif = User::where('email', 'warga.aktif@example.com')->first();
         $wargaBaru = User::where('email', 'warga.baru@example.com')->first();
         $wargaValid = User::where('email', 'warga.valid@example.com')->first();
@@ -27,11 +27,11 @@ class ReportSeeder extends Seeder
             return;
         }
 
-        // ==========================================
-        // 1. DATA LAPORAN UNTUK WARGA AKTIF (10 Laporan di Wilayah Kalimantan)
-        // ==========================================
+        
+        
+        
 
-        // Laporan 1: Pending (Kebakaran Ruko Gajah Mada Pontianak)
+        
         $this->createReport([
             'user_id' => $wargaAktif->users_id,
             'title' => 'Kebakaran Ruko di Jalan Gajah Mada Pontianak',
@@ -45,7 +45,7 @@ class ReportSeeder extends Seeder
             'creator_name' => $wargaAktif->users_name,
         ]);
 
-        // Laporan 2: Valid/Verified (Kebakaran Kabel Listrik Samarinda)
+        
         $this->createReport([
             'user_id' => $wargaAktif->users_id,
             'title' => 'Kabel Listrik Korslet dekat Kantor Gubernur Kaltim',
@@ -60,7 +60,7 @@ class ReportSeeder extends Seeder
             'admin_id' => $admin->users_id,
         ]);
 
-        // Laporan 3: Diproses/In Progress (Kebakaran Gudang Kayu Balikpapan)
+        
         $petugas1 = $petugasList->get(0) ?? $petugasList->first();
         $this->createReport([
             'user_id' => $wargaAktif->users_id,
@@ -78,7 +78,7 @@ class ReportSeeder extends Seeder
             'handling_note' => 'Tim armada regu 1 BPBD Kota Balikpapan sedang meluncur ke lokasi kejadian membawa 3 unit mobil pemadam.',
         ]);
 
-        // Laporan 4: Selesai/Resolved (Lahan Gambut Palangka Raya)
+        
         $petugas2 = $petugasList->get(1) ?? $petugasList->first();
         $this->createReport([
             'user_id' => $wargaAktif->users_id,
@@ -97,7 +97,7 @@ class ReportSeeder extends Seeder
             'bukti_foto' => 'bukti_penanganan/seeder_bukti_gambut.jpg',
         ]);
 
-        // Laporan 5: Ditolak/Invalid (Kebakaran Palsu Siring Banjarmasin)
+        
         $this->createReport([
             'user_id' => $wargaAktif->users_id,
             'title' => 'Kebakaran di Siring Menara Pandang Banjarmasin',
@@ -113,7 +113,7 @@ class ReportSeeder extends Seeder
             'rejection_reason' => 'Laporan palsu. Petugas pemadam di pos terdekat telah mengecek langsung ke Siring dan situasi aman kondusif, hanya ada anak-anak bermain kembang api/flare.',
         ]);
 
-        // Laporan 6: Pending (Tabung Gas Singkawang)
+        
         $this->createReport([
             'user_id' => $wargaAktif->users_id,
             'title' => 'Kebakaran Tabung Gas Warung Makan Singkawang',
@@ -127,7 +127,7 @@ class ReportSeeder extends Seeder
             'creator_name' => $wargaAktif->users_name,
         ]);
 
-        // Laporan 7: Valid/Verified (Ruko Banjarbaru)
+        
         $this->createReport([
             'user_id' => $wargaAktif->users_id,
             'title' => 'Kebakaran Ruko Toko Elektronik Banjarbaru',
@@ -142,7 +142,7 @@ class ReportSeeder extends Seeder
             'admin_id' => $admin->users_id,
         ]);
 
-        // Laporan 8: Diproses/In Progress (Lahan Gambut Ketapang)
+        
         $petugas3 = $petugasList->get(2) ?? $petugasList->first();
         $this->createReport([
             'user_id' => $wargaAktif->users_id,
@@ -160,7 +160,7 @@ class ReportSeeder extends Seeder
             'handling_note' => 'Regu pemadam sedang membuat sekat kanal air di sekitar lokasi agar api tidak menjalar ke lahan kelapa sawit warga.',
         ]);
 
-        // Laporan 9: Selesai/Resolved (Kebakaran Semak Bandara Tarakan)
+        
         $petugas4 = $petugasList->get(3) ?? $petugasList->first();
         $this->createReport([
             'user_id' => $wargaAktif->users_id,
@@ -179,7 +179,7 @@ class ReportSeeder extends Seeder
             'bukti_foto' => 'bukti_penanganan/seeder_bukti_tarakan.jpg',
         ]);
 
-        // Laporan 10: Ditolak/Invalid (Kebakaran Daun Kering Tanjung Selor)
+        
         $this->createReport([
             'user_id' => $wargaAktif->users_id,
             'title' => 'Kebakaran Daun Kering di Tanjung Selor',
@@ -196,9 +196,9 @@ class ReportSeeder extends Seeder
         ]);
 
 
-        // ==========================================
-        // 2. DATA LAPORAN UNTUK WARGA BARU (1 Laporan - Pending)
-        // ==========================================
+        
+        
+        
         $this->createReport([
             'user_id' => $wargaBaru->users_id,
             'title' => 'Kebakaran Rumah Panggung di Samarinda Seberang',
@@ -213,9 +213,9 @@ class ReportSeeder extends Seeder
         ]);
 
 
-        // ==========================================
-        // 3. DATA LAPORAN UNTUK WARGA VALID (1 Laporan - Valid)
-        // ==========================================
+        
+        
+        
         $this->createReport([
             'user_id' => $wargaValid->users_id,
             'title' => 'Asap Tebal dari Gudang Ban Balikpapan',
@@ -231,9 +231,9 @@ class ReportSeeder extends Seeder
         ]);
 
 
-        // ==========================================
-        // 4. DATA LAPORAN UNTUK WARGA PROSES (1 Laporan - Diproses)
-        // ==========================================
+        
+        
+        
         $petugas5 = $petugasList->get(4) ?? $petugasList->first();
         $this->createReport([
             'user_id' => $wargaProses->users_id,
@@ -252,9 +252,9 @@ class ReportSeeder extends Seeder
         ]);
 
 
-        // ==========================================
-        // 5. DATA LAPORAN UNTUK WARGA SELESAI (1 Laporan - Selesai)
-        // ==========================================
+        
+        
+        
         $petugas6 = $petugasList->get(5) ?? $petugasList->first();
         $this->createReport([
             'user_id' => $wargaSelesai->users_id,
@@ -279,9 +279,9 @@ class ReportSeeder extends Seeder
      */
     private function createReport(array $data): void
     {
-        // 1. Buat Laporan utama
-        // Booted event akan otomatis membuat status history awal 'pending' dengan pesan 'Laporan berhasil dibuat oleh pelapor.'
-        // Kita sesuaikan hal tersebut dengan status awal yang diinginkan.
+        
+        
+        
         
         $reportData = [
             'user_id' => $data['user_id'],
@@ -302,10 +302,10 @@ class ReportSeeder extends Seeder
 
         $report = Report::create($reportData);
 
-        // Hapus history awal yang dibuat otomatis agar kita bisa menyusun timeline yang rapi secara kronologis
+        
         $report->statusHistories()->delete();
 
-        // 2. Tambah History Awal (Pending)
+        
         $report->statusHistories()->create([
             'status_awal' => null,
             'status_baru' => 'pending',
@@ -316,7 +316,7 @@ class ReportSeeder extends Seeder
             'updated_at' => now()->subHours(5),
         ]);
 
-        // 3. Jika status bukan pending, buat transisi selanjutnya
+        
         if ($data['status'] === 'valid' || $data['status'] === 'diproses' || $data['status'] === 'selesai') {
             $adminUser = User::find($data['admin_id']);
             $adminName = $adminUser ? $adminUser->users_name : 'Admin Utama';
@@ -336,7 +336,7 @@ class ReportSeeder extends Seeder
             $petugasUser = User::find($data['assigned_petugas_id']);
             $petugasName = $petugasUser ? $petugasUser->users_name : 'Petugas Lapangan';
 
-            // Tambah penugasan petugas ke tabel penugasan
+            
             Penugasan::create([
                 'report_id' => $report->report_id,
                 'petugas_id' => $data['assigned_petugas_id'],

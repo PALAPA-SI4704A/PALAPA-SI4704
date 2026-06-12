@@ -319,7 +319,7 @@
     </div>
 
     @php
-        // Cek apakah ada notifikasi yang is_read-nya 0 (belum dibaca) untuk user saat ini
+        
         $hasUnreadNotif = false;
         if(auth()->check()) {
             $hasUnreadNotif = \App\Models\Notifikasi::where('user_id', auth()->user()->users_id)

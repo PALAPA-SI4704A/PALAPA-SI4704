@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\PetugasController;
-use App\Http\Controllers\NotifikasiController; // Import controller notifikasi
+use App\Http\Controllers\NotifikasiController; 
 use App\Http\Controllers\AdminController;
 
 Route::get('/', function () {
@@ -28,19 +28,19 @@ Route::middleware('auth')->group(function () {
     Route::put('/reports/{report}', [ReportController::class, 'update'])->name('reports.update');
     Route::get('/reports/{report}/history', [ReportController::class, 'history'])->name('reports.history');
 
-    // Rute Notifikasi (PBI 15)
+    
     Route::get('/notifikasi', [NotifikasiController::class, 'index'])->name('notifikasi.index');
     Route::post('/notifikasi/{id}/read', [NotifikasiController::class, 'markAsRead'])->name('notifikasi.read'); 
     Route::put('/profile/update', [ReportController::class, 'updateProfile'])->name('profile.update');
     Route::post('/reports/{report}/preview', [ReportController::class, 'previewEdit'])->name('reports.previewEdit');
 
-    // Petugas Routes
+    
     Route::get('/petugas/dashboard', [PetugasController::class, 'index'])->name('petugas.dashboard');
     Route::get('/petugas/reports/{report}', [PetugasController::class, 'show'])->name('petugas.reports.show');
     Route::post('/petugas/reports/{report}/verify', [PetugasController::class, 'verify'])->name('petugas.reports.verify');
     Route::post('/petugas/reports/{report}/status', [PetugasController::class, 'updateStatus'])->name('petugas.reports.updateStatus');
 
-    // Admin Routes
+    
     Route::get('/admin/dashboard', [AdminController::class, 'index'])->name('admin.dashboard');
     Route::get('/admin/reports', [AdminController::class, 'reportsIndex'])->name('admin.reports.index');
     Route::get('/admin/reports/{report}', [AdminController::class, 'show'])->name('admin.reports.show');

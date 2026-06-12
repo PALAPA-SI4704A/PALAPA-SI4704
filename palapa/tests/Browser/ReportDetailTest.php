@@ -17,7 +17,7 @@ class ReportDetailTest extends TestCase
      */
     public function test_user_can_view_report_history_detail(): void
     {
-        // Pre Condition: User berada di halaman riwayat laporan dan terdapat minimal 1 riwayat laporan
+        
         $pelapor = User::factory()->create([
             'role' => 'masyarakat',
         ])->fresh();
@@ -30,13 +30,13 @@ class ReportDetailTest extends TestCase
 
         $this->actingAs($pelapor);
         
-        // Halaman daftar laporan "Laporan Saya"
+        
         $this->get(route('reports.index'))
              ->assertStatus(200)
              ->assertSee('Laporan Saya')
              ->assertSee($report->title);
              
-        // Melihat detail informasi laporan pada riwayat history
+        
         $this->get(route('reports.history', $report->report_id))
              ->assertStatus(200)
              ->assertSee('Riwayat Status')
