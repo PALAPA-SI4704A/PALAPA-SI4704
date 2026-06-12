@@ -371,12 +371,14 @@
     editModalOpen: false,
     loading: false,
     reportTitle: '',
+    reportBuktiFoto: '',
     statusHistories: [],
     fetchHistory(reportId) {
         this.modalOpen = true;
         this.loading = true;
         this.statusHistories = [];
         this.reportTitle = '';
+        this.reportBuktiFoto = '';
         
         fetch(`/reports/${reportId}/history`, {
             headers: {
@@ -390,6 +392,7 @@
         })
         .then(data => {
             this.reportTitle = data.report.title;
+            this.reportBuktiFoto = data.report.bukti_foto;
             this.statusHistories = data.statusHistories;
             this.loading = false;
         })
@@ -690,6 +693,10 @@
                                       x-text="history.status_baru"></span>
                             </h4>
                             <p style="font-size: 13px; color: #607089; margin: 0 0 8px 0; line-height: 1.4;" x-text="history.catatan"></p>
+                            <div x-show="history.status_baru.toLowerCase() === 'selesai' && reportBuktiFoto" style="margin-top: 12px; margin-bottom: 12px;" class="bukti-foto-container">
+                                <p style="margin: 0 0 4px 0; font-size: 12px; font-weight: 700; color: #2a2e38;">Bukti Foto Penanganan:</p>
+                                <img :src="'/storage/' + reportBuktiFoto" alt="Bukti Foto Penanganan" style="max-width: 200px; border-radius: 8px;" class="bukti-foto-img">
+                            </div>
                             <div style="font-size: 11px; color: #8a94a5; display: flex; align-items: center; gap: 4px;">
                                 <i class="ph ph-user" style="font-size: 12px;"></i> Oleh: <span x-text="history.diubah_oleh"></span>
                             </div>
