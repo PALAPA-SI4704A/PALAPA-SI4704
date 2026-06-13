@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreReportRequest;
 use App\Models\Report;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -23,7 +24,7 @@ class ReportController extends Controller
 
     public function updateProfile(Request $request)
     {
-        $user = Auth::user();
+        $user = User::findOrFail(Auth::id());
 
         $request->validate([
             'users_name' => 'required|string|max:255',
@@ -264,6 +265,10 @@ class ReportController extends Controller
             abort(403);
         }
 
+        if (!in_array(strtolower($report->status), ['pending', 'diproses'], true)) {
+            return redirect()->route('profile')->with('error', 'Laporan yang sedang ditangani tidak dapat diedit');
+        }
+
         return view('reports.edit', [
             'report' => $report,
             'prefill' => [
@@ -281,6 +286,10 @@ class ReportController extends Controller
     {
         if ($report->user_id !== Auth::id()) {
             abort(403);
+        }
+
+        if (!in_array(strtolower($report->status), ['pending', 'diproses'], true)) {
+            return redirect()->route('profile')->with('error', 'Laporan yang sedang ditangani tidak dapat diedit');
         }
 
         $validated = $request->validated();
@@ -316,6 +325,10 @@ class ReportController extends Controller
     {
         if ($report->user_id !== Auth::id()) {
             abort(403);
+        }
+
+        if (!in_array(strtolower($report->status), ['pending', 'diproses'], true)) {
+            return redirect()->route('profile')->with('error', 'Laporan yang sedang ditangani tidak dapat diedit');
         }
 
         $validated = $request->validated();
