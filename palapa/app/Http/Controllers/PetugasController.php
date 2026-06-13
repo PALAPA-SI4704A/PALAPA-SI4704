@@ -143,167 +143,35 @@ class PetugasController extends Controller
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
 
-        
-        if ($report->status === 'selesai' || $report->status === 'ditolak') {
-            return redirect()->back()->with('error', 'Laporan dengan status ' . $this->getStatusLabel($report->status) . ' tidak dapat diubah lagi.');
-        }
-
-        
         $request->validate([
             'status' => 'required|string',
             'catatan' => 'nullable|string|max:1000',
             'bukti_foto' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
-        ], [
-            'bukti_foto.image' => 'File harus berupa gambar.',
-            'bukti_foto.mimes' => 'Format gambar harus: jpeg, png, jpg, atau gif.',
-            'bukti_foto.max' => 'Ukuran gambar tidak boleh lebih dari 2 MB.'
         ]);
 
-        $newStatus = $request->input('status');
-        $catatan = $request->input('catatan');
-        $currentStatus = $report->status;
-        $validTransitions = $this->getValidTransitions($currentStatus);
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($request, $report) {
+            $currentStatus = $report->status;
+            $newStatus = $request->input('status');
+            $catatan = $request->input('catatan');
 
-        
-        if (!in_array($newStatus, $validTransitions)) {
-            return redirect()->back()->with('error', 'Transisi status dari ' . $this->getStatusLabel($currentStatus) . ' ke ' . $this->getStatusLabel($newStatus) . ' tidak diizinkan.');
-        }
-
-        
-        if ($newStatus === 'diproses') {
-            $request->validate([
-                'petugas_id' => 'required|exists:users,users_id|integer',
-                'catatan' => 'required|string|min:10|max:1000',
-            ], [
-                'petugas_id.required' => 'Petugas harus ditugaskan saat mengubah status ke "In Progress".',
-                'petugas_id.exists' => 'Petugas yang dipilih tidak valid.',
-                'catatan.required' => 'Komentar penanganan harus diisi.',
-                'catatan.min' => 'Komentar penanganan minimal harus 10 karakter.',
-                'catatan.max' => 'Komentar penanganan maksimal 1000 karakter.',
-            ]);
-
-            $petugas_id = $request->input('petugas_id');
-
-            
-            $isOnDuty = \App\Models\Penugasan::where('petugas_id', $petugas_id)
-                ->whereNull('completed_at')
-                ->exists();
-            if ($isOnDuty) {
-                return redirect()->back()->withErrors(['error' => 'Petugas ini sedang bertugas (On Duty) dan tidak dapat ditugaskan kembali.']);
-            }
-
-                $petugas_id = $request->input('petugas_id');
-
-            
-            $report->penugasans()->create([
-                'petugas_id' => $petugas_id,
-                'assigned_at' => now()
-            ]);
-        } 
-        
-        elseif ($newStatus === 'selesai') {
-            $request->validate([
-                'catatan' => 'required|string|min:10|max:1000',
-                'bukti_foto' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048'
-            ], [
-                'catatan.required' => 'Komentar penanganan harus diisi.',
-                'catatan.min' => 'Komentar penanganan minimal harus 10 karakter.',
-                'catatan.max' => 'Komentar penanganan maksimal 1000 karakter.',
-                'bukti_foto.required' => 'Bukti foto penanganan harus diunggah.',
-                'bukti_foto.image' => 'File harus berupa gambar.',
-                'bukti_foto.mimes' => 'Format gambar harus: jpeg, png, jpg, atau gif.',
-                'bukti_foto.max' => 'Ukuran gambar tidak boleh lebih dari 2 MB.'
-            ]);
-
-            
-            $bukti_foto_path = $report->bukti_foto;
-            if ($request->hasFile('bukti_foto')) {
-                $file = $request->file('bukti_foto');
-                $finalName = 'bukti_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-                $bukti_foto_path = $file->storeAs('bukti_penanganan', $finalName, 'public');
-            }
-
-                // Buat penugasan baru
+            if ($newStatus === 'diproses') {
+                $request->validate(['petugas_id' => 'required|exists:users,users_id']);
                 $report->penugasans()->create([
-                    'petugas_id' => $petugas_id,
+                    'petugas_id' => $request->petugas_id,
                     'assigned_at' => now()
                 ]);
-            } 
-            // Validasi khusus untuk status "selesai" (resolved)
-            elseif ($newStatus === 'selesai') {
-                $request->validate([
-                    'catatan' => 'required|string|min:10|max:1000',
-                    'bukti_foto' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048'
-                ], [
-                    'catatan.required' => 'Komentar penanganan harus diisi.',
-                    'catatan.min' => 'Komentar penanganan minimal harus 10 karakter.',
-                    'catatan.max' => 'Komentar penanganan maksimal 1000 karakter.',
-                    'bukti_foto.required' => 'Bukti foto penanganan harus diunggah.',
-                    'bukti_foto.image' => 'File harus berupa gambar.',
-                    'bukti_foto.mimes' => 'Format gambar harus: jpeg, png, jpg, atau gif.',
-                    'bukti_foto.max' => 'Ukuran gambar tidak boleh lebih dari 2 MB.'
-                ]);
-
-            
-            \App\Models\Penugasan::where('report_id', $report->report_id)
-                ->whereNull('completed_at')
-                ->update([
+            } elseif ($newStatus === 'selesai') {
+                $request->validate(['bukti_foto' => 'required|image']);
+                $path = $request->file('bukti_foto')->store('bukti_penanganan', 'public');
+                $report->penugasans()->whereNull('completed_at')->update([
                     'completed_at' => now(),
-                    'bukti_photo' => $bukti_foto_path,
+                    'bukti_photo' => $path
                 ]);
-        }
-        
-        elseif ($newStatus === 'ditolak') {
-            $request->validate([
-                'catatan' => 'required|string|min:10|max:1000',
-            ], [
-                'catatan.required' => 'Komentar penolakan harus diisi.',
-                'catatan.min' => 'Komentar penolakan minimal harus 10 karakter.',
-                'catatan.max' => 'Komentar penolakan maksimal 1000 karakter.',
-            ]);
-
-                // Update active penugasan record to mark officer as available
-                \App\Models\Penugasan::where('report_id', $report->report_id)
-                    ->whereNull('completed_at')
-                    ->update([
-                        'completed_at' => now(),
-                        'bukti_photo' => $bukti_foto_path,
-                    ]);
+            } elseif ($newStatus === 'ditolak') {
+                $report->penugasans()->whereNull('completed_at')->update(['completed_at' => now()]);
             }
-            // Validasi khusus untuk status "ditolak" (invalid)
-            elseif ($newStatus === 'ditolak') {
-                $request->validate([
-                    'catatan' => 'required|string|min:10|max:1000',
-                ], [
-                    'catatan.required' => 'Komentar penolakan harus diisi.',
-                    'catatan.min' => 'Komentar penolakan minimal harus 10 karakter.',
-                    'catatan.max' => 'Komentar penolakan maksimal 1000 karakter.',
-                ]);
 
-            
-            \App\Models\Penugasan::where('report_id', $report->report_id)
-                ->whereNull('completed_at')
-                ->update([
-                    'completed_at' => now(),
-                ]);
-        }
-        else {
-            
             $report->update(['status' => $newStatus]);
-        }
-
-                // Update active penugasan record to mark officer as available
-                \App\Models\Penugasan::where('report_id', $report->report_id)
-                    ->whereNull('completed_at')
-                    ->update([
-                        'completed_at' => now(),
-                    ]);
-            }
-            else {
-                // Untuk status lain
-                $report->update(['status' => $newStatus]);
-            }
-
             $roleLabel = 'Petugas Pemadam';
             $statusMappingLabel = $this->getStatusLabel($newStatus);
 
