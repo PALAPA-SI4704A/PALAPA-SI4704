@@ -81,6 +81,10 @@ class PetugasController extends Controller
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
 
+        if ($report->assigned_petugas_id !== Auth::user()->users_id) {
+            abort(403, 'Anda tidak ditugaskan untuk menangani laporan ini.');
+        }
+
         $report->load(['pelapor', 'statusHistories' => function ($query) {
             $query->orderBy('id', 'asc');
         }]);
@@ -141,6 +145,10 @@ class PetugasController extends Controller
     {
         if (Auth::user()->role !== 'petugas') {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
+        }
+
+        if ($report->assigned_petugas_id !== Auth::user()->users_id) {
+            abort(403, 'Anda tidak ditugaskan untuk menangani laporan ini.');
         }
 
         $request->validate([
