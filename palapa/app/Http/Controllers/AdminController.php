@@ -544,9 +544,6 @@ class AdminController extends Controller
         });
     }
 
-    /**
-     * Ubah penugasan petugas ke petugas lain
-     */
     public function reassign(Report $report, User $petugas)
     {
         if (Auth::user()->role !== 'admin') {
