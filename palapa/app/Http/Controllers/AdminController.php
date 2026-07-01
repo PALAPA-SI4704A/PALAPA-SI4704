@@ -649,8 +649,19 @@ class AdminController extends Controller
         $request->validate(['file' => 'required|mimes:csv,txt|max:2048']);
 
         $file = $request->file('file');
-        $handle = fopen($file->getPathname(), "r");
+        $path = $file->getPathname();
 
+        // Detect delimiter: read first line to check if it contains semicolon or comma
+        $handle = fopen($path, "r");
+        $firstLine = fgets($handle);
+        fclose($handle);
+
+        $delimiter = ",";
+        if (strpos($firstLine, ';') !== false && strpos($firstLine, ',') === false) {
+            $delimiter = ";";
+        }
+
+        $handle = fopen($path, "r");
         $header = true;
         $successCount = 0;
         $skippedCount = 0;
@@ -658,29 +669,112 @@ class AdminController extends Controller
         $importedData = [];
         $rowNumber = 1;
 
-        while (($row = fgetcsv($handle, 1000, ",")) !== false) {
+        // Cache for hashed passwords to avoid slow bcrypt in loop
+        $hashedPasswords = [];
+
+        // Track processed emails and phones in this import batch to prevent duplicate inputs within the CSV itself
+        $processedEmails = [];
+        $processedPhones = [];
+
+        while (($row = fgetcsv($handle, 1000, $delimiter)) !== false) {
             if ($header) { $header = false; $rowNumber++; continue; }
+
+            // Filter out empty rows (fgetcsv returns [null] for blank lines)
+            if ($row === [null] || empty(array_filter($row))) {
+                $rowNumber++;
+                continue;
+            }
+
             if (count($row) >= 4) {
+                $name = trim($row[0]);
                 $email = trim($row[1]);
+                $phone = trim($row[2]);
+                $passwordRaw = trim($row[3]);
+                $posName = isset($row[4]) ? trim($row[4]) : null;
+
+                // 1. Validate Name
+                if (empty($name)) {
+                    $skippedCount++;
+                    $skippedDetails[] = "Baris $rowNumber: Nama kosong.";
+                    $rowNumber++;
+                    continue;
+                }
+
+                // 2. Validate Email
                 if (empty($email)) {
                     $skippedCount++;
                     $skippedDetails[] = "Baris $rowNumber: Email kosong.";
-                } elseif (!User::where('email', $email)->exists()) {
-                    try {
-                        User::create([
-                            'users_name' => trim($row[0]), 'email' => $email,
-                            'phone' => trim($row[2]), 'password' => bcrypt(trim($row[3])),
-                            'role' => 'petugas', 'pos_name' => isset($row[4]) ? trim($row[4]) : null,
-                        ]);
-                        $successCount++;
-                        $importedData[] = ['name' => trim($row[0]), 'email' => $email, 'phone' => trim($row[2])];
-                    } catch (\Exception $e) {
-                        $skippedCount++;
-                        $skippedDetails[] = "Baris $rowNumber: Gagal menyimpan data ($email).";
-                    }
-                } else {
+                    $rowNumber++;
+                    continue;
+                }
+
+                if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    $skippedCount++;
+                    $skippedDetails[] = "Baris $rowNumber: Format email tidak valid ($email).";
+                    $rowNumber++;
+                    continue;
+                }
+
+                // 3. Validate Phone
+                if (empty($phone)) {
+                    $skippedCount++;
+                    $skippedDetails[] = "Baris $rowNumber: Nomor telepon kosong.";
+                    $rowNumber++;
+                    continue;
+                }
+
+                if (!preg_match('/^[0-9]+$/', $phone)) {
+                    $skippedCount++;
+                    $skippedDetails[] = "Baris $rowNumber: Nomor telepon hanya boleh berisi angka ($phone).";
+                    $rowNumber++;
+                    continue;
+                }
+
+                // 4. Validate Password
+                if (empty($passwordRaw)) {
+                    $skippedCount++;
+                    $skippedDetails[] = "Baris $rowNumber: Password kosong.";
+                    $rowNumber++;
+                    continue;
+                }
+
+                // 5. Check Duplicates (both in current CSV batch and Database)
+                // Check Email
+                if (in_array($email, $processedEmails) || User::where('email', $email)->exists()) {
                     $skippedCount++;
                     $skippedDetails[] = "Baris $rowNumber: Email sudah terdaftar ($email).";
+                    $rowNumber++;
+                    continue;
+                }
+
+                // Check Phone
+                if (in_array($phone, $processedPhones) || User::where('phone', $phone)->exists()) {
+                    $skippedCount++;
+                    $skippedDetails[] = "Baris $rowNumber: Nomor telepon sudah terdaftar ($phone).";
+                    $rowNumber++;
+                    continue;
+                }
+
+                try {
+                    if (!isset($hashedPasswords[$passwordRaw])) {
+                        $hashedPasswords[$passwordRaw] = bcrypt($passwordRaw);
+                    }
+                    $passwordHash = $hashedPasswords[$passwordRaw];
+
+                    User::create([
+                        'users_name' => $name, 'email' => $email,
+                        'phone' => $phone, 'password' => $passwordHash,
+                        'role' => 'petugas', 'pos_name' => $posName,
+                    ]);
+                    
+                    $successCount++;
+                    $importedData[] = ['name' => $name, 'email' => $email, 'phone' => $phone];
+                    
+                    $processedEmails[] = $email;
+                    $processedPhones[] = $phone;
+                } catch (\Exception $e) {
+                    $skippedCount++;
+                    $skippedDetails[] = "Baris $rowNumber: Gagal menyimpan data ($email).";
                 }
             } else {
                 if (!empty(array_filter($row))) {
