@@ -14,7 +14,7 @@ class TCTrend002Test extends DuskTestCase
 
     public function test_tc_trend_002_filter_perubahan_periode_analisis_data_tren(): void
     {
-        // Arrange
+        // Arrange - Menyiapkan data pengguna (Admin & Pelapor) serta satu laporan awal
         $admin = User::factory()->create([
             'role' => 'admin',
             'users_name' => 'Admin Utama',
