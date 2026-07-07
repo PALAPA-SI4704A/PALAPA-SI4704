@@ -311,7 +311,9 @@ class AdminController extends Controller
                 $chartLabels[] = $date->locale('id')->isoFormat('MMMM');
                 $dateKeys[] = $date->format('Y-m');
             }
-            $groupRaw = "DATE_FORMAT(created_at, '%Y-%m')";
+            $groupRaw = DB::getDriverName() === 'sqlite'
+                ? "strftime('%Y-%m', created_at)"
+                : "DATE_FORMAT(created_at, '%Y-%m')";
             $rangeStart = Carbon::now()->startOfYear();
         } else {
             for ($i = 6; $i >= 0; $i--) {
